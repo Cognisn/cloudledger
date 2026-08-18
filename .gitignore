@@ -33,3 +33,6 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# --- SDD execution scratch (local only) ---
+.superpowers/
