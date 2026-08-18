@@ -36,3 +36,17 @@ htmlcov/
 
 # --- SDD execution scratch (local only) ---
 .superpowers/
+
+# --- Scan data (never commit) ---
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+!docs/example_accounts.csv
+credentials/
+secrets/
+*.tmp
+*.bak
+
+# --- Skill distribution archives (built artefacts) ---
+skills/*.zip
