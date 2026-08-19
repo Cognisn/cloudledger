@@ -8,6 +8,7 @@ from .aws_helpers import (
     validate_aws_credentials,
     get_account_id,
 )
+from .timeutils import to_utc_iso, utc_now_iso
 
 __all__ = [
     "get_all_regions",
@@ -16,4 +17,6 @@ __all__ = [
     "is_public_ip",
     "validate_aws_credentials",
     "get_account_id",
+    "to_utc_iso",
+    "utc_now_iso",
 ]
