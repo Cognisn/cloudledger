@@ -21,7 +21,7 @@ CloudLedger performs security assessments and collects detailed infrastructure i
 - **Historical ledger**: every scan is stored with timestamps for comparison and drift analysis
 
 ### Storage
-- **SQLite** out of the box (default location managed per platform), or
+- **SQLite** out of the box (default location in the platform data directory, managed by konfig), or
 - **PostgreSQL**, **MySQL**, or **MSSQL** via optional extras, configured once with `cloudledger setup`; connection credentials are stored securely in the operating system keyring
 
 ### MCP server
@@ -66,7 +66,8 @@ uv sync
 # One-off configuration: choose SQLite or a server backend
 cloudledger setup
 
-# Interactive scan of a single account
+# Interactive scan of a single account (database defaults to the
+# platform data directory; override with --database)
 cloudledger scan --tag client-acme --tag q3-review
 
 # Batch scanning from CSV
@@ -78,7 +79,7 @@ cloudledger tag list
 cloudledger tag find client-acme
 cloudledger tag add <scan-id> follow-up
 
-# Start the MCP server (stdio)
+# Start the MCP server (stdio); reads the configured database by default
 cloudledger-mcp
 ```
 
