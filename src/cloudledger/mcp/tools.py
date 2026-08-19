@@ -15,7 +15,7 @@ def get_tools() -> List[Dict[str, Any]]:
     Returns:
         List of tool definitions
     """
-    return [
+    tools = [
         {
             "name": "list_scans",
             "description": "List all AWS scans or scans for a specific account",
@@ -884,6 +884,12 @@ def get_tools() -> List[Dict[str, Any]]:
             "parameters": {"type": "object", "properties": {}},
         },
     ]
+
+    for tool in tools:
+        if "All timestamps are UTC" not in tool["description"]:
+            tool["description"] = tool["description"].rstrip() + " All timestamps are UTC (ISO 8601)."
+
+    return tools
 
 
 def get_tool_by_name(name: str) -> Dict[str, Any]:
