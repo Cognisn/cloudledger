@@ -8,7 +8,6 @@ Uses Australian English in all documentation and comments.
 import json
 import logging
 from typing import Any, Dict
-import sqlite3
 import ipaddress
 
 import sqlalchemy as sa
@@ -16,7 +15,15 @@ import sqlalchemy as sa
 from ..database.operations import DatabaseOperations
 from ..database.tables import (
     t_auto_scaling_groups,
+    t_bedrock_agents,
+    t_bedrock_guardrails,
+    t_bedrock_knowledge_bases,
+    t_cloudwatch_log_groups,
+    t_config_recorders,
+    t_config_rules,
     t_cost_data,
+    t_direct_connect_connections,
+    t_directory_services,
     t_ebs_snapshots,
     t_ebs_volumes,
     t_ec2_instances,
@@ -25,14 +32,19 @@ from ..database.tables import (
     t_ecs_services,
     t_eks_clusters,
     t_elastic_ips,
+    t_elasticache_clusters,
     t_iam_policies,
     t_iam_roles,
     t_iam_users,
     t_internet_gateways,
     t_lambda_functions,
     t_load_balancers,
+    t_msk_clusters,
     t_nat_gateways,
     t_network_interfaces,
+    t_opensearch_domains,
+    t_organization_accounts,
+    t_organizational_units,
     t_organizations,
     t_prowler_findings,
     t_rds_instances,
@@ -42,9 +54,13 @@ from ..database.tables import (
     t_s3_buckets,
     t_scan_metadata,
     t_security_groups,
+    t_sso_assignments,
+    t_sso_permission_sets,
     t_subnets,
+    t_transit_gateways,
     t_vpc_flow_logs,
     t_vpcs,
+    t_vpn_connections,
     t_workspaces,
 )
 from ..assessment import get_catalogue, run_checks as run_assessment_checks
@@ -3911,9 +3927,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "organizations": [],
             "organizational_units": [],
@@ -3921,24 +3934,23 @@ class QueryHandler:
             "summary": {"total_accounts": 0, "total_ous": 0, "feature_set": None},
         }
 
-        try:
-            # Build query conditions
-            org_condition = (
-                f"WHERE scan_id = '{scan_id}'"
-                if scan_id
-                else "ORDER BY created_at DESC LIMIT 1"
-            )
+        # Get organization details
+        org_stmt = sa.select(
+            t_organizations.c.organization_id,
+            t_organizations.c.organization_arn,
+            t_organizations.c.master_account_id,
+            t_organizations.c.master_account_email,
+            t_organizations.c.feature_set,
+            t_organizations.c.available_policy_types,
+            t_organizations.c.scan_id,
+        )
+        if scan_id:
+            org_stmt = org_stmt.where(t_organizations.c.scan_id == scan_id)
+        else:
+            org_stmt = org_stmt.order_by(t_organizations.c.created_at.desc()).limit(1)
 
-            # Get organization details
-            cursor.execute(f"""
-                SELECT organization_id, organization_arn, master_account_id,
-                       master_account_email, feature_set, available_policy_types,
-                       scan_id
-                FROM organizations
-                {org_condition}
-            """)
-
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(org_stmt):
                 org_data = {
                     "organization_id": row[0],
                     "organization_arn": row[1],
@@ -3954,17 +3966,18 @@ class QueryHandler:
                 org_scan_id = row[6]
 
                 # Get organizational units for this organization
-                cursor.execute(
-                    """
-                    SELECT ou_id, ou_arn, ou_name, parent_id
-                    FROM organizational_units
-                    WHERE scan_id = ?
-                    ORDER BY ou_name
-                """,
-                    (org_scan_id,),
+                ou_stmt = (
+                    sa.select(
+                        t_organizational_units.c.ou_id,
+                        t_organizational_units.c.ou_arn,
+                        t_organizational_units.c.ou_name,
+                        t_organizational_units.c.parent_id,
+                    )
+                    .where(t_organizational_units.c.scan_id == org_scan_id)
+                    .order_by(t_organizational_units.c.ou_name)
                 )
 
-                for ou_row in cursor.fetchall():
+                for ou_row in conn.execute(ou_stmt):
                     results["organizational_units"].append(
                         {
                             "ou_id": ou_row[0],
@@ -3975,18 +3988,21 @@ class QueryHandler:
                     )
 
                 # Get accounts for this organization
-                cursor.execute(
-                    """
-                    SELECT account_id, account_arn, email, account_name,
-                           status, joined_method, joined_timestamp
-                    FROM organization_accounts
-                    WHERE scan_id = ?
-                    ORDER BY account_name
-                """,
-                    (org_scan_id,),
+                accounts_stmt = (
+                    sa.select(
+                        t_organization_accounts.c.account_id,
+                        t_organization_accounts.c.account_arn,
+                        t_organization_accounts.c.email,
+                        t_organization_accounts.c.account_name,
+                        t_organization_accounts.c.status,
+                        t_organization_accounts.c.joined_method,
+                        t_organization_accounts.c.joined_timestamp,
+                    )
+                    .where(t_organization_accounts.c.scan_id == org_scan_id)
+                    .order_by(t_organization_accounts.c.account_name)
                 )
 
-                for acct_row in cursor.fetchall():
+                for acct_row in conn.execute(accounts_stmt):
                     results["accounts"].append(
                         {
                             "account_id": acct_row[0],
@@ -3999,11 +4015,8 @@ class QueryHandler:
                         }
                     )
 
-            results["summary"]["total_accounts"] = len(results["accounts"])
-            results["summary"]["total_ous"] = len(results["organizational_units"])
-
-        finally:
-            conn.close()
+        results["summary"]["total_accounts"] = len(results["accounts"])
+        results["summary"]["total_ous"] = len(results["organizational_units"])
 
         return results
 
@@ -4020,9 +4033,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         account_id = params.get("account_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "permission_sets": [],
             "assignments": [],
@@ -4033,20 +4043,39 @@ class QueryHandler:
             },
         }
 
-        try:
-            # Build query condition
-            ps_condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        # Get permission sets
+        ps_stmt = sa.select(
+            t_sso_permission_sets.c.permission_set_arn,
+            t_sso_permission_sets.c.permission_set_name,
+            t_sso_permission_sets.c.description,
+            t_sso_permission_sets.c.instance_arn,
+            t_sso_permission_sets.c.session_duration,
+            t_sso_permission_sets.c.relay_state,
+            t_sso_permission_sets.c.managed_policies,
+            t_sso_permission_sets.c.inline_policy,
+            t_sso_permission_sets.c.scan_id,
+        )
+        if scan_id:
+            ps_stmt = ps_stmt.where(t_sso_permission_sets.c.scan_id == scan_id)
 
-            # Get permission sets
-            cursor.execute(f"""
-                SELECT permission_set_arn, permission_set_name, description,
-                       instance_arn, session_duration, relay_state,
-                       managed_policies, inline_policy, scan_id
-                FROM sso_permission_sets
-                {ps_condition}
-            """)
+        # Get assignments
+        assignment_stmt = sa.select(
+            t_sso_assignments.c.instance_arn,
+            t_sso_assignments.c.permission_set_arn,
+            t_sso_assignments.c.target_id,
+            t_sso_assignments.c.principal_type,
+            t_sso_assignments.c.principal_id,
+        )
+        assignment_conditions = []
+        if scan_id:
+            assignment_conditions.append(t_sso_assignments.c.scan_id == scan_id)
+        if account_id:
+            assignment_conditions.append(t_sso_assignments.c.target_id == account_id)
+        if assignment_conditions:
+            assignment_stmt = assignment_stmt.where(*assignment_conditions)
 
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(ps_stmt):
                 ps_data = {
                     "permission_set_arn": row[0],
                     "permission_set_name": row[1],
@@ -4060,28 +4089,7 @@ class QueryHandler:
                 }
                 results["permission_sets"].append(ps_data)
 
-            # Build assignment query condition
-            assignment_conditions = []
-            if scan_id:
-                assignment_conditions.append(f"scan_id = '{scan_id}'")
-            if account_id:
-                assignment_conditions.append(f"target_id = '{account_id}'")
-
-            assignment_condition = (
-                f"WHERE {' AND '.join(assignment_conditions)}"
-                if assignment_conditions
-                else ""
-            )
-
-            # Get assignments
-            cursor.execute(f"""
-                SELECT instance_arn, permission_set_arn, target_id,
-                       principal_type, principal_id
-                FROM sso_assignments
-                {assignment_condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(assignment_stmt):
                 results["assignments"].append(
                     {
                         "instance_arn": row[0],
@@ -4093,19 +4101,14 @@ class QueryHandler:
                 )
                 results["summary"]["accounts_with_assignments"].add(row[2])
 
-            results["summary"]["total_permission_sets"] = len(
-                results["permission_sets"]
-            )
-            results["summary"]["total_assignments"] = len(results["assignments"])
-            results["summary"]["total_accounts_with_assignments"] = len(
-                results["summary"]["accounts_with_assignments"]
-            )
-            results["summary"]["accounts_with_assignments"] = list(
-                results["summary"]["accounts_with_assignments"]
-            )
-
-        finally:
-            conn.close()
+        results["summary"]["total_permission_sets"] = len(results["permission_sets"])
+        results["summary"]["total_assignments"] = len(results["assignments"])
+        results["summary"]["total_accounts_with_assignments"] = len(
+            results["summary"]["accounts_with_assignments"]
+        )
+        results["summary"]["accounts_with_assignments"] = list(
+            results["summary"]["accounts_with_assignments"]
+        )
 
         return results
 
@@ -4120,9 +4123,6 @@ class QueryHandler:
             CloudTrail coverage analysis
         """
         scan_id = params.get("scan_id")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "trails": [],
@@ -4139,19 +4139,31 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        # The legacy SQL selects cloudtrail_trails.log_file_validation_enabled, a
+        # column absent from the DDL (src/cloudledger/database/tables.py has no
+        # such column on t_cloudtrail_trails). Kept verbatim via sa.text() so the
+        # frozen "no such column: log_file_validation_enabled" baseline error
+        # still fires; the raw sqlite3 error is re-raised so handle_query's
+        # str(e) matches the frozen baseline exactly.
+        condition = "WHERE scan_id = :scan_id" if scan_id else ""
+        stmt = sa.text(f"""
+            SELECT trail_arn, trail_name, region, s3_bucket_name,
+                   is_multi_region_trail, is_organization_trail, is_logging,
+                   log_file_validation_enabled, kms_key_id,
+                   cloud_watch_logs_log_group_arn, home_region
+            FROM cloudtrail_trails
+            {condition}
+        """)
 
-            cursor.execute(f"""
-                SELECT trail_arn, trail_name, region, s3_bucket_name,
-                       is_multi_region_trail, is_organization_trail, is_logging,
-                       log_file_validation_enabled, kms_key_id,
-                       cloud_watch_logs_log_group_arn, home_region
-                FROM cloudtrail_trails
-                {condition}
-            """)
+        with self.db_ops.engine.connect() as conn:
+            try:
+                rows = conn.execute(
+                    stmt, {"scan_id": scan_id} if scan_id else {}
+                ).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in rows:
                 trail_data = {
                     "trail_arn": row[0],
                     "trail_name": row[1],
@@ -4216,9 +4228,6 @@ class QueryHandler:
                 results["summary"]["compliance_issues"]
             )
 
-        finally:
-            conn.close()
-
         return results
 
     def _analyze_logging_coverage(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -4232,9 +4241,6 @@ class QueryHandler:
             Logging and Config coverage analysis
         """
         scan_id = params.get("scan_id")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "cloudwatch_log_groups": [],
@@ -4253,18 +4259,38 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        log_groups_stmt = sa.select(
+            t_cloudwatch_log_groups.c.log_group_name,
+            t_cloudwatch_log_groups.c.region,
+            t_cloudwatch_log_groups.c.retention_in_days,
+            t_cloudwatch_log_groups.c.stored_bytes,
+            t_cloudwatch_log_groups.c.kms_key_id,
+        )
+        recorders_stmt = sa.select(
+            t_config_recorders.c.recorder_name,
+            t_config_recorders.c.region,
+            t_config_recorders.c.role_arn,
+            t_config_recorders.c.is_recording,
+            t_config_recorders.c.last_status,
+        )
+        rules_stmt = sa.select(
+            t_config_rules.c.rule_name,
+            t_config_rules.c.region,
+            t_config_rules.c.config_rule_state,
+            t_config_rules.c.compliance_type,
+        )
+        if scan_id:
+            log_groups_stmt = log_groups_stmt.where(
+                t_cloudwatch_log_groups.c.scan_id == scan_id
+            )
+            recorders_stmt = recorders_stmt.where(
+                t_config_recorders.c.scan_id == scan_id
+            )
+            rules_stmt = rules_stmt.where(t_config_rules.c.scan_id == scan_id)
 
+        with self.db_ops.engine.connect() as conn:
             # Analyze CloudWatch Log Groups
-            cursor.execute(f"""
-                SELECT log_group_name, region, retention_in_days,
-                       stored_bytes, kms_key_id
-                FROM cloudwatch_log_groups
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(log_groups_stmt):
                 log_group_data = {
                     "log_group_name": row[0],
                     "region": row[1],
@@ -4284,13 +4310,7 @@ class QueryHandler:
                     results["summary"]["log_groups_with_kms"] += 1
 
             # Analyze Config Recorders
-            cursor.execute(f"""
-                SELECT recorder_name, region, role_arn, is_recording, last_status
-                FROM config_recorders
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(recorders_stmt):
                 results["config_recorders"].append(
                     {
                         "recorder_name": row[0],
@@ -4306,13 +4326,7 @@ class QueryHandler:
                     results["summary"]["config_recorders_recording"] += 1
 
             # Analyze Config Rules
-            cursor.execute(f"""
-                SELECT rule_name, region, config_rule_state, compliance_type
-                FROM config_rules
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(rules_stmt):
                 results["config_rules"].append(
                     {
                         "rule_name": row[0],
@@ -4328,13 +4342,10 @@ class QueryHandler:
                 elif row[3] == "NON_COMPLIANT":
                     results["summary"]["non_compliant_rules"] += 1
 
-            # Convert stored bytes to GB for readability
-            results["summary"]["total_stored_gb"] = round(
-                results["summary"]["total_stored_bytes"] / (1024**3), 2
-            )
-
-        finally:
-            conn.close()
+        # Convert stored bytes to GB for readability
+        results["summary"]["total_stored_gb"] = round(
+            results["summary"]["total_stored_bytes"] / (1024**3), 2
+        )
 
         return results
 
@@ -4351,9 +4362,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         region = params.get("region")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "models": [],
             "guardrails": [],
@@ -4369,24 +4377,78 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        # The legacy SQL selects bedrock_models.model_lifecycle_status, a column
+        # absent from the DDL (t_bedrock_models has no such column). Kept
+        # verbatim via sa.text() so the frozen "no such column:
+        # model_lifecycle_status" baseline error still fires; the raw sqlite3
+        # error is re-raised so handle_query's str(e) matches the frozen
+        # baseline exactly. As in the legacy code, this query runs first, so
+        # the guardrails/knowledge-bases/agents sections below never execute
+        # while the DDL mismatch stands.
+        conditions_sql = []
+        text_params = {}
+        if scan_id:
+            conditions_sql.append("scan_id = :scan_id")
+            text_params["scan_id"] = scan_id
+        if region:
+            conditions_sql.append("region = :region")
+            text_params["region"] = region
+        condition = f"WHERE {' AND '.join(conditions_sql)}" if conditions_sql else ""
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        models_stmt = sa.text(f"""
+            SELECT model_id, model_name, region, provider_name,
+                   input_modalities, output_modalities, model_lifecycle_status
+            FROM bedrock_models
+            {condition}
+        """)
 
+        guardrails_stmt = sa.select(
+            t_bedrock_guardrails.c.guardrail_id,
+            t_bedrock_guardrails.c.guardrail_name,
+            t_bedrock_guardrails.c.region,
+            t_bedrock_guardrails.c.description,
+            t_bedrock_guardrails.c.status,
+        )
+        knowledge_bases_stmt = sa.select(
+            t_bedrock_knowledge_bases.c.knowledge_base_id,
+            t_bedrock_knowledge_bases.c.knowledge_base_name,
+            t_bedrock_knowledge_bases.c.region,
+            t_bedrock_knowledge_bases.c.description,
+            t_bedrock_knowledge_bases.c.status,
+        )
+        agents_stmt = sa.select(
+            t_bedrock_agents.c.agent_id,
+            t_bedrock_agents.c.agent_name,
+            t_bedrock_agents.c.region,
+            t_bedrock_agents.c.description,
+            t_bedrock_agents.c.agent_status,
+            t_bedrock_agents.c.foundation_model,
+        )
+        if scan_id:
+            guardrails_stmt = guardrails_stmt.where(
+                t_bedrock_guardrails.c.scan_id == scan_id
+            )
+            knowledge_bases_stmt = knowledge_bases_stmt.where(
+                t_bedrock_knowledge_bases.c.scan_id == scan_id
+            )
+            agents_stmt = agents_stmt.where(t_bedrock_agents.c.scan_id == scan_id)
+        if region:
+            guardrails_stmt = guardrails_stmt.where(
+                t_bedrock_guardrails.c.region == region
+            )
+            knowledge_bases_stmt = knowledge_bases_stmt.where(
+                t_bedrock_knowledge_bases.c.region == region
+            )
+            agents_stmt = agents_stmt.where(t_bedrock_agents.c.region == region)
+
+        with self.db_ops.engine.connect() as conn:
             # Get Bedrock Models
-            cursor.execute(f"""
-                SELECT model_id, model_name, region, provider_name,
-                       input_modalities, output_modalities, model_lifecycle_status
-                FROM bedrock_models
-                {condition}
-            """)
+            try:
+                model_rows = conn.execute(models_stmt, text_params).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in model_rows:
                 model_data = {
                     "model_id": row[0],
                     "model_name": row[1],
@@ -4406,13 +4468,7 @@ class QueryHandler:
                 results["summary"]["regions"].add(row[2])
 
             # Get Bedrock Guardrails
-            cursor.execute(f"""
-                SELECT guardrail_id, guardrail_name, region, description, status
-                FROM bedrock_guardrails
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(guardrails_stmt):
                 results["guardrails"].append(
                     {
                         "guardrail_id": row[0],
@@ -4425,13 +4481,7 @@ class QueryHandler:
                 results["summary"]["total_guardrails"] += 1
 
             # Get Bedrock Knowledge Bases
-            cursor.execute(f"""
-                SELECT knowledge_base_id, knowledge_base_name, region, description, status
-                FROM bedrock_knowledge_bases
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(knowledge_bases_stmt):
                 results["knowledge_bases"].append(
                     {
                         "knowledge_base_id": row[0],
@@ -4444,13 +4494,7 @@ class QueryHandler:
                 results["summary"]["total_knowledge_bases"] += 1
 
             # Get Bedrock Agents
-            cursor.execute(f"""
-                SELECT agent_id, agent_name, region, description, agent_status, foundation_model
-                FROM bedrock_agents
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(agents_stmt):
                 results["agents"].append(
                     {
                         "agent_id": row[0],
@@ -4463,10 +4507,7 @@ class QueryHandler:
                 )
                 results["summary"]["total_agents"] += 1
 
-            results["summary"]["regions"] = list(results["summary"]["regions"])
-
-        finally:
-            conn.close()
+        results["summary"]["regions"] = list(results["summary"]["regions"])
 
         return results
 
@@ -4482,9 +4523,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "transit_gateways": [],
             "vpn_connections": [],
@@ -4499,17 +4537,41 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        transit_gateways_stmt = sa.select(
+            t_transit_gateways.c.transit_gateway_id,
+            t_transit_gateways.c.region,
+            t_transit_gateways.c.state,
+            t_transit_gateways.c.owner_id,
+            t_transit_gateways.c.description,
+        )
+        vpn_stmt = sa.select(
+            t_vpn_connections.c.vpn_connection_id,
+            t_vpn_connections.c.region,
+            t_vpn_connections.c.state,
+            t_vpn_connections.c.vpn_gateway_id,
+            t_vpn_connections.c.transit_gateway_id,
+            t_vpn_connections.c.customer_gateway_id,
+            t_vpn_connections.c.vpn_connection_type,
+        )
+        dx_stmt = sa.select(
+            t_direct_connect_connections.c.connection_id,
+            t_direct_connect_connections.c.connection_name,
+            t_direct_connect_connections.c.region,
+            t_direct_connect_connections.c.connection_state,
+            t_direct_connect_connections.c.location,
+            t_direct_connect_connections.c.bandwidth,
+            t_direct_connect_connections.c.provider_name,
+        )
+        if scan_id:
+            transit_gateways_stmt = transit_gateways_stmt.where(
+                t_transit_gateways.c.scan_id == scan_id
+            )
+            vpn_stmt = vpn_stmt.where(t_vpn_connections.c.scan_id == scan_id)
+            dx_stmt = dx_stmt.where(t_direct_connect_connections.c.scan_id == scan_id)
 
+        with self.db_ops.engine.connect() as conn:
             # Get Transit Gateways
-            cursor.execute(f"""
-                SELECT transit_gateway_id, region, state, owner_id, description
-                FROM transit_gateways
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(transit_gateways_stmt):
                 results["transit_gateways"].append(
                     {
                         "transit_gateway_id": row[0],
@@ -4522,14 +4584,7 @@ class QueryHandler:
                 results["summary"]["total_transit_gateways"] += 1
 
             # Get VPN Connections
-            cursor.execute(f"""
-                SELECT vpn_connection_id, region, state, vpn_gateway_id,
-                       transit_gateway_id, customer_gateway_id, vpn_connection_type
-                FROM vpn_connections
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(vpn_stmt):
                 vpn_data = {
                     "vpn_connection_id": row[0],
                     "region": row[1],
@@ -4546,14 +4601,7 @@ class QueryHandler:
                     results["summary"]["active_vpn_connections"] += 1
 
             # Get Direct Connect Connections
-            cursor.execute(f"""
-                SELECT connection_id, connection_name, region, connection_state,
-                       location, bandwidth, provider_name
-                FROM direct_connect_connections
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(dx_stmt):
                 dx_data = {
                     "connection_id": row[0],
                     "connection_name": row[1],
@@ -4569,16 +4617,13 @@ class QueryHandler:
                 if row[3] == "available":
                     results["summary"]["active_direct_connect_connections"] += 1
 
-            # Determine connectivity types in use
-            if results["summary"]["total_transit_gateways"] > 0:
-                results["summary"]["connectivity_types"].append("Transit Gateway")
-            if results["summary"]["total_vpn_connections"] > 0:
-                results["summary"]["connectivity_types"].append("VPN")
-            if results["summary"]["total_direct_connect_connections"] > 0:
-                results["summary"]["connectivity_types"].append("Direct Connect")
-
-        finally:
-            conn.close()
+        # Determine connectivity types in use
+        if results["summary"]["total_transit_gateways"] > 0:
+            results["summary"]["connectivity_types"].append("Transit Gateway")
+        if results["summary"]["total_vpn_connections"] > 0:
+            results["summary"]["connectivity_types"].append("VPN")
+        if results["summary"]["total_direct_connect_connections"] > 0:
+            results["summary"]["connectivity_types"].append("Direct Connect")
 
         return results
 
@@ -4595,9 +4640,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         region = params.get("region")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "directories": [],
             "summary": {
@@ -4609,23 +4651,27 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        stmt = sa.select(
+            t_directory_services.c.directory_id,
+            t_directory_services.c.directory_name,
+            t_directory_services.c.region,
+            t_directory_services.c.directory_type,
+            t_directory_services.c.size,
+            t_directory_services.c.edition,
+            t_directory_services.c.access_url,
+            t_directory_services.c.stage,
+            t_directory_services.c.sso_enabled,
+        )
+        conditions = []
+        if scan_id:
+            conditions.append(t_directory_services.c.scan_id == scan_id)
+        if region:
+            conditions.append(t_directory_services.c.region == region)
+        if conditions:
+            stmt = stmt.where(*conditions)
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-
-            cursor.execute(f"""
-                SELECT directory_id, directory_name, region, directory_type,
-                       size, edition, access_url, stage, sso_enabled
-                FROM directory_services
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
                 dir_data = {
                     "directory_id": row[0],
                     "directory_name": row[1],
@@ -4656,10 +4702,7 @@ class QueryHandler:
 
                 results["summary"]["regions"].add(row[2])
 
-            results["summary"]["regions"] = list(results["summary"]["regions"])
-
-        finally:
-            conn.close()
+        results["summary"]["regions"] = list(results["summary"]["regions"])
 
         return results
 
@@ -4675,9 +4718,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
         region = params.get("region")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "elasticache_clusters": [],
@@ -4699,25 +4739,79 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        elasticache_stmt = sa.select(
+            t_elasticache_clusters.c.cache_cluster_id,
+            t_elasticache_clusters.c.region,
+            t_elasticache_clusters.c.cache_cluster_status,
+            t_elasticache_clusters.c.engine,
+            t_elasticache_clusters.c.engine_version,
+            t_elasticache_clusters.c.cache_node_type,
+            t_elasticache_clusters.c.num_cache_nodes,
+            t_elasticache_clusters.c.transit_encryption_enabled,
+            t_elasticache_clusters.c.at_rest_encryption_enabled,
+        )
+        opensearch_stmt = sa.select(
+            t_opensearch_domains.c.domain_name,
+            t_opensearch_domains.c.region,
+            t_opensearch_domains.c.engine_version,
+            t_opensearch_domains.c.endpoint,
+            t_opensearch_domains.c.created,
+            t_opensearch_domains.c.deleted,
+            t_opensearch_domains.c.processing,
+        )
+        msk_stmt = sa.select(
+            t_msk_clusters.c.cluster_name,
+            t_msk_clusters.c.region,
+            t_msk_clusters.c.cluster_type,
+            t_msk_clusters.c.state,
+            t_msk_clusters.c.current_version,
+            t_msk_clusters.c.number_of_broker_nodes,
+        )
+        if scan_id:
+            elasticache_stmt = elasticache_stmt.where(
+                t_elasticache_clusters.c.scan_id == scan_id
+            )
+            opensearch_stmt = opensearch_stmt.where(
+                t_opensearch_domains.c.scan_id == scan_id
+            )
+            msk_stmt = msk_stmt.where(t_msk_clusters.c.scan_id == scan_id)
+        if region:
+            elasticache_stmt = elasticache_stmt.where(
+                t_elasticache_clusters.c.region == region
+            )
+            opensearch_stmt = opensearch_stmt.where(
+                t_opensearch_domains.c.region == region
+            )
+            msk_stmt = msk_stmt.where(t_msk_clusters.c.region == region)
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        # The legacy SQL selects dynamodb_tables.billing_mode, a column absent
+        # from the DDL (t_dynamodb_tables has billing_mode_summary, not
+        # billing_mode). Kept verbatim via sa.text() so the frozen "no such
+        # column: billing_mode" baseline error still fires; the raw sqlite3
+        # error is re-raised so handle_query's str(e) matches the frozen
+        # baseline exactly. As in the legacy code, this query runs last, so
+        # its failure discards the elasticache/opensearch/msk results already
+        # gathered above (the exception propagates past this method entirely).
+        conditions_sql = []
+        text_params = {}
+        if scan_id:
+            conditions_sql.append("scan_id = :scan_id")
+            text_params["scan_id"] = scan_id
+        if region:
+            conditions_sql.append("region = :region")
+            text_params["region"] = region
+        condition = f"WHERE {' AND '.join(conditions_sql)}" if conditions_sql else ""
 
+        dynamodb_stmt = sa.text(f"""
+            SELECT table_name, region, table_status, billing_mode,
+                   table_size_bytes, item_count, deletion_protection_enabled
+            FROM dynamodb_tables
+            {condition}
+        """)
+
+        with self.db_ops.engine.connect() as conn:
             # Get ElastiCache Clusters
-            cursor.execute(f"""
-                SELECT cache_cluster_id, region, cache_cluster_status, engine,
-                       engine_version, cache_node_type, num_cache_nodes,
-                       transit_encryption_enabled, at_rest_encryption_enabled
-                FROM elasticache_clusters
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(elasticache_stmt):
                 cluster_data = {
                     "cache_cluster_id": row[0],
                     "region": row[1],
@@ -4743,14 +4837,7 @@ class QueryHandler:
                     ] += 1
 
             # Get OpenSearch Domains
-            cursor.execute(f"""
-                SELECT domain_name, region, engine_version, endpoint,
-                       created, deleted, processing
-                FROM opensearch_domains
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(opensearch_stmt):
                 results["opensearch_domains"].append(
                     {
                         "domain_name": row[0],
@@ -4765,14 +4852,7 @@ class QueryHandler:
                 results["summary"]["total_opensearch_domains"] += 1
 
             # Get MSK Clusters
-            cursor.execute(f"""
-                SELECT cluster_name, region, cluster_type, state,
-                       current_version, number_of_broker_nodes
-                FROM msk_clusters
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(msk_stmt):
                 results["msk_clusters"].append(
                     {
                         "cluster_name": row[0],
@@ -4786,14 +4866,12 @@ class QueryHandler:
                 results["summary"]["total_msk_clusters"] += 1
 
             # Get DynamoDB Tables
-            cursor.execute(f"""
-                SELECT table_name, region, table_status, billing_mode,
-                       table_size_bytes, item_count, deletion_protection_enabled
-                FROM dynamodb_tables
-                {condition}
-            """)
+            try:
+                dynamodb_rows = conn.execute(dynamodb_stmt, text_params).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in dynamodb_rows:
                 table_data = {
                     "table_name": row[0],
                     "region": row[1],
@@ -4812,9 +4890,6 @@ class QueryHandler:
                     + 1
                 )
 
-        finally:
-            conn.close()
-
         return results
 
     def _get_organizations_cost_breakdown(
@@ -4828,9 +4903,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "organization_info": {},
             "master_account_costs": {},
@@ -4843,19 +4915,59 @@ class QueryHandler:
             },
         }
 
-        try:
-            # Get organization information
-            org_condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
-            cursor.execute(f"""
-                SELECT organization_id, organization_arn, master_account_id, 
-                       master_account_email, feature_set
-                FROM organizations
-                {org_condition}
-                ORDER BY created_at DESC
-                LIMIT 1
-            """)
+        org_stmt = (
+            sa.select(
+                t_organizations.c.organization_id,
+                t_organizations.c.organization_arn,
+                t_organizations.c.master_account_id,
+                t_organizations.c.master_account_email,
+                t_organizations.c.feature_set,
+            )
+            .order_by(t_organizations.c.created_at.desc())
+            .limit(1)
+        )
 
-            org_row = cursor.fetchone()
+        accounts_stmt = sa.select(
+            t_organization_accounts.c.account_id,
+            t_organization_accounts.c.account_name,
+            t_organization_accounts.c.email,
+            t_organization_accounts.c.status,
+        )
+
+        total_cost_expr = sa.func.sum(t_cost_data.c.amount).label("total_cost")
+        service_count_expr = sa.func.count(
+            sa.distinct(t_cost_data.c.service_name)
+        ).label("service_count")
+        cost_stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                total_cost_expr,
+                t_cost_data.c.currency,
+                service_count_expr,
+            )
+            .select_from(
+                t_cost_data.join(
+                    t_scan_metadata, t_cost_data.c.scan_id == t_scan_metadata.c.scan_id
+                )
+            )
+            .group_by(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_cost_data.c.currency,
+            )
+            .order_by(total_cost_expr.desc())
+        )
+        if scan_id:
+            org_stmt = org_stmt.where(t_organizations.c.scan_id == scan_id)
+            accounts_stmt = accounts_stmt.where(
+                t_organization_accounts.c.scan_id == scan_id
+            )
+            cost_stmt = cost_stmt.where(t_cost_data.c.scan_id == scan_id)
+
+        with self.db_ops.engine.connect() as conn:
+            # Get organization information
+            org_row = conn.execute(org_stmt).fetchone()
             if not org_row:
                 return {
                     "error": "No AWS Organizations data found. This query is for Organizations environments only.",
@@ -4872,14 +4984,8 @@ class QueryHandler:
             master_account_id = org_row[2]
 
             # Get all organization member accounts
-            cursor.execute(f"""
-                SELECT account_id, account_name, email, status
-                FROM organization_accounts
-                {org_condition}
-            """)
-
             member_account_ids = {}
-            for row in cursor.fetchall():
+            for row in conn.execute(accounts_stmt):
                 member_account_ids[row[0]] = {
                     "account_name": row[1],
                     "email": row[2],
@@ -4887,20 +4993,7 @@ class QueryHandler:
                 }
 
             # Get costs for all accounts
-            cost_condition = f"cd.scan_id = '{scan_id}'" if scan_id else "1=1"
-            cursor.execute(f"""
-                SELECT sm.account_name, sm.account_number,
-                       SUM(cd.amount) as total_cost,
-                       cd.currency,
-                       COUNT(DISTINCT cd.service_name) as service_count
-                FROM cost_data cd
-                INNER JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
-                WHERE {cost_condition}
-                GROUP BY sm.account_name, sm.account_number, cd.currency
-                ORDER BY total_cost DESC
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(cost_stmt):
                 account_number = row[1]
                 account_name = row[0]
                 total_cost = round(row[2], 2)
@@ -4940,35 +5033,30 @@ class QueryHandler:
                 results["cost_summary"]["total_all_accounts"] += total_cost
                 results["cost_summary"]["currency"] = currency
 
-            # Round summary values
-            results["cost_summary"]["total_all_accounts"] = round(
-                results["cost_summary"]["total_all_accounts"], 2
-            )
-            results["cost_summary"]["total_member_accounts"] = round(
-                results["cost_summary"]["total_member_accounts"], 2
-            )
+        # Round summary values
+        results["cost_summary"]["total_all_accounts"] = round(
+            results["cost_summary"]["total_all_accounts"], 2
+        )
+        results["cost_summary"]["total_member_accounts"] = round(
+            results["cost_summary"]["total_member_accounts"], 2
+        )
 
-            # Add helpful context
-            results["interpretation"] = {
-                "note": (
-                    "In AWS Organizations with consolidated billing:\n"
-                    "- The master account pays for all member account usage\n"
-                    "- Cost data shown here reflects actual usage per account\n"
-                    "- Master account costs are its DIRECT costs only\n"
-                    "- Member account costs are their individual usage\n"
-                    '- When asking "which account costs most?", exclude the master account '
-                    "or look at member_accounts list to see actual usage by account"
-                ),
-                "highest_cost_member_account": results["member_accounts"][0][
-                    "account_name"
-                ]
-                if results["member_accounts"]
-                else "N/A",
-                "member_account_count": len(results["member_accounts"]),
-            }
-
-        finally:
-            conn.close()
+        # Add helpful context
+        results["interpretation"] = {
+            "note": (
+                "In AWS Organizations with consolidated billing:\n"
+                "- The master account pays for all member account usage\n"
+                "- Cost data shown here reflects actual usage per account\n"
+                "- Master account costs are its DIRECT costs only\n"
+                "- Member account costs are their individual usage\n"
+                '- When asking "which account costs most?", exclude the master account '
+                "or look at member_accounts list to see actual usage by account"
+            ),
+            "highest_cost_member_account": results["member_accounts"][0]["account_name"]
+            if results["member_accounts"]
+            else "N/A",
+            "member_account_count": len(results["member_accounts"]),
+        }
 
         return results
 
@@ -4983,18 +5071,16 @@ class QueryHandler:
         except ValueError as e:
             return {"error": str(e)}
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT severity, COUNT(*) FROM prowler_findings"
-                " WHERE scan_id = ? AND UPPER(status) = 'FAIL'"
-                " GROUP BY severity",
-                (result["scan_id"],),
+        failed_stmt = (
+            sa.select(t_prowler_findings.c.severity, sa.func.count())
+            .where(
+                t_prowler_findings.c.scan_id == result["scan_id"],
+                sa.func.upper(t_prowler_findings.c.status) == "FAIL",
             )
-            failed = {row[0]: row[1] for row in cursor.fetchall()}
-        finally:
-            conn.close()
+            .group_by(t_prowler_findings.c.severity)
+        )
+        with self.db_ops.engine.connect() as conn:
+            failed = {row[0]: row[1] for row in conn.execute(failed_stmt)}
 
         result["prowler"] = {
             "available": bool(failed),
