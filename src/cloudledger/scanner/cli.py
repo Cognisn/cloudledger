@@ -19,7 +19,7 @@ from rich.table import Table
 from ..database.schema import DatabaseSchema
 from ..database.operations import DatabaseOperations
 from ..database.models import ScanMetadata
-from ..utils.logging_config import setup_logging
+from ..config.context import create_app_context, resolve_database_path
 from .credential_manager import CredentialManager, AccountConfig
 from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
@@ -39,9 +39,9 @@ def cli():
 @cli.command()
 @click.option(
     "--database",
-    required=True,
+    default=None,
     type=click.Path(),
-    help="Path to SQLite database file (will be created if it doesn't exist)",
+    help="Path to SQLite database file (default: configured or platform data location)",
 )
 @click.option(
     "--csv",
@@ -51,8 +51,8 @@ def cli():
 @click.option(
     "--log-level",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"], case_sensitive=False),
-    default="INFO",
-    help="Logging level",
+    default=None,
+    help="Logging level (overrides the configured level)",
 )
 @click.option(
     "--regions",
@@ -77,13 +77,12 @@ def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[st
         # Specific regions only
         cloudledger scan --database /path/to/scanner.db --regions us-east-1,us-west-2
     """
-    # Setup logging
-    setup_logging(
-        log_file=str(Path(database).parent / "cloudledger.log"),
-        log_level=log_level,
-        console_output=False,  # We use rich for console output
-    )
+    with create_app_context(console_output="none", log_level=log_level) as ctx:
+        database = str(resolve_database_path(database, ctx.settings))
+        _run_scan(database, csv, regions)
 
+
+def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None:
     console.print("\n[bold blue]CloudLedger[/bold blue]", style="bold")
     console.print("=" * 60)
 
@@ -416,9 +415,10 @@ def create_example_csv(output: str):
 @cli.command()
 @click.option(
     "--database",
-    required=True,
-    type=click.Path(exists=True),
-    help="Path to SQLite database file",
+    required=False,
+    default=None,
+    type=click.Path(),
+    help="Path to SQLite database file (default: configured or platform data location)",
 )
 @click.option(
     "--scan-id",
@@ -432,138 +432,146 @@ def delete_scan(database: str, scan_id: Optional[str]):
     If --scan-id is not provided, displays a list of scans and prompts for selection.
     This operation cannot be undone, so use with caution.
     """
-    # Initialise database
-    db_schema = DatabaseSchema(database)
-    db_schema.initialise_database()
-    db_ops = DatabaseOperations(database)
+    with create_app_context(console_output="none") as ctx:
+        database = str(resolve_database_path(database, ctx.settings))
+        if not Path(database).exists():
+            console.print(f"[red]✗[/red] Database not found: {database}")
+            sys.exit(1)
 
-    # Get all scans
-    scans = db_ops.get_all_scans()
+        # Initialise database
+        db_schema = DatabaseSchema(database)
+        db_schema.initialise_database()
+        db_ops = DatabaseOperations(database)
 
-    if not scans:
-        console.print("[yellow]No scans found in database.[/yellow]")
-        return
+        # Get all scans
+        scans = db_ops.get_all_scans()
 
-    # If scan_id not provided, display list and prompt for selection
-    if not scan_id:
-        console.print("\n[bold]Available Scans:[/bold]\n")
-
-        # Create table of scans
-        table = Table(title="Scans in Database")
-        table.add_column("#", style="cyan", justify="right")
-        table.add_column("Scan ID", style="yellow")
-        table.add_column("Account Name", style="green")
-        table.add_column("Account Number", style="blue")
-        table.add_column("Timestamp", style="magenta")
-        table.add_column("Status", style="white")
-
-        for idx, scan in enumerate(scans, 1):
-            table.add_row(
-                str(idx),
-                scan["scan_id"][:8] + "...",  # Show abbreviated scan ID
-                scan.get("account_name", "N/A"),
-                scan.get("account_number", "N/A"),
-                scan.get("scan_timestamp", "N/A"),
-                scan.get("status", "N/A"),
-            )
-
-        console.print(table)
-
-        # Prompt for selection
-        console.print(
-            "\n[bold]Enter the number of the scan to delete, or 'q' to quit:[/bold]"
-        )
-        selection = input("Selection: ").strip()
-
-        if selection.lower() == "q":
-            console.print("[yellow]Cancelled.[/yellow]")
+        if not scans:
+            console.print("[yellow]No scans found in database.[/yellow]")
             return
 
-        try:
-            selection_idx = int(selection) - 1
-            if selection_idx < 0 or selection_idx >= len(scans):
+        # If scan_id not provided, display list and prompt for selection
+        if not scan_id:
+            console.print("\n[bold]Available Scans:[/bold]\n")
+
+            # Create table of scans
+            table = Table(title="Scans in Database")
+            table.add_column("#", style="cyan", justify="right")
+            table.add_column("Scan ID", style="yellow")
+            table.add_column("Account Name", style="green")
+            table.add_column("Account Number", style="blue")
+            table.add_column("Timestamp", style="magenta")
+            table.add_column("Status", style="white")
+
+            for idx, scan in enumerate(scans, 1):
+                table.add_row(
+                    str(idx),
+                    scan["scan_id"][:8] + "...",  # Show abbreviated scan ID
+                    scan.get("account_name", "N/A"),
+                    scan.get("account_number", "N/A"),
+                    scan.get("scan_timestamp", "N/A"),
+                    scan.get("status", "N/A"),
+                )
+
+            console.print(table)
+
+            # Prompt for selection
+            console.print(
+                "\n[bold]Enter the number of the scan to delete, or 'q' to quit:[/bold]"
+            )
+            selection = input("Selection: ").strip()
+
+            if selection.lower() == "q":
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+
+            try:
+                selection_idx = int(selection) - 1
+                if selection_idx < 0 or selection_idx >= len(scans):
+                    console.print(
+                        f"[red]✗[/red] Invalid selection. Must be between 1 and {len(scans)}"
+                    )
+                    sys.exit(1)
+
+                scan_id = scans[selection_idx]["scan_id"]
+            except ValueError:
                 console.print(
-                    f"[red]✗[/red] Invalid selection. Must be between 1 and {len(scans)}"
+                    "[red]✗[/red] Invalid input. Please enter a number or 'q'."
                 )
                 sys.exit(1)
 
-            scan_id = scans[selection_idx]["scan_id"]
-        except ValueError:
-            console.print("[red]✗[/red] Invalid input. Please enter a number or 'q'.")
+        # Verify the scan exists and get details
+        scan_details = None
+        for scan in scans:
+            if scan["scan_id"] == scan_id:
+                scan_details = scan
+                break
+
+        if not scan_details:
+            console.print(f"[red]✗[/red] Scan ID '{scan_id}' not found in database.")
             sys.exit(1)
 
-    # Verify the scan exists and get details
-    scan_details = None
-    for scan in scans:
-        if scan["scan_id"] == scan_id:
-            scan_details = scan
-            break
+        # Display scan details and confirm deletion
+        console.print(
+            "\n[bold red]WARNING: This will permanently delete the following scan:[/bold red]\n"
+        )
 
-    if not scan_details:
-        console.print(f"[red]✗[/red] Scan ID '{scan_id}' not found in database.")
-        sys.exit(1)
+        info_table = Table(show_header=False, box=None)
+        info_table.add_column("Field", style="cyan")
+        info_table.add_column("Value", style="white")
 
-    # Display scan details and confirm deletion
-    console.print(
-        "\n[bold red]WARNING: This will permanently delete the following scan:[/bold red]\n"
-    )
+        info_table.add_row("Scan ID", scan_details["scan_id"])
+        info_table.add_row("Account Name", scan_details.get("account_name", "N/A"))
+        info_table.add_row("Account Number", scan_details.get("account_number", "N/A"))
+        info_table.add_row("Scan Timestamp", scan_details.get("scan_timestamp", "N/A"))
+        info_table.add_row("Status", scan_details.get("status", "N/A"))
 
-    info_table = Table(show_header=False, box=None)
-    info_table.add_column("Field", style="cyan")
-    info_table.add_column("Value", style="white")
+        console.print(info_table)
 
-    info_table.add_row("Scan ID", scan_details["scan_id"])
-    info_table.add_row("Account Name", scan_details.get("account_name", "N/A"))
-    info_table.add_row("Account Number", scan_details.get("account_number", "N/A"))
-    info_table.add_row("Scan Timestamp", scan_details.get("scan_timestamp", "N/A"))
-    info_table.add_row("Status", scan_details.get("status", "N/A"))
+        console.print("\n[yellow]This will delete:[/yellow]")
+        console.print("  • Scan metadata")
+        console.print("  • All resources collected during this scan")
+        console.print("  • Prowler security findings")
+        console.print("  • Cost data")
+        console.print("  • All other associated data")
 
-    console.print(info_table)
+        console.print("\n[bold red]This operation cannot be undone![/bold red]")
 
-    console.print("\n[yellow]This will delete:[/yellow]")
-    console.print("  • Scan metadata")
-    console.print("  • All resources collected during this scan")
-    console.print("  • Prowler security findings")
-    console.print("  • Cost data")
-    console.print("  • All other associated data")
+        # Confirm deletion
+        confirmation = input("\nType 'DELETE' to confirm: ").strip()
 
-    console.print("\n[bold red]This operation cannot be undone![/bold red]")
+        if confirmation != "DELETE":
+            console.print("[yellow]Deletion cancelled.[/yellow]")
+            return
 
-    # Confirm deletion
-    confirmation = input("\nType 'DELETE' to confirm: ").strip()
+        # Perform deletion
+        try:
+            console.print(f"\n[bold]Deleting scan {scan_id}...[/bold]")
 
-    if confirmation != "DELETE":
-        console.print("[yellow]Deletion cancelled.[/yellow]")
-        return
+            deleted_counts = db_ops.delete_scan(scan_id)
 
-    # Perform deletion
-    try:
-        console.print(f"\n[bold]Deleting scan {scan_id}...[/bold]")
+            # Display deletion summary
+            console.print("\n[green]✓[/green] Scan deleted successfully!\n")
 
-        deleted_counts = db_ops.delete_scan(scan_id)
+            summary_table = Table(title="Deletion Summary")
+            summary_table.add_column("Table", style="cyan")
+            summary_table.add_column("Records Deleted", justify="right", style="green")
 
-        # Display deletion summary
-        console.print("\n[green]✓[/green] Scan deleted successfully!\n")
+            total_deleted = 0
+            for table, count in sorted(deleted_counts.items()):
+                summary_table.add_row(table, str(count))
+                total_deleted += count
 
-        summary_table = Table(title="Deletion Summary")
-        summary_table.add_column("Table", style="cyan")
-        summary_table.add_column("Records Deleted", justify="right", style="green")
+            console.print(summary_table)
+            console.print(f"\n[bold]Total records deleted:[/bold] {total_deleted}")
 
-        total_deleted = 0
-        for table, count in sorted(deleted_counts.items()):
-            summary_table.add_row(table, str(count))
-            total_deleted += count
-
-        console.print(summary_table)
-        console.print(f"\n[bold]Total records deleted:[/bold] {total_deleted}")
-
-    except ValueError as e:
-        console.print(f"[red]✗[/red] Error: {e}")
-        sys.exit(1)
-    except Exception as e:
-        console.print(f"[red]✗[/red] Failed to delete scan: {e}")
-        logger.error(f"Failed to delete scan {scan_id}: {e}", exc_info=True)
-        sys.exit(1)
+        except ValueError as e:
+            console.print(f"[red]✗[/red] Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            console.print(f"[red]✗[/red] Failed to delete scan: {e}")
+            logger.error(f"Failed to delete scan {scan_id}: {e}", exc_info=True)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
