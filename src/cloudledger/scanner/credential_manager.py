@@ -201,9 +201,7 @@ class CredentialManager:
 
             if not is_management_account:
                 while True:
-                    management_account_name = input(
-                        "Management account name: "
-                    ).strip()
+                    management_account_name = input("Management account name: ").strip()
                     if management_account_name:
                         break
                     print("Management account name must not be blank")

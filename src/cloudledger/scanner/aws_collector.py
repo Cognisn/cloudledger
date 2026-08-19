@@ -3479,11 +3479,13 @@ class AWSCollector:
                         log_group_name=lg_data["logGroupName"],
                         log_group_arn=lg_data["arn"],
                         region=region,
-                        creation_time=datetime.fromtimestamp(
-                            lg_data["creationTime"] / 1000, tz=UTC
-                        )
-                        if "creationTime" in lg_data
-                        else None,
+                        creation_time=(
+                            datetime.fromtimestamp(
+                                lg_data["creationTime"] / 1000, tz=UTC
+                            )
+                            if "creationTime" in lg_data
+                            else None
+                        ),
                         retention_in_days=lg_data.get("retentionInDays"),
                         metric_filter_count=lg_data.get("metricFilterCount", 0),
                         stored_bytes=lg_data.get("storedBytes", 0),
@@ -3547,9 +3549,9 @@ class AWSCollector:
                     ),  # Note: Config doesn't provide ARN
                     region=region,
                     role_arn=recorder_data.get("roleARN"),
-                    is_recording=status_data.get("recording", False)
-                    if status_data
-                    else False,
+                    is_recording=(
+                        status_data.get("recording", False) if status_data else False
+                    ),
                     last_status=status_data.get("lastStatus") if status_data else None,
                     recording_group=recorder_data.get("recordingGroup", {}),
                     recording_mode=recorder_data.get("recordingMode", {}),

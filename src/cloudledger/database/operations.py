@@ -341,16 +341,16 @@ class DatabaseOperations:
                 "creation_date": bucket.creation_date.isoformat(),
                 "region": bucket.region,
                 "versioning_status": bucket.versioning_status,
-                "public_access_block": json.dumps(
-                    bucket.public_access_block, default=json_serial
-                )
-                if bucket.public_access_block
-                else None,
-                "encryption_config": json.dumps(
-                    bucket.encryption_config, default=json_serial
-                )
-                if bucket.encryption_config
-                else None,
+                "public_access_block": (
+                    json.dumps(bucket.public_access_block, default=json_serial)
+                    if bucket.public_access_block
+                    else None
+                ),
+                "encryption_config": (
+                    json.dumps(bucket.encryption_config, default=json_serial)
+                    if bucket.encryption_config
+                    else None
+                ),
                 "lifecycle_rules": json.dumps(
                     bucket.lifecycle_rules, default=json_serial
                 ),
@@ -377,9 +377,11 @@ class DatabaseOperations:
                 "user_id": user.user_id,
                 "arn": user.arn,
                 "create_date": user.create_date.isoformat(),
-                "password_last_used": user.password_last_used.isoformat()
-                if user.password_last_used
-                else None,
+                "password_last_used": (
+                    user.password_last_used.isoformat()
+                    if user.password_last_used
+                    else None
+                ),
                 "mfa_enabled": 1 if user.mfa_enabled else 0,
                 "access_keys": json.dumps(user.access_keys, default=json_serial),
                 "attached_policies": json.dumps(
@@ -473,9 +475,9 @@ class DatabaseOperations:
                 ),
                 "security_groups": json.dumps(lb.security_groups, default=json_serial),
                 "subnets": json.dumps(lb.subnets, default=json_serial),
-                "created_time": lb.created_time.isoformat()
-                if lb.created_time
-                else None,
+                "created_time": (
+                    lb.created_time.isoformat() if lb.created_time else None
+                ),
                 "listeners": json.dumps(lb.listeners, default=json_serial),
                 "target_groups": json.dumps(lb.target_groups, default=json_serial),
                 "tags": json.dumps(lb.tags, default=json_serial),
@@ -502,9 +504,9 @@ class DatabaseOperations:
                 "connectivity_type": nat.connectivity_type,
                 "public_ip": nat.public_ip,
                 "private_ip": nat.private_ip,
-                "created_time": nat.created_time.isoformat()
-                if nat.created_time
-                else None,
+                "created_time": (
+                    nat.created_time.isoformat() if nat.created_time else None
+                ),
                 "nat_gateway_addresses": json.dumps(
                     nat.nat_gateway_addresses, default=json_serial
                 ),
@@ -578,9 +580,11 @@ class DatabaseOperations:
                 "auto_scaling_group_arn": asg.auto_scaling_group_arn,
                 "region": asg.region,
                 "launch_configuration_name": asg.launch_configuration_name,
-                "launch_template": json.dumps(asg.launch_template, default=json_serial)
-                if asg.launch_template
-                else None,
+                "launch_template": (
+                    json.dumps(asg.launch_template, default=json_serial)
+                    if asg.launch_template
+                    else None
+                ),
                 "min_size": asg.min_size,
                 "max_size": asg.max_size,
                 "desired_capacity": asg.desired_capacity,
@@ -633,9 +637,11 @@ class DatabaseOperations:
                 "mac_address": eni.mac_address,
                 "source_dest_check": 1 if eni.source_dest_check else 0,
                 "security_groups": json.dumps(eni.security_groups, default=json_serial),
-                "attachment": json.dumps(eni.attachment, default=json_serial)
-                if eni.attachment
-                else None,
+                "attachment": (
+                    json.dumps(eni.attachment, default=json_serial)
+                    if eni.attachment
+                    else None
+                ),
                 "tags": json.dumps(eni.tags, default=json_serial),
                 "raw_data": json.dumps(eni.raw_data, default=json_serial),
             }
@@ -662,9 +668,9 @@ class DatabaseOperations:
                 "ip_address": workspace.ip_address,
                 "state": workspace.state,
                 "compute_type": workspace.compute_type,
-                "volume_encryption_enabled": 1
-                if workspace.volume_encryption_enabled
-                else 0,
+                "volume_encryption_enabled": (
+                    1 if workspace.volume_encryption_enabled else 0
+                ),
                 "user_volume_size_gb": workspace.user_volume_size_gb,
                 "root_volume_size_gb": workspace.root_volume_size_gb,
                 "running_mode": workspace.running_mode,
@@ -694,9 +700,11 @@ class DatabaseOperations:
                 "timeout": func.timeout,
                 "last_modified": func.last_modified.isoformat(),
                 "role_arn": func.role_arn,
-                "vpc_config": json.dumps(func.vpc_config, default=json_serial)
-                if func.vpc_config
-                else None,
+                "vpc_config": (
+                    json.dumps(func.vpc_config, default=json_serial)
+                    if func.vpc_config
+                    else None
+                ),
                 "environment_variables": json.dumps(
                     func.environment_variables, default=json_serial
                 ),
@@ -729,9 +737,9 @@ class DatabaseOperations:
                 "log_destination": flow_log.log_destination,
                 "log_format": flow_log.log_format,
                 "flow_log_status": flow_log.flow_log_status,
-                "created_time": flow_log.created_time.isoformat()
-                if flow_log.created_time
-                else None,
+                "created_time": (
+                    flow_log.created_time.isoformat() if flow_log.created_time else None
+                ),
                 "tags": json.dumps(flow_log.tags, default=json_serial),
                 "raw_data": json.dumps(flow_log.raw_data, default=json_serial),
             }
@@ -802,9 +810,11 @@ class DatabaseOperations:
                 "resource_records": json.dumps(
                     record.resource_records, default=json_serial
                 ),
-                "alias_target": json.dumps(record.alias_target, default=json_serial)
-                if record.alias_target
-                else None,
+                "alias_target": (
+                    json.dumps(record.alias_target, default=json_serial)
+                    if record.alias_target
+                    else None
+                ),
                 "raw_data": json.dumps(record.raw_data, default=json_serial),
             }
             for record in record_sets
@@ -901,19 +911,21 @@ class DatabaseOperations:
                 ),
                 "backup_retention_period": instance.backup_retention_period,
                 "preferred_backup_window": instance.preferred_backup_window,
-                "latest_restorable_time": instance.latest_restorable_time.isoformat()
-                if instance.latest_restorable_time
-                else None,
+                "latest_restorable_time": (
+                    instance.latest_restorable_time.isoformat()
+                    if instance.latest_restorable_time
+                    else None
+                ),
                 "endpoint_address": instance.endpoint_address,
                 "endpoint_port": instance.endpoint_port,
                 "db_instance_status": instance.db_instance_status,
                 "monitoring_interval": instance.monitoring_interval,
-                "performance_insights_enabled": 1
-                if instance.performance_insights_enabled
-                else 0,
-                "auto_minor_version_upgrade": 1
-                if instance.auto_minor_version_upgrade
-                else 0,
+                "performance_insights_enabled": (
+                    1 if instance.performance_insights_enabled else 0
+                ),
+                "auto_minor_version_upgrade": (
+                    1 if instance.auto_minor_version_upgrade else 0
+                ),
                 "deletion_protection": 1 if instance.deletion_protection else 0,
                 "tags": json.dumps(instance.tags, default=json_serial),
                 "raw_data": json.dumps(instance.raw_data, default=json_serial),
@@ -981,9 +993,9 @@ class DatabaseOperations:
                 "key_spec": key.key_spec,
                 "description": key.description,
                 "enabled": 1 if key.enabled else 0,
-                "deletion_date": key.deletion_date.isoformat()
-                if key.deletion_date
-                else None,
+                "deletion_date": (
+                    key.deletion_date.isoformat() if key.deletion_date else None
+                ),
                 "rotation_enabled": 1 if key.rotation_enabled else 0,
                 "key_policy": json.dumps(key.key_policy, default=json_serial),
                 "aliases": json.dumps(key.aliases, default=json_serial),
@@ -1094,9 +1106,9 @@ class DatabaseOperations:
                 "deployments": json.dumps(service.deployments, default=json_serial),
                 "health_check_grace_period_seconds": service.health_check_grace_period_seconds,
                 "scheduling_strategy": service.scheduling_strategy,
-                "created_at_svc": service.created_at.isoformat()
-                if service.created_at
-                else None,
+                "created_at_svc": (
+                    service.created_at.isoformat() if service.created_at else None
+                ),
                 "tags": json.dumps(service.tags, default=json_serial),
                 "raw_data": json.dumps(service.raw_data, default=json_serial),
             }
@@ -1140,27 +1152,31 @@ class DatabaseOperations:
                 ),
                 "pid_mode": task_def.pid_mode,
                 "ipc_mode": task_def.ipc_mode,
-                "proxy_configuration": json.dumps(
-                    task_def.proxy_configuration, default=json_serial
-                )
-                if task_def.proxy_configuration
-                else None,
-                "ephemeral_storage": json.dumps(
-                    task_def.ephemeral_storage, default=json_serial
-                )
-                if task_def.ephemeral_storage
-                else None,
-                "runtime_platform": json.dumps(
-                    task_def.runtime_platform, default=json_serial
-                )
-                if task_def.runtime_platform
-                else None,
-                "registered_at": task_def.registered_at.isoformat()
-                if task_def.registered_at
-                else None,
-                "deregistered_at": task_def.deregistered_at.isoformat()
-                if task_def.deregistered_at
-                else None,
+                "proxy_configuration": (
+                    json.dumps(task_def.proxy_configuration, default=json_serial)
+                    if task_def.proxy_configuration
+                    else None
+                ),
+                "ephemeral_storage": (
+                    json.dumps(task_def.ephemeral_storage, default=json_serial)
+                    if task_def.ephemeral_storage
+                    else None
+                ),
+                "runtime_platform": (
+                    json.dumps(task_def.runtime_platform, default=json_serial)
+                    if task_def.runtime_platform
+                    else None
+                ),
+                "registered_at": (
+                    task_def.registered_at.isoformat()
+                    if task_def.registered_at
+                    else None
+                ),
+                "deregistered_at": (
+                    task_def.deregistered_at.isoformat()
+                    if task_def.deregistered_at
+                    else None
+                ),
                 "registered_by": task_def.registered_by,
                 "tags": json.dumps(task_def.tags, default=json_serial),
                 "raw_data": json.dumps(task_def.raw_data, default=json_serial),
@@ -1200,16 +1216,18 @@ class DatabaseOperations:
                     cluster.resources_vpc_config, default=json_serial
                 ),
                 "logging": json.dumps(cluster.logging, default=json_serial),
-                "identity": json.dumps(cluster.identity, default=json_serial)
-                if cluster.identity
-                else None,
+                "identity": (
+                    json.dumps(cluster.identity, default=json_serial)
+                    if cluster.identity
+                    else None
+                ),
                 "encryption_config": json.dumps(
                     cluster.encryption_config, default=json_serial
                 ),
                 "platform_version": cluster.platform_version,
-                "created_at_eks": cluster.created_at.isoformat()
-                if cluster.created_at
-                else None,
+                "created_at_eks": (
+                    cluster.created_at.isoformat() if cluster.created_at else None
+                ),
                 "tags": json.dumps(cluster.tags, default=json_serial),
                 "raw_data": json.dumps(cluster.raw_data, default=json_serial),
             }
@@ -1240,35 +1258,39 @@ class DatabaseOperations:
                 "ami_type": node_group.ami_type,
                 "release_version": node_group.release_version,
                 "subnets": json.dumps(node_group.subnets, default=json_serial),
-                "remote_access": json.dumps(
-                    node_group.remote_access, default=json_serial
-                )
-                if node_group.remote_access
-                else None,
+                "remote_access": (
+                    json.dumps(node_group.remote_access, default=json_serial)
+                    if node_group.remote_access
+                    else None
+                ),
                 "node_role": node_group.node_role,
                 "labels": json.dumps(node_group.labels, default=json_serial),
                 "taints": json.dumps(node_group.taints, default=json_serial),
                 "disk_size": node_group.disk_size,
                 "capacity_type": node_group.capacity_type,
-                "launch_template": json.dumps(
-                    node_group.launch_template, default=json_serial
-                )
-                if node_group.launch_template
-                else None,
-                "update_config": json.dumps(
-                    node_group.update_config, default=json_serial
-                )
-                if node_group.update_config
-                else None,
-                "health": json.dumps(node_group.health, default=json_serial)
-                if node_group.health
-                else None,
-                "created_at_ng": node_group.created_at.isoformat()
-                if node_group.created_at
-                else None,
-                "modified_at": node_group.modified_at.isoformat()
-                if node_group.modified_at
-                else None,
+                "launch_template": (
+                    json.dumps(node_group.launch_template, default=json_serial)
+                    if node_group.launch_template
+                    else None
+                ),
+                "update_config": (
+                    json.dumps(node_group.update_config, default=json_serial)
+                    if node_group.update_config
+                    else None
+                ),
+                "health": (
+                    json.dumps(node_group.health, default=json_serial)
+                    if node_group.health
+                    else None
+                ),
+                "created_at_ng": (
+                    node_group.created_at.isoformat() if node_group.created_at else None
+                ),
+                "modified_at": (
+                    node_group.modified_at.isoformat()
+                    if node_group.modified_at
+                    else None
+                ),
                 "tags": json.dumps(node_group.tags, default=json_serial),
                 "raw_data": json.dumps(node_group.raw_data, default=json_serial),
             }
@@ -1297,9 +1319,9 @@ class DatabaseOperations:
                 "encryption_configuration": json.dumps(
                     repo.encryption_configuration, default=json_serial
                 ),
-                "created_at_repo": repo.created_at.isoformat()
-                if repo.created_at
-                else None,
+                "created_at_repo": (
+                    repo.created_at.isoformat() if repo.created_at else None
+                ),
                 "tags": json.dumps(repo.tags, default=json_serial),
                 "raw_data": json.dumps(repo.raw_data, default=json_serial),
             }
@@ -1322,18 +1344,20 @@ class DatabaseOperations:
                 "image_digest": image.image_digest,
                 "image_tags": json.dumps(image.image_tags, default=json_serial),
                 "image_size_in_bytes": image.image_size_in_bytes,
-                "image_pushed_at": image.image_pushed_at.isoformat()
-                if image.image_pushed_at
-                else None,
+                "image_pushed_at": (
+                    image.image_pushed_at.isoformat() if image.image_pushed_at else None
+                ),
                 "image_scan_status": image.image_scan_status,
-                "image_scan_findings_summary": json.dumps(
-                    image.image_scan_findings_summary, default=json_serial
-                )
-                if image.image_scan_findings_summary
-                else None,
-                "last_recorded_pull_time": image.last_recorded_pull_time.isoformat()
-                if image.last_recorded_pull_time
-                else None,
+                "image_scan_findings_summary": (
+                    json.dumps(image.image_scan_findings_summary, default=json_serial)
+                    if image.image_scan_findings_summary
+                    else None
+                ),
+                "last_recorded_pull_time": (
+                    image.last_recorded_pull_time.isoformat()
+                    if image.last_recorded_pull_time
+                    else None
+                ),
                 "artifact_media_type": image.artifact_media_type,
                 "raw_data": json.dumps(image.raw_data, default=json_serial),
             }
@@ -1360,18 +1384,18 @@ class DatabaseOperations:
                     api.endpoint_configuration, default=json_serial
                 ),
                 "version": api.version,
-                "created_date": api.created_date.isoformat()
-                if api.created_date
-                else None,
+                "created_date": (
+                    api.created_date.isoformat() if api.created_date else None
+                ),
                 "api_key_source": api.api_key_source,
                 "policy": api.policy,
                 "minimum_compression_size": api.minimum_compression_size,
                 "binary_media_types": json.dumps(
                     api.binary_media_types, default=json_serial
                 ),
-                "disable_execute_api_endpoint": 1
-                if api.disable_execute_api_endpoint
-                else 0,
+                "disable_execute_api_endpoint": (
+                    1 if api.disable_execute_api_endpoint else 0
+                ),
                 "tags": json.dumps(api.tags, default=json_serial),
                 "raw_data": json.dumps(api.raw_data, default=json_serial),
             }
@@ -1396,21 +1420,21 @@ class DatabaseOperations:
                 "protocol_type": api.protocol_type,
                 "description": api.description,
                 "api_endpoint": api.api_endpoint,
-                "cors_configuration": json.dumps(
-                    api.cors_configuration, default=json_serial
-                )
-                if api.cors_configuration
-                else None,
+                "cors_configuration": (
+                    json.dumps(api.cors_configuration, default=json_serial)
+                    if api.cors_configuration
+                    else None
+                ),
                 "version": api.version,
                 "route_selection_expression": api.route_selection_expression,
-                "disable_execute_api_endpoint": 1
-                if api.disable_execute_api_endpoint
-                else 0,
+                "disable_execute_api_endpoint": (
+                    1 if api.disable_execute_api_endpoint else 0
+                ),
                 "disable_schema_validation": 1 if api.disable_schema_validation else 0,
                 "import_info": json.dumps(api.import_info, default=json_serial),
-                "created_date": api.created_date.isoformat()
-                if api.created_date
-                else None,
+                "created_date": (
+                    api.created_date.isoformat() if api.created_date else None
+                ),
                 "tags": json.dumps(api.tags, default=json_serial),
                 "raw_data": json.dumps(api.raw_data, default=json_serial),
             }
@@ -1435,23 +1459,25 @@ class DatabaseOperations:
                 "api_type": stage.api_type,
                 "deployment_id": stage.deployment_id,
                 "description": stage.description,
-                "created_date": stage.created_date.isoformat()
-                if stage.created_date
-                else None,
-                "last_updated_date": stage.last_updated_date.isoformat()
-                if stage.last_updated_date
-                else None,
-                "access_log_settings": json.dumps(
-                    stage.access_log_settings, default=json_serial
-                )
-                if stage.access_log_settings
-                else None,
+                "created_date": (
+                    stage.created_date.isoformat() if stage.created_date else None
+                ),
+                "last_updated_date": (
+                    stage.last_updated_date.isoformat()
+                    if stage.last_updated_date
+                    else None
+                ),
+                "access_log_settings": (
+                    json.dumps(stage.access_log_settings, default=json_serial)
+                    if stage.access_log_settings
+                    else None
+                ),
                 "client_certificate_id": stage.client_certificate_id,
-                "throttle_settings": json.dumps(
-                    stage.throttle_settings, default=json_serial
-                )
-                if stage.throttle_settings
-                else None,
+                "throttle_settings": (
+                    json.dumps(stage.throttle_settings, default=json_serial)
+                    if stage.throttle_settings
+                    else None
+                ),
                 "method_settings": json.dumps(
                     stage.method_settings, default=json_serial
                 ),
@@ -1460,11 +1486,11 @@ class DatabaseOperations:
                 "web_acl_arn": stage.web_acl_arn,
                 "auto_deploy": 1 if stage.auto_deploy else 0,
                 "route_settings": json.dumps(stage.route_settings, default=json_serial),
-                "default_route_settings": json.dumps(
-                    stage.default_route_settings, default=json_serial
-                )
-                if stage.default_route_settings
-                else None,
+                "default_route_settings": (
+                    json.dumps(stage.default_route_settings, default=json_serial)
+                    if stage.default_route_settings
+                    else None
+                ),
                 "tags": json.dumps(stage.tags, default=json_serial),
                 "raw_data": json.dumps(stage.raw_data, default=json_serial),
             }
@@ -1501,23 +1527,29 @@ class DatabaseOperations:
                 "viewer_certificate": json.dumps(
                     dist.viewer_certificate, default=json_serial
                 ),
-                "geo_restriction": json.dumps(dist.geo_restriction, default=json_serial)
-                if dist.geo_restriction
-                else None,
+                "geo_restriction": (
+                    json.dumps(dist.geo_restriction, default=json_serial)
+                    if dist.geo_restriction
+                    else None
+                ),
                 "web_acl_id": dist.web_acl_id,
                 "http_version": dist.http_version,
                 "is_ipv6_enabled": 1 if dist.is_ipv6_enabled else 0,
-                "logging": json.dumps(dist.logging, default=json_serial)
-                if dist.logging
-                else None,
+                "logging": (
+                    json.dumps(dist.logging, default=json_serial)
+                    if dist.logging
+                    else None
+                ),
                 "price_class": dist.price_class,
                 "custom_error_responses": json.dumps(
                     dist.custom_error_responses, default=json_serial
                 ),
                 "comment": dist.comment,
-                "last_modified_time": dist.last_modified_time.isoformat()
-                if dist.last_modified_time
-                else None,
+                "last_modified_time": (
+                    dist.last_modified_time.isoformat()
+                    if dist.last_modified_time
+                    else None
+                ),
                 "tags": json.dumps(dist.tags, default=json_serial),
                 "raw_data": json.dumps(dist.raw_data, default=json_serial),
             }
@@ -1588,9 +1620,11 @@ class DatabaseOperations:
                 "email": account.email,
                 "status": account.status,
                 "joined_method": account.joined_method,
-                "joined_timestamp": account.joined_timestamp.isoformat()
-                if account.joined_timestamp
-                else None,
+                "joined_timestamp": (
+                    account.joined_timestamp.isoformat()
+                    if account.joined_timestamp
+                    else None
+                ),
                 "parent_ou_id": account.parent_ou_id,
                 "raw_data": json.dumps(account.raw_data, default=json_serial),
             }
@@ -1615,9 +1649,9 @@ class DatabaseOperations:
                 "description": ps.description,
                 "session_duration": ps.session_duration,
                 "relay_state": ps.relay_state,
-                "created_date": ps.created_date.isoformat()
-                if ps.created_date
-                else None,
+                "created_date": (
+                    ps.created_date.isoformat() if ps.created_date else None
+                ),
                 "managed_policies": json.dumps(
                     ps.managed_policies, default=json_serial
                 ),
@@ -1625,11 +1659,11 @@ class DatabaseOperations:
                 "customer_managed_policies": json.dumps(
                     ps.customer_managed_policies, default=json_serial
                 ),
-                "permissions_boundary": json.dumps(
-                    ps.permissions_boundary, default=json_serial
-                )
-                if ps.permissions_boundary
-                else None,
+                "permissions_boundary": (
+                    json.dumps(ps.permissions_boundary, default=json_serial)
+                    if ps.permissions_boundary
+                    else None
+                ),
                 "tags": json.dumps(ps.tags, default=json_serial),
                 "raw_data": json.dumps(ps.raw_data, default=json_serial),
             }
@@ -1679,9 +1713,9 @@ class DatabaseOperations:
                 "kms_key_id": trail.kms_key_id,
                 "is_multi_region_trail": 1 if trail.is_multi_region_trail else 0,
                 "is_organization_trail": 1 if trail.is_organization_trail else 0,
-                "include_global_service_events": 1
-                if trail.include_global_service_events
-                else 0,
+                "include_global_service_events": (
+                    1 if trail.include_global_service_events else 0
+                ),
                 "is_logging": 1 if trail.is_logging else 0,
                 "has_event_selectors": 1 if trail.has_event_selectors else 0,
                 "has_insight_selectors": 1 if trail.has_insight_selectors else 0,
@@ -1707,9 +1741,9 @@ class DatabaseOperations:
                 "log_group_name": lg.log_group_name,
                 "log_group_arn": lg.log_group_arn,
                 "region": lg.region,
-                "creation_time": lg.creation_time.isoformat()
-                if lg.creation_time
-                else None,
+                "creation_time": (
+                    lg.creation_time.isoformat() if lg.creation_time else None
+                ),
                 "retention_in_days": lg.retention_in_days,
                 "stored_bytes": lg.stored_bytes,
                 "kms_key_id": lg.kms_key_id,
@@ -1738,12 +1772,16 @@ class DatabaseOperations:
                 ),
                 "is_recording": 1 if recorder.is_recording else 0,
                 "last_status": recorder.last_status,
-                "last_start_time": recorder.last_start_time.isoformat()
-                if recorder.last_start_time
-                else None,
-                "last_stop_time": recorder.last_stop_time.isoformat()
-                if recorder.last_stop_time
-                else None,
+                "last_start_time": (
+                    recorder.last_start_time.isoformat()
+                    if recorder.last_start_time
+                    else None
+                ),
+                "last_stop_time": (
+                    recorder.last_stop_time.isoformat()
+                    if recorder.last_stop_time
+                    else None
+                ),
                 "raw_data": json.dumps(recorder.raw_data, default=json_serial),
             }
             for recorder in recorders
@@ -1764,9 +1802,9 @@ class DatabaseOperations:
                 "rule_id": rule.rule_id,
                 "region": rule.region,
                 "description": rule.description,
-                "scope": json.dumps(rule.scope, default=json_serial)
-                if rule.scope
-                else None,
+                "scope": (
+                    json.dumps(rule.scope, default=json_serial) if rule.scope else None
+                ),
                 "source": json.dumps(rule.source, default=json_serial),
                 "compliance_type": rule.compliance_type,
                 "config_rule_state": rule.config_rule_state,
@@ -1802,9 +1840,9 @@ class DatabaseOperations:
                 "output_modalities": json.dumps(
                     model.output_modalities, default=json_serial
                 ),
-                "response_streaming_supported": 1
-                if model.response_streaming_supported
-                else 0,
+                "response_streaming_supported": (
+                    1 if model.response_streaming_supported else 0
+                ),
                 "raw_data": json.dumps(model.raw_data, default=json_serial),
             }
             for model in models
@@ -1827,26 +1865,28 @@ class DatabaseOperations:
                 "version": gr.version,
                 "description": gr.description,
                 "status": gr.status,
-                "content_policy_config": json.dumps(
-                    gr.content_policy_config, default=json_serial
-                )
-                if gr.content_policy_config
-                else None,
-                "topic_policy_config": json.dumps(
-                    gr.topic_policy_config, default=json_serial
-                )
-                if gr.topic_policy_config
-                else None,
-                "word_policy_config": json.dumps(
-                    gr.word_policy_config, default=json_serial
-                )
-                if gr.word_policy_config
-                else None,
-                "sensitive_information_policy_config": json.dumps(
-                    gr.sensitive_information_policy_config, default=json_serial
-                )
-                if gr.sensitive_information_policy_config
-                else None,
+                "content_policy_config": (
+                    json.dumps(gr.content_policy_config, default=json_serial)
+                    if gr.content_policy_config
+                    else None
+                ),
+                "topic_policy_config": (
+                    json.dumps(gr.topic_policy_config, default=json_serial)
+                    if gr.topic_policy_config
+                    else None
+                ),
+                "word_policy_config": (
+                    json.dumps(gr.word_policy_config, default=json_serial)
+                    if gr.word_policy_config
+                    else None
+                ),
+                "sensitive_information_policy_config": (
+                    json.dumps(
+                        gr.sensitive_information_policy_config, default=json_serial
+                    )
+                    if gr.sensitive_information_policy_config
+                    else None
+                ),
                 "blocked_input_messaging": gr.blocked_input_messaging,
                 "blocked_outputs_messaging": gr.blocked_outputs_messaging,
                 "created_at_time": gr.created_at.isoformat() if gr.created_at else None,
@@ -1911,15 +1951,15 @@ class DatabaseOperations:
                 "instruction": agent.instruction,
                 "idle_session_ttl_in_seconds": agent.idle_session_ttl_in_seconds,
                 "agent_status": agent.agent_status,
-                "created_at_time": agent.created_at.isoformat()
-                if agent.created_at
-                else None,
-                "updated_at_time": agent.updated_at.isoformat()
-                if agent.updated_at
-                else None,
-                "prepared_at_time": agent.prepared_at.isoformat()
-                if agent.prepared_at
-                else None,
+                "created_at_time": (
+                    agent.created_at.isoformat() if agent.created_at else None
+                ),
+                "updated_at_time": (
+                    agent.updated_at.isoformat() if agent.updated_at else None
+                ),
+                "prepared_at_time": (
+                    agent.prepared_at.isoformat() if agent.prepared_at else None
+                ),
                 "tags": json.dumps(agent.tags, default=json_serial),
                 "raw_data": json.dumps(agent.raw_data, default=json_serial),
             }
@@ -1951,12 +1991,14 @@ class DatabaseOperations:
                 "stage": directory.stage,
                 "sso_enabled": 1 if directory.sso_enabled else 0,
                 "radius_status": directory.radius_status,
-                "launch_time": directory.launch_time.isoformat()
-                if directory.launch_time
-                else None,
-                "stage_last_updated_date_time": directory.stage_last_updated_date_time.isoformat()
-                if directory.stage_last_updated_date_time
-                else None,
+                "launch_time": (
+                    directory.launch_time.isoformat() if directory.launch_time else None
+                ),
+                "stage_last_updated_date_time": (
+                    directory.stage_last_updated_date_time.isoformat()
+                    if directory.stage_last_updated_date_time
+                    else None
+                ),
                 "description": directory.description,
                 "alias": directory.alias,
                 "short_name": directory.short_name,
@@ -1993,9 +2035,9 @@ class DatabaseOperations:
                 "transit_gateway_cidr_blocks": json.dumps(
                     tgw.transit_gateway_cidr_blocks, default=json_serial
                 ),
-                "creation_time": tgw.creation_time.isoformat()
-                if tgw.creation_time
-                else None,
+                "creation_time": (
+                    tgw.creation_time.isoformat() if tgw.creation_time else None
+                ),
                 "tags": json.dumps(tgw.tags, default=json_serial),
                 "raw_data": json.dumps(tgw.raw_data, default=json_serial),
             }
@@ -2059,9 +2101,9 @@ class DatabaseOperations:
                 "provider_name": dx.provider_name,
                 "mac_sec_capable": 1 if dx.mac_sec_capable else 0,
                 "encryption_mode": dx.encryption_mode,
-                "loa_issue_time": dx.loa_issue_time.isoformat()
-                if dx.loa_issue_time
-                else None,
+                "loa_issue_time": (
+                    dx.loa_issue_time.isoformat() if dx.loa_issue_time else None
+                ),
                 "tags": json.dumps(dx.tags, default=json_serial),
                 "raw_data": json.dumps(dx.raw_data, default=json_serial),
             }
@@ -2095,26 +2137,28 @@ class DatabaseOperations:
                 "security_groups": json.dumps(
                     cluster.security_groups, default=json_serial
                 ),
-                "at_rest_encryption_enabled": 1
-                if cluster.at_rest_encryption_enabled
-                else 0,
-                "transit_encryption_enabled": 1
-                if cluster.transit_encryption_enabled
-                else 0,
+                "at_rest_encryption_enabled": (
+                    1 if cluster.at_rest_encryption_enabled else 0
+                ),
+                "transit_encryption_enabled": (
+                    1 if cluster.transit_encryption_enabled else 0
+                ),
                 "auth_token_enabled": 1 if cluster.auth_token_enabled else 0,
                 "replication_group_id": cluster.replication_group_id,
                 "snapshot_retention_limit": cluster.snapshot_retention_limit,
                 "snapshot_window": cluster.snapshot_window,
                 "preferred_maintenance_window": cluster.preferred_maintenance_window,
-                "notification_configuration": json.dumps(
-                    cluster.notification_configuration, default=json_serial
-                )
-                if cluster.notification_configuration
-                else None,
+                "notification_configuration": (
+                    json.dumps(cluster.notification_configuration, default=json_serial)
+                    if cluster.notification_configuration
+                    else None
+                ),
                 "cache_parameter_group_name": cluster.cache_parameter_group_name,
-                "cache_cluster_create_time": cluster.cache_cluster_create_time.isoformat()
-                if cluster.cache_cluster_create_time
-                else None,
+                "cache_cluster_create_time": (
+                    cluster.cache_cluster_create_time.isoformat()
+                    if cluster.cache_cluster_create_time
+                    else None
+                ),
                 "tags": json.dumps(cluster.tags, default=json_serial),
                 "raw_data": json.dumps(cluster.raw_data, default=json_serial),
             }
@@ -2160,21 +2204,21 @@ class DatabaseOperations:
                 ),
                 "endpoint": domain.endpoint,
                 "endpoints": json.dumps(domain.endpoints, default=json_serial),
-                "encryption_at_rest_enabled": 1
-                if domain.encryption_at_rest_enabled
-                else 0,
+                "encryption_at_rest_enabled": (
+                    1 if domain.encryption_at_rest_enabled else 0
+                ),
                 "kms_key_id": domain.kms_key_id,
-                "node_to_node_encryption_enabled": 1
-                if domain.node_to_node_encryption_enabled
-                else 0,
+                "node_to_node_encryption_enabled": (
+                    1 if domain.node_to_node_encryption_enabled else 0
+                ),
                 "enforce_https": 1 if domain.enforce_https else 0,
                 "tls_security_policy": domain.tls_security_policy,
                 "custom_endpoint_enabled": 1 if domain.custom_endpoint_enabled else 0,
                 "custom_endpoint": domain.custom_endpoint,
                 "access_policies": domain.access_policies,
-                "internal_user_database_enabled": 1
-                if domain.internal_user_database_enabled
-                else 0,
+                "internal_user_database_enabled": (
+                    1 if domain.internal_user_database_enabled else 0
+                ),
                 "saml_enabled": 1 if domain.saml_enabled else 0,
                 "auto_tune_enabled": 1 if domain.auto_tune_enabled else 0,
                 "created": 1 if domain.created else 0,
@@ -2203,35 +2247,41 @@ class DatabaseOperations:
                 "region": cluster.region,
                 "kafka_version": cluster.kafka_version,
                 "state": cluster.state,
-                "creation_time": cluster.creation_time.isoformat()
-                if cluster.creation_time
-                else None,
+                "creation_time": (
+                    cluster.creation_time.isoformat() if cluster.creation_time else None
+                ),
                 "broker_node_group_info": json.dumps(
                     cluster.broker_node_group_info, default=json_serial
                 ),
                 "number_of_broker_nodes": cluster.number_of_broker_nodes,
-                "encryption_in_transit": json.dumps(
-                    cluster.encryption_in_transit, default=json_serial
-                )
-                if cluster.encryption_in_transit
-                else None,
+                "encryption_in_transit": (
+                    json.dumps(cluster.encryption_in_transit, default=json_serial)
+                    if cluster.encryption_in_transit
+                    else None
+                ),
                 "encryption_at_rest_kms_key_arn": cluster.encryption_at_rest_kms_key_arn,
                 "enhanced_monitoring": cluster.enhanced_monitoring,
-                "open_monitoring": json.dumps(
-                    cluster.open_monitoring, default=json_serial
-                )
-                if cluster.open_monitoring
-                else None,
-                "logging_info": json.dumps(cluster.logging_info, default=json_serial)
-                if cluster.logging_info
-                else None,
+                "open_monitoring": (
+                    json.dumps(cluster.open_monitoring, default=json_serial)
+                    if cluster.open_monitoring
+                    else None
+                ),
+                "logging_info": (
+                    json.dumps(cluster.logging_info, default=json_serial)
+                    if cluster.logging_info
+                    else None
+                ),
                 "cluster_type": cluster.cluster_type,
-                "provisioned": json.dumps(cluster.provisioned, default=json_serial)
-                if cluster.provisioned
-                else None,
-                "serverless": json.dumps(cluster.serverless, default=json_serial)
-                if cluster.serverless
-                else None,
+                "provisioned": (
+                    json.dumps(cluster.provisioned, default=json_serial)
+                    if cluster.provisioned
+                    else None
+                ),
+                "serverless": (
+                    json.dumps(cluster.serverless, default=json_serial)
+                    if cluster.serverless
+                    else None
+                ),
                 "current_version": cluster.current_version,
                 "zookeeper_connect_string": cluster.zookeeper_connect_string,
                 "zookeeper_connect_string_tls": cluster.zookeeper_connect_string_tls,
@@ -2258,23 +2308,25 @@ class DatabaseOperations:
                 "table_id": table.table_id,
                 "region": table.region,
                 "table_status": table.table_status,
-                "creation_date_time": table.creation_date_time.isoformat()
-                if table.creation_date_time
-                else None,
+                "creation_date_time": (
+                    table.creation_date_time.isoformat()
+                    if table.creation_date_time
+                    else None
+                ),
                 "key_schema": json.dumps(table.key_schema, default=json_serial),
                 "attribute_definitions": json.dumps(
                     table.attribute_definitions, default=json_serial
                 ),
-                "billing_mode_summary": json.dumps(
-                    table.billing_mode_summary, default=json_serial
-                )
-                if table.billing_mode_summary
-                else None,
-                "provisioned_throughput": json.dumps(
-                    table.provisioned_throughput, default=json_serial
-                )
-                if table.provisioned_throughput
-                else None,
+                "billing_mode_summary": (
+                    json.dumps(table.billing_mode_summary, default=json_serial)
+                    if table.billing_mode_summary
+                    else None
+                ),
+                "provisioned_throughput": (
+                    json.dumps(table.provisioned_throughput, default=json_serial)
+                    if table.provisioned_throughput
+                    else None
+                ),
                 "table_size_bytes": table.table_size_bytes,
                 "item_count": table.item_count,
                 "global_secondary_indexes": json.dumps(
@@ -2283,37 +2335,37 @@ class DatabaseOperations:
                 "local_secondary_indexes": json.dumps(
                     table.local_secondary_indexes, default=json_serial
                 ),
-                "stream_specification": json.dumps(
-                    table.stream_specification, default=json_serial
-                )
-                if table.stream_specification
-                else None,
+                "stream_specification": (
+                    json.dumps(table.stream_specification, default=json_serial)
+                    if table.stream_specification
+                    else None
+                ),
                 "latest_stream_arn": table.latest_stream_arn,
                 "latest_stream_label": table.latest_stream_label,
-                "restore_summary": json.dumps(
-                    table.restore_summary, default=json_serial
-                )
-                if table.restore_summary
-                else None,
-                "sse_description": json.dumps(
-                    table.sse_description, default=json_serial
-                )
-                if table.sse_description
-                else None,
-                "point_in_time_recovery_enabled": 1
-                if table.point_in_time_recovery_enabled
-                else 0,
+                "restore_summary": (
+                    json.dumps(table.restore_summary, default=json_serial)
+                    if table.restore_summary
+                    else None
+                ),
+                "sse_description": (
+                    json.dumps(table.sse_description, default=json_serial)
+                    if table.sse_description
+                    else None
+                ),
+                "point_in_time_recovery_enabled": (
+                    1 if table.point_in_time_recovery_enabled else 0
+                ),
                 "global_table_version": table.global_table_version,
                 "replicas": json.dumps(table.replicas, default=json_serial),
                 "continuous_backups_status": table.continuous_backups_status,
-                "table_class_summary": json.dumps(
-                    table.table_class_summary, default=json_serial
-                )
-                if table.table_class_summary
-                else None,
-                "deletion_protection_enabled": 1
-                if table.deletion_protection_enabled
-                else 0,
+                "table_class_summary": (
+                    json.dumps(table.table_class_summary, default=json_serial)
+                    if table.table_class_summary
+                    else None
+                ),
+                "deletion_protection_enabled": (
+                    1 if table.deletion_protection_enabled else 0
+                ),
                 "tags": json.dumps(table.tags, default=json_serial),
                 "raw_data": json.dumps(table.raw_data, default=json_serial),
             }
@@ -2490,20 +2542,22 @@ class DatabaseOperations:
                 "account_summary": json.dumps(
                     posture.account_summary, default=json_serial
                 ),
-                "password_policy": json.dumps(
-                    posture.password_policy, default=json_serial
-                )
-                if posture.password_policy is not None
-                else None,
+                "password_policy": (
+                    json.dumps(posture.password_policy, default=json_serial)
+                    if posture.password_policy is not None
+                    else None
+                ),
                 "password_policy_exists": 1 if posture.password_policy_exists else 0,
-                "account_public_access_block": json.dumps(
-                    posture.account_public_access_block, default=json_serial
-                )
-                if posture.account_public_access_block is not None
-                else None,
-                "credential_report_generated": posture.credential_report_generated.isoformat()
-                if posture.credential_report_generated
-                else None,
+                "account_public_access_block": (
+                    json.dumps(posture.account_public_access_block, default=json_serial)
+                    if posture.account_public_access_block is not None
+                    else None
+                ),
+                "credential_report_generated": (
+                    posture.credential_report_generated.isoformat()
+                    if posture.credential_report_generated
+                    else None
+                ),
                 "raw_data": json.dumps(posture.raw_data, default=json_serial),
             }
             for posture in records
@@ -2524,9 +2578,11 @@ class DatabaseOperations:
                 "user_name": entry.user_name,
                 "arn": entry.arn,
                 "user_creation_time": entry.user_creation_time,
-                "password_enabled": None
-                if entry.password_enabled is None
-                else (1 if entry.password_enabled else 0),
+                "password_enabled": (
+                    None
+                    if entry.password_enabled is None
+                    else (1 if entry.password_enabled else 0)
+                ),
                 "password_last_used": entry.password_last_used,
                 "mfa_active": 1 if entry.mfa_active else 0,
                 "access_key_1_active": 1 if entry.access_key_1_active else 0,
@@ -2558,11 +2614,11 @@ class DatabaseOperations:
                 "scan_id": record.scan_id,
                 "region": record.region,
                 "guardduty_enabled": tri(record.guardduty_enabled),
-                "guardduty_detector": json.dumps(
-                    record.guardduty_detector, default=json_serial
-                )
-                if record.guardduty_detector is not None
-                else None,
+                "guardduty_detector": (
+                    json.dumps(record.guardduty_detector, default=json_serial)
+                    if record.guardduty_detector is not None
+                    else None
+                ),
                 "security_hub_enabled": tri(record.security_hub_enabled),
                 "ebs_encryption_by_default": tri(record.ebs_encryption_by_default),
                 "access_analyzers": json.dumps(
@@ -2586,15 +2642,17 @@ class DatabaseOperations:
                 "region": record.region,
                 "function_name": record.function_name,
                 "function_arn": record.function_arn,
-                "url_config": json.dumps(record.url_config, default=json_serial)
-                if record.url_config is not None
-                else None,
+                "url_config": (
+                    json.dumps(record.url_config, default=json_serial)
+                    if record.url_config is not None
+                    else None
+                ),
                 "url_auth_type": record.url_auth_type,
-                "resource_policy": json.dumps(
-                    record.resource_policy, default=json_serial
-                )
-                if record.resource_policy is not None
-                else None,
+                "resource_policy": (
+                    json.dumps(record.resource_policy, default=json_serial)
+                    if record.resource_policy is not None
+                    else None
+                ),
                 "raw_data": json.dumps(record.raw_data, default=json_serial),
             }
             for record in records
@@ -2611,14 +2669,16 @@ class DatabaseOperations:
             {
                 "scan_id": record.scan_id,
                 "bucket_name": record.bucket_name,
-                "public_access_block": json.dumps(
-                    record.public_access_block, default=json_serial
-                )
-                if record.public_access_block is not None
-                else None,
-                "policy_is_public": None
-                if record.policy_is_public is None
-                else (1 if record.policy_is_public else 0),
+                "public_access_block": (
+                    json.dumps(record.public_access_block, default=json_serial)
+                    if record.public_access_block is not None
+                    else None
+                ),
+                "policy_is_public": (
+                    None
+                    if record.policy_is_public is None
+                    else (1 if record.policy_is_public else 0)
+                ),
                 "raw_data": json.dumps(record.raw_data, default=json_serial),
             }
             for record in records
@@ -2772,9 +2832,9 @@ class DatabaseOperations:
             scan_ids = [scan["scan_id"] for scan in scans]
             tags_by_scan: Dict[str, List[str]] = {scan_id: [] for scan_id in scan_ids}
             if scan_ids:
-                tags_stmt = sa.select(
-                    t_scan_tags.c.scan_id, t_scan_tags.c.tag
-                ).where(t_scan_tags.c.scan_id.in_(scan_ids))
+                tags_stmt = sa.select(t_scan_tags.c.scan_id, t_scan_tags.c.tag).where(
+                    t_scan_tags.c.scan_id.in_(scan_ids)
+                )
                 for row in conn.execute(tags_stmt):
                     tags_by_scan[row.scan_id].append(row.tag)
 

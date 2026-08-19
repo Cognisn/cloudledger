@@ -60,9 +60,13 @@ def test_tag_find_is_case_insensitive(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     db_path = _seed_db(tmp_path)
 
-    CliRunner().invoke(cli, ["tag", "add", "s1", "alpha", "Beta", "--database", db_path])
+    CliRunner().invoke(
+        cli, ["tag", "add", "s1", "alpha", "Beta", "--database", db_path]
+    )
 
-    find_result = CliRunner().invoke(cli, ["tag", "find", "beta", "--database", db_path])
+    find_result = CliRunner().invoke(
+        cli, ["tag", "find", "beta", "--database", db_path]
+    )
     assert find_result.exit_code == 0
     assert "s1" in find_result.output
 

@@ -50,11 +50,11 @@ if ps_count > 0:
     print("\nPermission Sets by Account:")
     current_account = None
     for row in cursor.fetchall():
-        if current_account != row['account_name']:
-            current_account = row['account_name']
+        if current_account != row["account_name"]:
+            current_account = row["account_name"]
             print(f"\n  {current_account} ({row['account_number']}):")
         print(f"    - {row['permission_set_name']}")
-        if row['description']:
+        if row["description"]:
             print(f"      Description: {row['description']}")
 
 # Check sso_assignments table
@@ -121,26 +121,38 @@ cursor.execute("""
 
 frontier_row = cursor.fetchone()
 if frontier_row:
-    frontier_scan_id = frontier_row['scan_id']
-    frontier_account = frontier_row['account_number']
+    frontier_scan_id = frontier_row["scan_id"]
+    frontier_account = frontier_row["account_number"]
 
     print(f"\n6. FrontierSoftwareOrg Data (scan_id: {frontier_scan_id}):")
     print("-" * 80)
 
     # Check SSO data for this scan
-    cursor.execute("SELECT COUNT(*) FROM sso_instances WHERE scan_id = ?", (frontier_scan_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM sso_instances WHERE scan_id = ?", (frontier_scan_id,)
+    )
     print(f"  SSO Instances: {cursor.fetchone()[0]}")
 
-    cursor.execute("SELECT COUNT(*) FROM sso_permission_sets WHERE scan_id = ?", (frontier_scan_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM sso_permission_sets WHERE scan_id = ?",
+        (frontier_scan_id,),
+    )
     print(f"  SSO Permission Sets: {cursor.fetchone()[0]}")
 
-    cursor.execute("SELECT COUNT(*) FROM sso_assignments WHERE scan_id = ?", (frontier_scan_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM sso_assignments WHERE scan_id = ?", (frontier_scan_id,)
+    )
     print(f"  SSO Assignments: {cursor.fetchone()[0]}")
 
-    cursor.execute("SELECT COUNT(*) FROM organizations WHERE scan_id = ?", (frontier_scan_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM organizations WHERE scan_id = ?", (frontier_scan_id,)
+    )
     print(f"  Organizations: {cursor.fetchone()[0]}")
 
-    cursor.execute("SELECT COUNT(*) FROM organization_accounts WHERE scan_id = ?", (frontier_scan_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM organization_accounts WHERE scan_id = ?",
+        (frontier_scan_id,),
+    )
     print(f"  Organization Accounts: {cursor.fetchone()[0]}")
 
 else:
@@ -164,7 +176,10 @@ else:
     print(f"\n✓ Found {ps_count} SSO permission sets")
     if frontier_row:
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM sso_permission_sets WHERE scan_id = ?", (frontier_scan_id,))
+        cursor.execute(
+            "SELECT COUNT(*) FROM sso_permission_sets WHERE scan_id = ?",
+            (frontier_scan_id,),
+        )
         frontier_ps_count = cursor.fetchone()[0]
         if frontier_ps_count == 0:
             print(f"\n⚠ But FrontierSoftwareOrg scan has 0 permission sets!")

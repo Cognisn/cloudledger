@@ -21,14 +21,16 @@ def make_db(tmp_path) -> str:
     db_path = str(Path(tmp_path) / "assessment_test.db")
     DatabaseSchema(db_path).initialise_database()
     db_ops = DatabaseOperations(db_path)
-    db_ops.insert_scan_metadata(ScanMetadata(
-        scan_id=SCAN_ID,
-        account_name="test-account",
-        account_number="123456789012",
-        scan_timestamp=datetime.now(UTC),
-        regions_scanned=["ap-southeast-2"],
-        scan_status="completed",
-    ))
+    db_ops.insert_scan_metadata(
+        ScanMetadata(
+            scan_id=SCAN_ID,
+            account_name="test-account",
+            account_number="123456789012",
+            scan_timestamp=datetime.now(UTC),
+            regions_scanned=["ap-southeast-2"],
+            scan_status="completed",
+        )
+    )
     return db_path
 
 
