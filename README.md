@@ -39,17 +39,19 @@ CloudLedger performs security assessments and collects detailed infrastructure i
 
 ## Installation
 
+The distribution is named cognisn-cloudledger; the installed command is cloudledger.
+
 From PyPI (once published):
 
 ```bash
 # Run ad hoc without installing
-uvx cloudledger --help
+uvx --from cognisn-cloudledger cloudledger --help
 
 # Or install as a tool
-uv tool install cloudledger
+uv tool install cognisn-cloudledger
 
 # With a server database backend
-uv tool install "cloudledger[postgres]"   # or [mysql], [mssql], [all-db]
+uv tool install "cognisn-cloudledger[postgres]"   # or [mysql], [mssql], [all-db]
 ```
 
 From source:

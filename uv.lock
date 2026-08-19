@@ -1197,7 +1197,7 @@ wheels = [
 ]
 
 [[package]]
-name = "cloudledger"
+name = "cognisn-cloudledger"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },

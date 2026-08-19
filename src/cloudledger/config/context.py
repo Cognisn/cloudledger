@@ -40,7 +40,7 @@ DEFAULTS = {
 def app_version() -> str:
     """Return the installed package version, or a placeholder when unpackaged."""
     try:
-        return version("cloudledger")
+        return version("cognisn-cloudledger")
     except PackageNotFoundError:
         return "0.0.0"
 

@@ -21,6 +21,7 @@ All notable changes to this project are documented in this file. The format foll
 - MCP query layer rewritten onto SQLAlchemy Core with a query-output equivalence harness proving unchanged behaviour; the transitional sqlite connection shim is removed, making the entire query layer dialect-portable.
 - Assessment engine now runs on SQLAlchemy connections, completing dialect portability of the data layer.
 - All recorded date/times are UTC on every backend (client-side UTC stamps for bookkeeping columns; aware ISO 8601 serialisation for scan timestamps), and every MCP tool description states that timestamps are UTC.
+- Distribution renamed to cognisn-cloudledger on PyPI (the import package and the cloudledger/cloudledger-mcp commands are unchanged).
 
 ### Fixed
 - MySQL and MSSQL schema creation: bounded dialect-specific column types wherever those dialects forbid defaults or keys on unbounded text; timestamp bookkeeping columns are typed DATETIME on MySQL.
