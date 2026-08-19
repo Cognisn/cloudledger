@@ -9,9 +9,32 @@ import sqlite3
 import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 import logging
 
+import sqlalchemy as sa
+
+from .engine import make_engine
+from .tables import (
+    t_scan_metadata,
+    t_ec2_instances,
+    t_vpcs,
+    t_subnets,
+    t_security_groups,
+    t_s3_buckets,
+    t_iam_users,
+    t_iam_roles,
+    t_prowler_findings,
+    t_load_balancers,
+    t_nat_gateways,
+    t_internet_gateways,
+    t_route_tables,
+    t_auto_scaling_groups,
+    t_network_interfaces,
+    t_workspaces,
+    t_lambda_functions,
+    t_vpc_flow_logs,
+    t_cost_data,
+)
 from .models import (
     ScanMetadata,
     EC2Instance,
@@ -80,13 +103,9 @@ class DatabaseOperations:
     """Handles all database operations for CloudLedger."""
 
     def __init__(self, db_path: str):
-        """
-        Initialise database operations.
-
-        Args:
-            db_path: Full path to SQLite database file
-        """
-        self.db_path = Path(db_path)
+        """Initialise operations for a database path or URL."""
+        self.db_path = db_path
+        self._engine = make_engine(db_path)
 
     def _get_connection(self) -> sqlite3.Connection:
         """Get database connection with row factory."""
@@ -101,30 +120,22 @@ class DatabaseOperations:
         Args:
             metadata: Scan metadata to insert
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO scan_metadata (
-                    scan_id, account_name, account_number, scan_timestamp,
-                    prowler_level, regions_scanned, scan_status,
-                    error_message, scan_duration_seconds
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    metadata.scan_id,
-                    metadata.account_name,
-                    metadata.account_number,
-                    metadata.scan_timestamp.isoformat(),
-                    metadata.prowler_level,
-                    json.dumps(metadata.regions_scanned, default=json_serial),
-                    metadata.scan_status,
-                    metadata.error_message,
-                    metadata.scan_duration_seconds,
-                ),
-            )
-            conn.commit()
-            logger.debug(f"Inserted scan metadata: {metadata.scan_id}")
+        row = {
+            "scan_id": metadata.scan_id,
+            "account_name": metadata.account_name,
+            "account_number": metadata.account_number,
+            "scan_timestamp": metadata.scan_timestamp.isoformat(),
+            "prowler_level": metadata.prowler_level,
+            "regions_scanned": json.dumps(
+                metadata.regions_scanned, default=json_serial
+            ),
+            "scan_status": metadata.scan_status,
+            "error_message": metadata.error_message,
+            "scan_duration_seconds": metadata.scan_duration_seconds,
+        }
+        with self._engine.begin() as conn:
+            conn.execute(t_scan_metadata.insert(), row)
+        logger.debug(f"Inserted scan metadata: {metadata.scan_id}")
 
     def update_scan_status(
         self,
@@ -142,18 +153,18 @@ class DatabaseOperations:
             error_message: Optional error message
             duration: Optional scan duration in seconds
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                UPDATE scan_metadata
-                SET scan_status = ?, error_message = ?, scan_duration_seconds = ?
-                WHERE scan_id = ?
-            """,
-                (status, error_message, duration, scan_id),
+        stmt = (
+            sa.update(t_scan_metadata)
+            .where(t_scan_metadata.c.scan_id == scan_id)
+            .values(
+                scan_status=status,
+                error_message=error_message,
+                scan_duration_seconds=duration,
             )
-            conn.commit()
-            logger.debug(f"Updated scan status for {scan_id}: {status}")
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
+        logger.debug(f"Updated scan status for {scan_id}: {status}")
 
     def insert_ec2_instances(self, instances: List[EC2Instance]) -> None:
         """
@@ -164,358 +175,290 @@ class DatabaseOperations:
         """
         if not instances:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for instance in instances:
-                cursor.execute(
-                    """
-                    INSERT INTO ec2_instances (
-                        scan_id, instance_id, region, instance_type, state,
-                        public_ip, private_ip, vpc_id, subnet_id, availability_zone,
-                        launch_time, platform, security_groups, tags,
-                        iam_instance_profile, monitoring_state, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        instance.scan_id,
-                        instance.instance_id,
-                        instance.region,
-                        instance.instance_type,
-                        instance.state,
-                        instance.public_ip,
-                        instance.private_ip,
-                        instance.vpc_id,
-                        instance.subnet_id,
-                        instance.availability_zone,
-                        instance.launch_time.isoformat(),
-                        instance.platform,
-                        json.dumps(instance.security_groups, default=json_serial),
-                        json.dumps(instance.tags, default=json_serial),
-                        instance.iam_instance_profile,
-                        instance.monitoring_state,
-                        json.dumps(instance.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(instances)} EC2 instances")
+        rows = [
+            {
+                "scan_id": instance.scan_id,
+                "instance_id": instance.instance_id,
+                "region": instance.region,
+                "instance_type": instance.instance_type,
+                "state": instance.state,
+                "public_ip": instance.public_ip,
+                "private_ip": instance.private_ip,
+                "vpc_id": instance.vpc_id,
+                "subnet_id": instance.subnet_id,
+                "availability_zone": instance.availability_zone,
+                "launch_time": instance.launch_time.isoformat(),
+                "platform": instance.platform,
+                "security_groups": json.dumps(
+                    instance.security_groups, default=json_serial
+                ),
+                "tags": json.dumps(instance.tags, default=json_serial),
+                "iam_instance_profile": instance.iam_instance_profile,
+                "monitoring_state": instance.monitoring_state,
+                "raw_data": json.dumps(instance.raw_data, default=json_serial),
+            }
+            for instance in instances
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_ec2_instances.insert(), rows)
+        logger.debug(f"Inserted {len(instances)} EC2 instances")
 
     def insert_vpcs(self, vpcs: List[VPC]) -> None:
         """Insert VPC records."""
         if not vpcs:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for vpc in vpcs:
-                cursor.execute(
-                    """
-                    INSERT INTO vpcs (
-                        scan_id, vpc_id, region, cidr_block, state,
-                        is_default, dhcp_options_id, instance_tenancy, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        vpc.scan_id,
-                        vpc.vpc_id,
-                        vpc.region,
-                        vpc.cidr_block,
-                        vpc.state,
-                        1 if vpc.is_default else 0,
-                        vpc.dhcp_options_id,
-                        vpc.instance_tenancy,
-                        json.dumps(vpc.tags, default=json_serial),
-                        json.dumps(vpc.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(vpcs)} VPCs")
+        rows = [
+            {
+                "scan_id": vpc.scan_id,
+                "vpc_id": vpc.vpc_id,
+                "region": vpc.region,
+                "cidr_block": vpc.cidr_block,
+                "state": vpc.state,
+                "is_default": 1 if vpc.is_default else 0,
+                "dhcp_options_id": vpc.dhcp_options_id,
+                "instance_tenancy": vpc.instance_tenancy,
+                "tags": json.dumps(vpc.tags, default=json_serial),
+                "raw_data": json.dumps(vpc.raw_data, default=json_serial),
+            }
+            for vpc in vpcs
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_vpcs.insert(), rows)
+        logger.debug(f"Inserted {len(vpcs)} VPCs")
 
     def insert_subnets(self, subnets: List[Subnet]) -> None:
         """Insert subnet records."""
         if not subnets:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for subnet in subnets:
-                cursor.execute(
-                    """
-                    INSERT INTO subnets (
-                        scan_id, subnet_id, vpc_id, region, cidr_block,
-                        availability_zone, available_ip_count, map_public_ip,
-                        state, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        subnet.scan_id,
-                        subnet.subnet_id,
-                        subnet.vpc_id,
-                        subnet.region,
-                        subnet.cidr_block,
-                        subnet.availability_zone,
-                        subnet.available_ip_count,
-                        1 if subnet.map_public_ip else 0,
-                        subnet.state,
-                        json.dumps(subnet.tags, default=json_serial),
-                        json.dumps(subnet.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(subnets)} subnets")
+        rows = [
+            {
+                "scan_id": subnet.scan_id,
+                "subnet_id": subnet.subnet_id,
+                "vpc_id": subnet.vpc_id,
+                "region": subnet.region,
+                "cidr_block": subnet.cidr_block,
+                "availability_zone": subnet.availability_zone,
+                "available_ip_count": subnet.available_ip_count,
+                "map_public_ip": 1 if subnet.map_public_ip else 0,
+                "state": subnet.state,
+                "tags": json.dumps(subnet.tags, default=json_serial),
+                "raw_data": json.dumps(subnet.raw_data, default=json_serial),
+            }
+            for subnet in subnets
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_subnets.insert(), rows)
+        logger.debug(f"Inserted {len(subnets)} subnets")
 
     def insert_security_groups(self, security_groups: List[SecurityGroup]) -> None:
         """Insert security group records."""
         if not security_groups:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for sg in security_groups:
-                cursor.execute(
-                    """
-                    INSERT INTO security_groups (
-                        scan_id, group_id, group_name, vpc_id, region,
-                        description, ingress_rules, egress_rules, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        sg.scan_id,
-                        sg.group_id,
-                        sg.group_name,
-                        sg.vpc_id,
-                        sg.region,
-                        sg.description,
-                        json.dumps(sg.ingress_rules, default=json_serial),
-                        json.dumps(sg.egress_rules, default=json_serial),
-                        json.dumps(sg.tags, default=json_serial),
-                        json.dumps(sg.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(security_groups)} security groups")
+        rows = [
+            {
+                "scan_id": sg.scan_id,
+                "group_id": sg.group_id,
+                "group_name": sg.group_name,
+                "vpc_id": sg.vpc_id,
+                "region": sg.region,
+                "description": sg.description,
+                "ingress_rules": json.dumps(sg.ingress_rules, default=json_serial),
+                "egress_rules": json.dumps(sg.egress_rules, default=json_serial),
+                "tags": json.dumps(sg.tags, default=json_serial),
+                "raw_data": json.dumps(sg.raw_data, default=json_serial),
+            }
+            for sg in security_groups
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_security_groups.insert(), rows)
+        logger.debug(f"Inserted {len(security_groups)} security groups")
 
     def insert_s3_buckets(self, buckets: List[S3Bucket]) -> None:
         """Insert S3 bucket records."""
         if not buckets:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for bucket in buckets:
-                cursor.execute(
-                    """
-                    INSERT INTO s3_buckets (
-                        scan_id, bucket_name, creation_date, region,
-                        versioning_status, public_access_block, encryption_config,
-                        lifecycle_rules, logging_enabled, size_bytes, object_count,
-                        tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        bucket.scan_id,
-                        bucket.bucket_name,
-                        bucket.creation_date.isoformat(),
-                        bucket.region,
-                        bucket.versioning_status,
-                        json.dumps(bucket.public_access_block, default=json_serial)
-                        if bucket.public_access_block
-                        else None,
-                        json.dumps(bucket.encryption_config, default=json_serial)
-                        if bucket.encryption_config
-                        else None,
-                        json.dumps(bucket.lifecycle_rules, default=json_serial),
-                        1 if bucket.logging_enabled else 0,
-                        bucket.size_bytes,
-                        bucket.object_count,
-                        json.dumps(bucket.tags, default=json_serial),
-                        json.dumps(bucket.raw_data, default=json_serial),
-                    ),
+        rows = [
+            {
+                "scan_id": bucket.scan_id,
+                "bucket_name": bucket.bucket_name,
+                "creation_date": bucket.creation_date.isoformat(),
+                "region": bucket.region,
+                "versioning_status": bucket.versioning_status,
+                "public_access_block": json.dumps(
+                    bucket.public_access_block, default=json_serial
                 )
-            conn.commit()
-            logger.debug(f"Inserted {len(buckets)} S3 buckets")
+                if bucket.public_access_block
+                else None,
+                "encryption_config": json.dumps(
+                    bucket.encryption_config, default=json_serial
+                )
+                if bucket.encryption_config
+                else None,
+                "lifecycle_rules": json.dumps(
+                    bucket.lifecycle_rules, default=json_serial
+                ),
+                "logging_enabled": 1 if bucket.logging_enabled else 0,
+                "size_bytes": bucket.size_bytes,
+                "object_count": bucket.object_count,
+                "tags": json.dumps(bucket.tags, default=json_serial),
+                "raw_data": json.dumps(bucket.raw_data, default=json_serial),
+            }
+            for bucket in buckets
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_s3_buckets.insert(), rows)
+        logger.debug(f"Inserted {len(buckets)} S3 buckets")
 
     def insert_iam_users(self, users: List[IAMUser]) -> None:
         """Insert IAM user records."""
         if not users:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for user in users:
-                cursor.execute(
-                    """
-                    INSERT INTO iam_users (
-                        scan_id, user_name, user_id, arn, create_date,
-                        password_last_used, mfa_enabled, access_keys,
-                        attached_policies, groups, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        user.scan_id,
-                        user.user_name,
-                        user.user_id,
-                        user.arn,
-                        user.create_date.isoformat(),
-                        user.password_last_used.isoformat()
-                        if user.password_last_used
-                        else None,
-                        1 if user.mfa_enabled else 0,
-                        json.dumps(user.access_keys, default=json_serial),
-                        json.dumps(user.attached_policies, default=json_serial),
-                        json.dumps(user.groups, default=json_serial),
-                        json.dumps(user.tags, default=json_serial),
-                        json.dumps(user.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(users)} IAM users")
+        rows = [
+            {
+                "scan_id": user.scan_id,
+                "user_name": user.user_name,
+                "user_id": user.user_id,
+                "arn": user.arn,
+                "create_date": user.create_date.isoformat(),
+                "password_last_used": user.password_last_used.isoformat()
+                if user.password_last_used
+                else None,
+                "mfa_enabled": 1 if user.mfa_enabled else 0,
+                "access_keys": json.dumps(user.access_keys, default=json_serial),
+                "attached_policies": json.dumps(
+                    user.attached_policies, default=json_serial
+                ),
+                "groups": json.dumps(user.groups, default=json_serial),
+                "tags": json.dumps(user.tags, default=json_serial),
+                "raw_data": json.dumps(user.raw_data, default=json_serial),
+            }
+            for user in users
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_iam_users.insert(), rows)
+        logger.debug(f"Inserted {len(users)} IAM users")
 
     def insert_iam_roles(self, roles: List[IAMRole]) -> None:
         """Insert IAM role records."""
         if not roles:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for role in roles:
-                cursor.execute(
-                    """
-                    INSERT INTO iam_roles (
-                        scan_id, role_name, role_id, arn, create_date,
-                        assume_role_policy, attached_policies, max_session_duration,
-                        tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        role.scan_id,
-                        role.role_name,
-                        role.role_id,
-                        role.arn,
-                        role.create_date.isoformat(),
-                        json.dumps(role.assume_role_policy, default=json_serial),
-                        json.dumps(role.attached_policies, default=json_serial),
-                        role.max_session_duration,
-                        json.dumps(role.tags, default=json_serial),
-                        json.dumps(role.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(roles)} IAM roles")
+        rows = [
+            {
+                "scan_id": role.scan_id,
+                "role_name": role.role_name,
+                "role_id": role.role_id,
+                "arn": role.arn,
+                "create_date": role.create_date.isoformat(),
+                "assume_role_policy": json.dumps(
+                    role.assume_role_policy, default=json_serial
+                ),
+                "attached_policies": json.dumps(
+                    role.attached_policies, default=json_serial
+                ),
+                "max_session_duration": role.max_session_duration,
+                "tags": json.dumps(role.tags, default=json_serial),
+                "raw_data": json.dumps(role.raw_data, default=json_serial),
+            }
+            for role in roles
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_iam_roles.insert(), rows)
+        logger.debug(f"Inserted {len(roles)} IAM roles")
 
     def insert_prowler_findings(self, findings: List[ProwlerFinding]) -> None:
         """Insert Prowler security findings."""
         if not findings:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for finding in findings:
-                cursor.execute(
-                    """
-                    INSERT INTO prowler_findings (
-                        scan_id, check_id, check_title, severity, status,
-                        region, resource_id, resource_arn, resource_tags,
-                        status_extended, service_name, check_type, risk,
-                        remediation, compliance_frameworks, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        finding.scan_id,
-                        finding.check_id,
-                        finding.check_title,
-                        finding.severity,
-                        finding.status,
-                        finding.region,
-                        finding.resource_id,
-                        finding.resource_arn,
-                        json.dumps(finding.resource_tags, default=json_serial),
-                        finding.status_extended,
-                        finding.service_name,
-                        finding.check_type,
-                        finding.risk,
-                        finding.remediation,
-                        json.dumps(finding.compliance_frameworks, default=json_serial),
-                        json.dumps(finding.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(findings)} Prowler findings")
+        rows = [
+            {
+                "scan_id": finding.scan_id,
+                "check_id": finding.check_id,
+                "check_title": finding.check_title,
+                "severity": finding.severity,
+                "status": finding.status,
+                "region": finding.region,
+                "resource_id": finding.resource_id,
+                "resource_arn": finding.resource_arn,
+                "resource_tags": json.dumps(finding.resource_tags, default=json_serial),
+                "status_extended": finding.status_extended,
+                "service_name": finding.service_name,
+                "check_type": finding.check_type,
+                "risk": finding.risk,
+                "remediation": finding.remediation,
+                "compliance_frameworks": json.dumps(
+                    finding.compliance_frameworks, default=json_serial
+                ),
+                "raw_data": json.dumps(finding.raw_data, default=json_serial),
+            }
+            for finding in findings
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_prowler_findings.insert(), rows)
+        logger.debug(f"Inserted {len(findings)} Prowler findings")
 
     def insert_load_balancers(self, load_balancers: List[LoadBalancer]) -> None:
         """Insert load balancer records."""
         if not load_balancers:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for lb in load_balancers:
-                cursor.execute(
-                    """
-                    INSERT INTO load_balancers (
-                        scan_id, load_balancer_name, load_balancer_arn, load_balancer_type,
-                        region, vpc_id, scheme, state, dns_name, availability_zones,
-                        security_groups, subnets, created_time, listeners, target_groups,
-                        tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        lb.scan_id,
-                        lb.load_balancer_name,
-                        lb.load_balancer_arn,
-                        lb.load_balancer_type,
-                        lb.region,
-                        lb.vpc_id,
-                        lb.scheme,
-                        lb.state,
-                        lb.dns_name,
-                        json.dumps(lb.availability_zones, default=json_serial),
-                        json.dumps(lb.security_groups, default=json_serial),
-                        json.dumps(lb.subnets, default=json_serial),
-                        lb.created_time.isoformat() if lb.created_time else None,
-                        json.dumps(lb.listeners, default=json_serial),
-                        json.dumps(lb.target_groups, default=json_serial),
-                        json.dumps(lb.tags, default=json_serial),
-                        json.dumps(lb.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(load_balancers)} load balancers")
+        rows = [
+            {
+                "scan_id": lb.scan_id,
+                "load_balancer_name": lb.load_balancer_name,
+                "load_balancer_arn": lb.load_balancer_arn,
+                "load_balancer_type": lb.load_balancer_type,
+                "region": lb.region,
+                "vpc_id": lb.vpc_id,
+                "scheme": lb.scheme,
+                "state": lb.state,
+                "dns_name": lb.dns_name,
+                "availability_zones": json.dumps(
+                    lb.availability_zones, default=json_serial
+                ),
+                "security_groups": json.dumps(lb.security_groups, default=json_serial),
+                "subnets": json.dumps(lb.subnets, default=json_serial),
+                "created_time": lb.created_time.isoformat()
+                if lb.created_time
+                else None,
+                "listeners": json.dumps(lb.listeners, default=json_serial),
+                "target_groups": json.dumps(lb.target_groups, default=json_serial),
+                "tags": json.dumps(lb.tags, default=json_serial),
+                "raw_data": json.dumps(lb.raw_data, default=json_serial),
+            }
+            for lb in load_balancers
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_load_balancers.insert(), rows)
+        logger.debug(f"Inserted {len(load_balancers)} load balancers")
 
     def insert_nat_gateways(self, nat_gateways: List[NATGateway]) -> None:
         """Insert NAT gateway records."""
         if not nat_gateways:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for nat in nat_gateways:
-                cursor.execute(
-                    """
-                    INSERT INTO nat_gateways (
-                        scan_id, nat_gateway_id, region, vpc_id, subnet_id, state,
-                        connectivity_type, public_ip, private_ip, created_time,
-                        nat_gateway_addresses, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        nat.scan_id,
-                        nat.nat_gateway_id,
-                        nat.region,
-                        nat.vpc_id,
-                        nat.subnet_id,
-                        nat.state,
-                        nat.connectivity_type,
-                        nat.public_ip,
-                        nat.private_ip,
-                        nat.created_time.isoformat() if nat.created_time else None,
-                        json.dumps(nat.nat_gateway_addresses, default=json_serial),
-                        json.dumps(nat.tags, default=json_serial),
-                        json.dumps(nat.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(nat_gateways)} NAT gateways")
+        rows = [
+            {
+                "scan_id": nat.scan_id,
+                "nat_gateway_id": nat.nat_gateway_id,
+                "region": nat.region,
+                "vpc_id": nat.vpc_id,
+                "subnet_id": nat.subnet_id,
+                "state": nat.state,
+                "connectivity_type": nat.connectivity_type,
+                "public_ip": nat.public_ip,
+                "private_ip": nat.private_ip,
+                "created_time": nat.created_time.isoformat()
+                if nat.created_time
+                else None,
+                "nat_gateway_addresses": json.dumps(
+                    nat.nat_gateway_addresses, default=json_serial
+                ),
+                "tags": json.dumps(nat.tags, default=json_serial),
+                "raw_data": json.dumps(nat.raw_data, default=json_serial),
+            }
+            for nat in nat_gateways
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_nat_gateways.insert(), rows)
+        logger.debug(f"Inserted {len(nat_gateways)} NAT gateways")
 
     def insert_internet_gateways(
         self, internet_gateways: List[InternetGateway]
@@ -523,58 +466,47 @@ class DatabaseOperations:
         """Insert internet gateway records."""
         if not internet_gateways:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for igw in internet_gateways:
-                cursor.execute(
-                    """
-                    INSERT INTO internet_gateways (
-                        scan_id, internet_gateway_id, region, vpc_attachments, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        igw.scan_id,
-                        igw.internet_gateway_id,
-                        igw.region,
-                        json.dumps(igw.vpc_attachments, default=json_serial),
-                        json.dumps(igw.tags, default=json_serial),
-                        json.dumps(igw.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(internet_gateways)} internet gateways")
+        rows = [
+            {
+                "scan_id": igw.scan_id,
+                "internet_gateway_id": igw.internet_gateway_id,
+                "region": igw.region,
+                "vpc_attachments": json.dumps(igw.vpc_attachments, default=json_serial),
+                "tags": json.dumps(igw.tags, default=json_serial),
+                "raw_data": json.dumps(igw.raw_data, default=json_serial),
+            }
+            for igw in internet_gateways
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_internet_gateways.insert(), rows)
+        logger.debug(f"Inserted {len(internet_gateways)} internet gateways")
 
     def insert_route_tables(self, route_tables: List[RouteTable]) -> None:
         """Insert route table records."""
         if not route_tables:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for rt in route_tables:
-                cursor.execute(
-                    """
-                    INSERT INTO route_tables (
-                        scan_id, route_table_id, region, vpc_id, is_main, routes,
-                        subnet_associations, gateway_associations, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        rt.scan_id,
-                        rt.route_table_id,
-                        rt.region,
-                        rt.vpc_id,
-                        1 if rt.is_main else 0,
-                        json.dumps(rt.routes, default=json_serial),
-                        json.dumps(rt.subnet_associations, default=json_serial),
-                        json.dumps(rt.gateway_associations, default=json_serial),
-                        json.dumps(rt.tags, default=json_serial),
-                        json.dumps(rt.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(route_tables)} route tables")
+        rows = [
+            {
+                "scan_id": rt.scan_id,
+                "route_table_id": rt.route_table_id,
+                "region": rt.region,
+                "vpc_id": rt.vpc_id,
+                "is_main": 1 if rt.is_main else 0,
+                "routes": json.dumps(rt.routes, default=json_serial),
+                "subnet_associations": json.dumps(
+                    rt.subnet_associations, default=json_serial
+                ),
+                "gateway_associations": json.dumps(
+                    rt.gateway_associations, default=json_serial
+                ),
+                "tags": json.dumps(rt.tags, default=json_serial),
+                "raw_data": json.dumps(rt.raw_data, default=json_serial),
+            }
+            for rt in route_tables
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_route_tables.insert(), rows)
+        logger.debug(f"Inserted {len(route_tables)} route tables")
 
     def insert_auto_scaling_groups(
         self, auto_scaling_groups: List[AutoScalingGroup]
@@ -582,47 +514,42 @@ class DatabaseOperations:
         """Insert Auto Scaling group records."""
         if not auto_scaling_groups:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for asg in auto_scaling_groups:
-                cursor.execute(
-                    """
-                    INSERT INTO auto_scaling_groups (
-                        scan_id, auto_scaling_group_name, auto_scaling_group_arn, region,
-                        launch_configuration_name, launch_template, min_size, max_size,
-                        desired_capacity, default_cooldown, availability_zones, load_balancer_names,
-                        target_group_arns, health_check_type, health_check_grace_period,
-                        vpc_zone_identifier, instances, created_time, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        asg.scan_id,
-                        asg.auto_scaling_group_name,
-                        asg.auto_scaling_group_arn,
-                        asg.region,
-                        asg.launch_configuration_name,
-                        json.dumps(asg.launch_template, default=json_serial)
-                        if asg.launch_template
-                        else None,
-                        asg.min_size,
-                        asg.max_size,
-                        asg.desired_capacity,
-                        asg.default_cooldown,
-                        json.dumps(asg.availability_zones, default=json_serial),
-                        json.dumps(asg.load_balancer_names, default=json_serial),
-                        json.dumps(asg.target_group_arns, default=json_serial),
-                        asg.health_check_type,
-                        asg.health_check_grace_period,
-                        asg.vpc_zone_identifier,
-                        json.dumps(asg.instances, default=json_serial),
-                        asg.created_time.isoformat(),
-                        json.dumps(asg.tags, default=json_serial),
-                        json.dumps(asg.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(auto_scaling_groups)} Auto Scaling groups")
+        rows = [
+            {
+                "scan_id": asg.scan_id,
+                "auto_scaling_group_name": asg.auto_scaling_group_name,
+                "auto_scaling_group_arn": asg.auto_scaling_group_arn,
+                "region": asg.region,
+                "launch_configuration_name": asg.launch_configuration_name,
+                "launch_template": json.dumps(asg.launch_template, default=json_serial)
+                if asg.launch_template
+                else None,
+                "min_size": asg.min_size,
+                "max_size": asg.max_size,
+                "desired_capacity": asg.desired_capacity,
+                "default_cooldown": asg.default_cooldown,
+                "availability_zones": json.dumps(
+                    asg.availability_zones, default=json_serial
+                ),
+                "load_balancer_names": json.dumps(
+                    asg.load_balancer_names, default=json_serial
+                ),
+                "target_group_arns": json.dumps(
+                    asg.target_group_arns, default=json_serial
+                ),
+                "health_check_type": asg.health_check_type,
+                "health_check_grace_period": asg.health_check_grace_period,
+                "vpc_zone_identifier": asg.vpc_zone_identifier,
+                "instances": json.dumps(asg.instances, default=json_serial),
+                "created_time": asg.created_time.isoformat(),
+                "tags": json.dumps(asg.tags, default=json_serial),
+                "raw_data": json.dumps(asg.raw_data, default=json_serial),
+            }
+            for asg in auto_scaling_groups
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_auto_scaling_groups.insert(), rows)
+        logger.debug(f"Inserted {len(auto_scaling_groups)} Auto Scaling groups")
 
     def insert_network_interfaces(
         self, network_interfaces: List[NetworkInterface]
@@ -630,195 +557,154 @@ class DatabaseOperations:
         """Insert network interface records."""
         if not network_interfaces:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for eni in network_interfaces:
-                cursor.execute(
-                    """
-                    INSERT INTO network_interfaces (
-                        scan_id, network_interface_id, region, interface_type, status,
-                        vpc_id, subnet_id, availability_zone, description, private_ip_address,
-                        private_ip_addresses, public_ip, mac_address, source_dest_check,
-                        security_groups, attachment, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        eni.scan_id,
-                        eni.network_interface_id,
-                        eni.region,
-                        eni.interface_type,
-                        eni.status,
-                        eni.vpc_id,
-                        eni.subnet_id,
-                        eni.availability_zone,
-                        eni.description,
-                        eni.private_ip_address,
-                        json.dumps(eni.private_ip_addresses, default=json_serial),
-                        eni.public_ip,
-                        eni.mac_address,
-                        1 if eni.source_dest_check else 0,
-                        json.dumps(eni.security_groups, default=json_serial),
-                        json.dumps(eni.attachment, default=json_serial)
-                        if eni.attachment
-                        else None,
-                        json.dumps(eni.tags, default=json_serial),
-                        json.dumps(eni.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(network_interfaces)} network interfaces")
+        rows = [
+            {
+                "scan_id": eni.scan_id,
+                "network_interface_id": eni.network_interface_id,
+                "region": eni.region,
+                "interface_type": eni.interface_type,
+                "status": eni.status,
+                "vpc_id": eni.vpc_id,
+                "subnet_id": eni.subnet_id,
+                "availability_zone": eni.availability_zone,
+                "description": eni.description,
+                "private_ip_address": eni.private_ip_address,
+                "private_ip_addresses": json.dumps(
+                    eni.private_ip_addresses, default=json_serial
+                ),
+                "public_ip": eni.public_ip,
+                "mac_address": eni.mac_address,
+                "source_dest_check": 1 if eni.source_dest_check else 0,
+                "security_groups": json.dumps(eni.security_groups, default=json_serial),
+                "attachment": json.dumps(eni.attachment, default=json_serial)
+                if eni.attachment
+                else None,
+                "tags": json.dumps(eni.tags, default=json_serial),
+                "raw_data": json.dumps(eni.raw_data, default=json_serial),
+            }
+            for eni in network_interfaces
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_network_interfaces.insert(), rows)
+        logger.debug(f"Inserted {len(network_interfaces)} network interfaces")
 
     def insert_workspaces(self, workspaces: List[WorkSpace]) -> None:
         """Insert WorkSpaces records."""
         if not workspaces:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for workspace in workspaces:
-                cursor.execute(
-                    """
-                    INSERT INTO workspaces (
-                        scan_id, workspace_id, region, directory_id, user_name,
-                        bundle_id, subnet_id, vpc_id, ip_address, state,
-                        compute_type, volume_encryption_enabled, user_volume_size_gb,
-                        root_volume_size_gb, running_mode, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        workspace.scan_id,
-                        workspace.workspace_id,
-                        workspace.region,
-                        workspace.directory_id,
-                        workspace.user_name,
-                        workspace.bundle_id,
-                        workspace.subnet_id,
-                        workspace.vpc_id,
-                        workspace.ip_address,
-                        workspace.state,
-                        workspace.compute_type,
-                        1 if workspace.volume_encryption_enabled else 0,
-                        workspace.user_volume_size_gb,
-                        workspace.root_volume_size_gb,
-                        workspace.running_mode,
-                        json.dumps(workspace.tags, default=json_serial),
-                        json.dumps(workspace.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(workspaces)} WorkSpaces")
+        rows = [
+            {
+                "scan_id": workspace.scan_id,
+                "workspace_id": workspace.workspace_id,
+                "region": workspace.region,
+                "directory_id": workspace.directory_id,
+                "user_name": workspace.user_name,
+                "bundle_id": workspace.bundle_id,
+                "subnet_id": workspace.subnet_id,
+                "vpc_id": workspace.vpc_id,
+                "ip_address": workspace.ip_address,
+                "state": workspace.state,
+                "compute_type": workspace.compute_type,
+                "volume_encryption_enabled": 1
+                if workspace.volume_encryption_enabled
+                else 0,
+                "user_volume_size_gb": workspace.user_volume_size_gb,
+                "root_volume_size_gb": workspace.root_volume_size_gb,
+                "running_mode": workspace.running_mode,
+                "tags": json.dumps(workspace.tags, default=json_serial),
+                "raw_data": json.dumps(workspace.raw_data, default=json_serial),
+            }
+            for workspace in workspaces
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_workspaces.insert(), rows)
+        logger.debug(f"Inserted {len(workspaces)} WorkSpaces")
 
     def insert_lambda_functions(self, lambda_functions: List[LambdaFunction]) -> None:
         """Insert Lambda function records."""
         if not lambda_functions:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for func in lambda_functions:
-                cursor.execute(
-                    """
-                    INSERT INTO lambda_functions (
-                        scan_id, function_name, function_arn, region, runtime,
-                        handler, code_size, memory_size, timeout, last_modified,
-                        role_arn, vpc_config, environment_variables, layers,
-                        state, architectures, triggers, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        func.scan_id,
-                        func.function_name,
-                        func.function_arn,
-                        func.region,
-                        func.runtime,
-                        func.handler,
-                        func.code_size,
-                        func.memory_size,
-                        func.timeout,
-                        func.last_modified.isoformat(),
-                        func.role_arn,
-                        json.dumps(func.vpc_config, default=json_serial)
-                        if func.vpc_config
-                        else None,
-                        json.dumps(func.environment_variables, default=json_serial),
-                        json.dumps(func.layers, default=json_serial),
-                        func.state,
-                        json.dumps(func.architectures, default=json_serial),
-                        json.dumps(func.triggers, default=json_serial),
-                        json.dumps(func.tags, default=json_serial),
-                        json.dumps(func.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(lambda_functions)} Lambda functions")
+        rows = [
+            {
+                "scan_id": func.scan_id,
+                "function_name": func.function_name,
+                "function_arn": func.function_arn,
+                "region": func.region,
+                "runtime": func.runtime,
+                "handler": func.handler,
+                "code_size": func.code_size,
+                "memory_size": func.memory_size,
+                "timeout": func.timeout,
+                "last_modified": func.last_modified.isoformat(),
+                "role_arn": func.role_arn,
+                "vpc_config": json.dumps(func.vpc_config, default=json_serial)
+                if func.vpc_config
+                else None,
+                "environment_variables": json.dumps(
+                    func.environment_variables, default=json_serial
+                ),
+                "layers": json.dumps(func.layers, default=json_serial),
+                "state": func.state,
+                "architectures": json.dumps(func.architectures, default=json_serial),
+                "triggers": json.dumps(func.triggers, default=json_serial),
+                "tags": json.dumps(func.tags, default=json_serial),
+                "raw_data": json.dumps(func.raw_data, default=json_serial),
+            }
+            for func in lambda_functions
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_lambda_functions.insert(), rows)
+        logger.debug(f"Inserted {len(lambda_functions)} Lambda functions")
 
     def insert_vpc_flow_logs(self, vpc_flow_logs: List[VPCFlowLog]) -> None:
         """Insert VPC Flow Log records."""
         if not vpc_flow_logs:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for flow_log in vpc_flow_logs:
-                cursor.execute(
-                    """
-                    INSERT INTO vpc_flow_logs (
-                        scan_id, flow_log_id, region, resource_id, resource_type,
-                        traffic_type, log_destination_type, log_destination,
-                        log_format, flow_log_status, created_time, tags, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        flow_log.scan_id,
-                        flow_log.flow_log_id,
-                        flow_log.region,
-                        flow_log.resource_id,
-                        flow_log.resource_type,
-                        flow_log.traffic_type,
-                        flow_log.log_destination_type,
-                        flow_log.log_destination,
-                        flow_log.log_format,
-                        flow_log.flow_log_status,
-                        flow_log.created_time.isoformat()
-                        if flow_log.created_time
-                        else None,
-                        json.dumps(flow_log.tags, default=json_serial),
-                        json.dumps(flow_log.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(vpc_flow_logs)} VPC Flow Logs")
+        rows = [
+            {
+                "scan_id": flow_log.scan_id,
+                "flow_log_id": flow_log.flow_log_id,
+                "region": flow_log.region,
+                "resource_id": flow_log.resource_id,
+                "resource_type": flow_log.resource_type,
+                "traffic_type": flow_log.traffic_type,
+                "log_destination_type": flow_log.log_destination_type,
+                "log_destination": flow_log.log_destination,
+                "log_format": flow_log.log_format,
+                "flow_log_status": flow_log.flow_log_status,
+                "created_time": flow_log.created_time.isoformat()
+                if flow_log.created_time
+                else None,
+                "tags": json.dumps(flow_log.tags, default=json_serial),
+                "raw_data": json.dumps(flow_log.raw_data, default=json_serial),
+            }
+            for flow_log in vpc_flow_logs
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_vpc_flow_logs.insert(), rows)
+        logger.debug(f"Inserted {len(vpc_flow_logs)} VPC Flow Logs")
 
     def insert_cost_data(self, cost_records: List[CostData]) -> None:
         """Insert cost and billing data records."""
         if not cost_records:
             return
-
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            for cost in cost_records:
-                cursor.execute(
-                    """
-                    INSERT INTO cost_data (
-                        scan_id, account_number, time_period_start, time_period_end,
-                        service_name, amount, currency, unit, raw_data
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        cost.scan_id,
-                        cost.account_number,
-                        cost.time_period_start.isoformat(),
-                        cost.time_period_end.isoformat(),
-                        cost.service_name,
-                        cost.amount,
-                        cost.currency,
-                        cost.unit,
-                        json.dumps(cost.raw_data, default=json_serial),
-                    ),
-                )
-            conn.commit()
-            logger.debug(f"Inserted {len(cost_records)} cost data records")
+        rows = [
+            {
+                "scan_id": cost.scan_id,
+                "account_number": cost.account_number,
+                "time_period_start": cost.time_period_start.isoformat(),
+                "time_period_end": cost.time_period_end.isoformat(),
+                "service_name": cost.service_name,
+                "amount": cost.amount,
+                "currency": cost.currency,
+                "unit": cost.unit,
+                "raw_data": json.dumps(cost.raw_data, default=json_serial),
+            }
+            for cost in cost_records
+        ]
+        with self._engine.begin() as conn:
+            conn.execute(t_cost_data.insert(), rows)
+        logger.debug(f"Inserted {len(cost_records)} cost data records")
 
     def insert_route53_hosted_zones(
         self, hosted_zones: List[Route53HostedZone]
@@ -2645,19 +2531,15 @@ class DatabaseOperations:
         Returns:
             Dictionary with scan metadata or None if not found
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                SELECT * FROM scan_metadata
-                WHERE account_number = ?
-                ORDER BY scan_timestamp DESC
-                LIMIT 1
-            """,
-                (account_number,),
-            )
-            row = cursor.fetchone()
-            return dict(row) if row else None
+        stmt = (
+            sa.select(t_scan_metadata)
+            .where(t_scan_metadata.c.account_number == account_number)
+            .order_by(t_scan_metadata.c.scan_timestamp.desc())
+            .limit(1)
+        )
+        with self._engine.begin() as conn:
+            row = conn.execute(stmt).fetchone()
+            return dict(row._mapping) if row else None
 
     def get_all_scans(self) -> List[Dict[str, Any]]:
         """
@@ -2666,13 +2548,11 @@ class DatabaseOperations:
         Returns:
             List of scan metadata dictionaries
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM scan_metadata
-                ORDER BY scan_timestamp DESC
-            """)
-            return [dict(row) for row in cursor.fetchall()]
+        stmt = sa.select(t_scan_metadata).order_by(
+            t_scan_metadata.c.scan_timestamp.desc()
+        )
+        with self._engine.begin() as conn:
+            return [dict(row._mapping) for row in conn.execute(stmt).fetchall()]
 
     def delete_scan(self, scan_id: str) -> Dict[str, int]:
         """
@@ -2692,13 +2572,14 @@ class DatabaseOperations:
             ValueError: If scan_id doesn't exist
         """
         # First verify the scan exists
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT scan_id, account_name, scan_timestamp FROM scan_metadata WHERE scan_id = ?",
-                (scan_id,),
-            )
-            scan = cursor.fetchone()
+        with self._engine.begin() as conn:
+            scan = conn.execute(
+                sa.text(
+                    "SELECT scan_id, account_name, scan_timestamp "
+                    "FROM scan_metadata WHERE scan_id = :scan_id"
+                ),
+                {"scan_id": scan_id},
+            ).fetchone()
 
             if not scan:
                 raise ValueError(f"Scan ID '{scan_id}' not found in database")
@@ -2769,24 +2650,26 @@ class DatabaseOperations:
         deleted_counts = {}
 
         # Delete from all related tables first, then scan_metadata
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-
+        with self._engine.begin() as conn:
             # Enable foreign key constraints
-            cursor.execute("PRAGMA foreign_keys = ON")
+            conn.execute(sa.text("PRAGMA foreign_keys = ON"))
 
             # Delete from each table
             for table in tables_with_scan_id:
-                cursor.execute(f"DELETE FROM {table} WHERE scan_id = ?", (scan_id,))
-                deleted_count = cursor.rowcount
+                result = conn.execute(
+                    sa.text(f"DELETE FROM {table} WHERE scan_id = :scan_id"),
+                    {"scan_id": scan_id},
+                )
+                deleted_count = result.rowcount
                 if deleted_count > 0:
                     deleted_counts[table] = deleted_count
 
             # Finally delete the scan metadata
-            cursor.execute("DELETE FROM scan_metadata WHERE scan_id = ?", (scan_id,))
-            deleted_counts["scan_metadata"] = cursor.rowcount
-
-            conn.commit()
+            result = conn.execute(
+                sa.text("DELETE FROM scan_metadata WHERE scan_id = :scan_id"),
+                {"scan_id": scan_id},
+            )
+            deleted_counts["scan_metadata"] = result.rowcount
 
         return deleted_counts
 
