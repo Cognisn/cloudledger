@@ -131,9 +131,9 @@ class QueryHandler:
             "total_count": total_count,
             "limit": limit,
             "offset": offset,
-            "returned_count": len(results.get("items", []))
-            if "items" in results
-            else 0,
+            "returned_count": (
+                len(results.get("items", [])) if "items" in results else 0
+            ),
             "has_more": (offset + limit) < total_count,
         }
 
@@ -1877,9 +1877,9 @@ class QueryHandler:
             "total_vpcs": len(vpcs),
             "vpcs_with_flow_logs": len(vpcs_with_logs),
             "vpcs_without_flow_logs": len(vpcs_without_logs),
-            "coverage_percentage": (len(vpcs_with_logs) / len(vpcs) * 100)
-            if vpcs
-            else 0,
+            "coverage_percentage": (
+                (len(vpcs_with_logs) / len(vpcs) * 100) if vpcs else 0
+            ),
             "vpcs_with_logs": vpcs_with_logs,
             "vpcs_without_logs": vpcs_without_logs,
         }
@@ -2285,15 +2285,13 @@ class QueryHandler:
                 # is_public" baseline error still fires; the raw sqlite3
                 # error is re-raised so handle_query's str(e) matches the
                 # frozen baseline exactly.
-                subnet_stmt = sa.text(
-                    """
+                subnet_stmt = sa.text("""
                     SELECT vpc_id, subnet_id, cidr_block, availability_zone,
                            is_public, tags
                     FROM subnets
                     WHERE vpc_id IN :vpc_ids
                     ORDER BY vpc_id, cidr_block
-                    """
-                ).bindparams(sa.bindparam("vpc_ids", expanding=True))
+                    """).bindparams(sa.bindparam("vpc_ids", expanding=True))
 
                 try:
                     subnet_rows = conn.execute(
@@ -2344,11 +2342,11 @@ class QueryHandler:
                                 "total_ips": vpc_total_ips,
                                 "allocated_ips": subnet_ips,
                                 "available_ips": vpc_total_ips - subnet_ips,
-                                "utilization_percentage": round(
-                                    (subnet_ips / vpc_total_ips) * 100, 2
-                                )
-                                if vpc_total_ips > 0
-                                else 0,
+                                "utilization_percentage": (
+                                    round((subnet_ips / vpc_total_ips) * 100, 2)
+                                    if vpc_total_ips > 0
+                                    else 0
+                                ),
                             }
                         except ValueError:
                             vpc["cidr_utilization"] = None
@@ -2378,9 +2376,11 @@ class QueryHandler:
                             "account_number": vpc2["data"]["account_number"],
                             "region": vpc2["data"]["region"],
                         },
-                        "overlap_type": "full"
-                        if (vpc1["network"] == vpc2["network"])
-                        else "partial",
+                        "overlap_type": (
+                            "full"
+                            if (vpc1["network"] == vpc2["network"])
+                            else "partial"
+                        ),
                     }
                     overlaps.append(overlap)
 
@@ -2489,9 +2489,9 @@ class QueryHandler:
                     )
 
                 if unattached_volumes:
-                    results["unused_resources"]["unattached_ebs_volumes"] = (
-                        unattached_volumes
-                    )
+                    results["unused_resources"][
+                        "unattached_ebs_volumes"
+                    ] = unattached_volumes
                     results["summary"]["categories"]["unattached_ebs_volumes"] = len(
                         unattached_volumes
                     )
@@ -2538,9 +2538,9 @@ class QueryHandler:
                     )
 
                 if unassociated_eips:
-                    results["unused_resources"]["unassociated_elastic_ips"] = (
-                        unassociated_eips
-                    )
+                    results["unused_resources"][
+                        "unassociated_elastic_ips"
+                    ] = unassociated_eips
                     results["summary"]["categories"]["unassociated_elastic_ips"] = len(
                         unassociated_eips
                     )
@@ -2656,9 +2656,9 @@ class QueryHandler:
                     )
 
                 if stopped_instances:
-                    results["unused_resources"]["stopped_ec2_instances"] = (
-                        stopped_instances
-                    )
+                    results["unused_resources"][
+                        "stopped_ec2_instances"
+                    ] = stopped_instances
                     results["summary"]["categories"]["stopped_ec2_instances"] = len(
                         stopped_instances
                     )
@@ -3027,12 +3027,16 @@ class QueryHandler:
                         "severity": "CRITICAL",
                         "risk_assessment": {
                             "publicly_accessible": "CRITICAL - Database is accessible from the internet",
-                            "encryption_status": "OK - Encrypted"
-                            if row[11]
-                            else "CRITICAL - Not encrypted",
-                            "multi_az": "OK - Multi-AZ enabled"
-                            if row[12]
-                            else "WARNING - Single AZ",
+                            "encryption_status": (
+                                "OK - Encrypted"
+                                if row[11]
+                                else "CRITICAL - Not encrypted"
+                            ),
+                            "multi_az": (
+                                "OK - Multi-AZ enabled"
+                                if row[12]
+                                else "WARNING - Single AZ"
+                            ),
                         },
                     }
                 )
@@ -3041,9 +3045,11 @@ class QueryHandler:
             "summary": {
                 "total_public_databases": len(public_databases),
                 "severity": "CRITICAL" if public_databases else "OK",
-                "recommendation": "Make databases private and use VPN/bastion host for access"
-                if public_databases
-                else "No publicly accessible databases found",
+                "recommendation": (
+                    "Make databases private and use VPN/bastion host for access"
+                    if public_databases
+                    else "No publicly accessible databases found"
+                ),
             },
             "public_databases": public_databases,
         }
@@ -3155,9 +3161,9 @@ class QueryHandler:
                         results["summary"]["high_issues"] += 1
 
                 if admin_policies:
-                    results["findings"]["administrator_access_policies"] = (
-                        admin_policies
-                    )
+                    results["findings"][
+                        "administrator_access_policies"
+                    ] = admin_policies
                 if wildcard_policies:
                     results["findings"]["wildcard_policies"] = wildcard_policies
 
@@ -3748,20 +3754,16 @@ class QueryHandler:
                 severity = (
                     "CRITICAL"
                     if critical > 0
-                    else "HIGH"
-                    if high > 0
-                    else "MEDIUM"
-                    if medium > 0
-                    else "LOW"
+                    else "HIGH" if high > 0 else "MEDIUM" if medium > 0 else "LOW"
                 )
 
                 results["vulnerable_images"].append(
                     {
                         "repository_name": repository_name,
                         "image_tag": image_tag,
-                        "image_digest": image_digest[:19] + "..."
-                        if image_digest
-                        else None,
+                        "image_digest": (
+                            image_digest[:19] + "..." if image_digest else None
+                        ),
                         "region": region,
                         "critical": critical,
                         "high": high,
@@ -5094,9 +5096,11 @@ class QueryHandler:
                 '- When asking "which account costs most?", exclude the master account '
                 "or look at member_accounts list to see actual usage by account"
             ),
-            "highest_cost_member_account": results["member_accounts"][0]["account_name"]
-            if results["member_accounts"]
-            else "N/A",
+            "highest_cost_member_account": (
+                results["member_accounts"][0]["account_name"]
+                if results["member_accounts"]
+                else "N/A"
+            ),
             "member_account_count": len(results["member_accounts"]),
         }
 

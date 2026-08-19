@@ -35,16 +35,32 @@ def _collector_with_fake_ec2(paginator_pages_by_op):
 
 def test_collect_security_groups_spans_pages():
     pages = [
-        {"SecurityGroups": [
-            {"GroupId": "sg-1", "GroupName": "one", "VpcId": "vpc-1",
-             "Description": "first", "IpPermissions": [],
-             "IpPermissionsEgress": [], "Tags": []},
-        ]},
-        {"SecurityGroups": [
-            {"GroupId": "sg-2", "GroupName": "two", "VpcId": "vpc-1",
-             "Description": "second", "IpPermissions": [],
-             "IpPermissionsEgress": [], "Tags": []},
-        ]},
+        {
+            "SecurityGroups": [
+                {
+                    "GroupId": "sg-1",
+                    "GroupName": "one",
+                    "VpcId": "vpc-1",
+                    "Description": "first",
+                    "IpPermissions": [],
+                    "IpPermissionsEgress": [],
+                    "Tags": [],
+                },
+            ]
+        },
+        {
+            "SecurityGroups": [
+                {
+                    "GroupId": "sg-2",
+                    "GroupName": "two",
+                    "VpcId": "vpc-1",
+                    "Description": "second",
+                    "IpPermissions": [],
+                    "IpPermissionsEgress": [],
+                    "Tags": [],
+                },
+            ]
+        },
     ]
     collector = _collector_with_fake_ec2({"describe_security_groups": pages})
     groups = collector.collect_security_groups("ap-southeast-2")
@@ -53,12 +69,30 @@ def test_collect_security_groups_spans_pages():
 
 def test_collect_vpcs_spans_pages():
     pages = [
-        {"Vpcs": [{"VpcId": "vpc-1", "CidrBlock": "10.0.0.0/16",
-                   "State": "available", "IsDefault": False,
-                   "InstanceTenancy": "default", "Tags": []}]},
-        {"Vpcs": [{"VpcId": "vpc-2", "CidrBlock": "10.1.0.0/16",
-                   "State": "available", "IsDefault": False,
-                   "InstanceTenancy": "default", "Tags": []}]},
+        {
+            "Vpcs": [
+                {
+                    "VpcId": "vpc-1",
+                    "CidrBlock": "10.0.0.0/16",
+                    "State": "available",
+                    "IsDefault": False,
+                    "InstanceTenancy": "default",
+                    "Tags": [],
+                }
+            ]
+        },
+        {
+            "Vpcs": [
+                {
+                    "VpcId": "vpc-2",
+                    "CidrBlock": "10.1.0.0/16",
+                    "State": "available",
+                    "IsDefault": False,
+                    "InstanceTenancy": "default",
+                    "Tags": [],
+                }
+            ]
+        },
     ]
     collector = _collector_with_fake_ec2({"describe_vpcs": pages})
     vpcs = collector.collect_vpcs("ap-southeast-2")
@@ -67,18 +101,34 @@ def test_collect_vpcs_spans_pages():
 
 def test_collect_subnets_spans_pages():
     pages = [
-        {"Subnets": [{"SubnetId": "subnet-1", "VpcId": "vpc-1",
-                      "CidrBlock": "10.0.1.0/24",
-                      "AvailabilityZone": "ap-southeast-2a",
-                      "AvailableIpAddressCount": 250,
-                      "MapPublicIpOnLaunch": False,
-                      "State": "available", "Tags": []}]},
-        {"Subnets": [{"SubnetId": "subnet-2", "VpcId": "vpc-1",
-                      "CidrBlock": "10.0.2.0/24",
-                      "AvailabilityZone": "ap-southeast-2b",
-                      "AvailableIpAddressCount": 250,
-                      "MapPublicIpOnLaunch": True,
-                      "State": "available", "Tags": []}]},
+        {
+            "Subnets": [
+                {
+                    "SubnetId": "subnet-1",
+                    "VpcId": "vpc-1",
+                    "CidrBlock": "10.0.1.0/24",
+                    "AvailabilityZone": "ap-southeast-2a",
+                    "AvailableIpAddressCount": 250,
+                    "MapPublicIpOnLaunch": False,
+                    "State": "available",
+                    "Tags": [],
+                }
+            ]
+        },
+        {
+            "Subnets": [
+                {
+                    "SubnetId": "subnet-2",
+                    "VpcId": "vpc-1",
+                    "CidrBlock": "10.0.2.0/24",
+                    "AvailabilityZone": "ap-southeast-2b",
+                    "AvailableIpAddressCount": 250,
+                    "MapPublicIpOnLaunch": True,
+                    "State": "available",
+                    "Tags": [],
+                }
+            ]
+        },
     ]
     collector = _collector_with_fake_ec2({"describe_subnets": pages})
     subnets = collector.collect_subnets("ap-southeast-2")

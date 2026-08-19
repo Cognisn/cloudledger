@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_all_regions(service: str = 'ec2') -> List[str]:
+def get_all_regions(service: str = "ec2") -> List[str]:
     """
     Get list of all AWS regions for a service.
 
@@ -25,18 +25,25 @@ def get_all_regions(service: str = 'ec2') -> List[str]:
         List of region names
     """
     try:
-        ec2_client = boto3.client('ec2', region_name='us-east-1')
+        ec2_client = boto3.client("ec2", region_name="us-east-1")
         response = ec2_client.describe_regions(AllRegions=True)
-        regions = [region['RegionName'] for region in response['Regions']]
+        regions = [region["RegionName"] for region in response["Regions"]]
         logger.debug(f"Retrieved {len(regions)} regions for {service}")
         return sorted(regions)
     except (ClientError, BotoCoreError) as e:
         logger.error(f"Failed to retrieve regions: {e}")
         # Fallback to common regions
         return [
-            'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
-            'eu-west-1', 'eu-west-2', 'eu-central-1',
-            'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1'
+            "us-east-1",
+            "us-east-2",
+            "us-west-1",
+            "us-west-2",
+            "eu-west-1",
+            "eu-west-2",
+            "eu-central-1",
+            "ap-southeast-1",
+            "ap-southeast-2",
+            "ap-northeast-1",
         ]
 
 
@@ -45,7 +52,7 @@ def retry_with_backoff(
     max_attempts: int = 3,
     initial_delay: float = 1.0,
     backoff_factor: float = 2.0,
-    **kwargs
+    **kwargs,
 ) -> Any:
     """
     Retry a function with exponential backoff.
@@ -71,23 +78,35 @@ def retry_with_backoff(
             return func(**kwargs)
         except ClientError as e:
             last_exception = e
-            error_code = e.response.get('Error', {}).get('Code', '')
+            error_code = e.response.get("Error", {}).get("Code", "")
 
             # Don't retry on access denied or resource not found
-            if error_code in ['AccessDenied', 'UnauthorizedOperation', 'ResourceNotFoundException']:
+            if error_code in [
+                "AccessDenied",
+                "UnauthorizedOperation",
+                "ResourceNotFoundException",
+            ]:
                 raise
 
             # Retry on throttling errors
-            if error_code in ['Throttling', 'RequestLimitExceeded', 'TooManyRequestsException']:
+            if error_code in [
+                "Throttling",
+                "RequestLimitExceeded",
+                "TooManyRequestsException",
+            ]:
                 if attempt < max_attempts:
-                    logger.warning(f"Throttled, retrying in {delay}s (attempt {attempt}/{max_attempts})")
+                    logger.warning(
+                        f"Throttled, retrying in {delay}s (attempt {attempt}/{max_attempts})"
+                    )
                     time.sleep(delay)
                     delay *= backoff_factor
                     continue
 
             # Retry on other errors
             if attempt < max_attempts:
-                logger.warning(f"Error: {error_code}, retrying in {delay}s (attempt {attempt}/{max_attempts})")
+                logger.warning(
+                    f"Error: {error_code}, retrying in {delay}s (attempt {attempt}/{max_attempts})"
+                )
                 time.sleep(delay)
                 delay *= backoff_factor
             else:
@@ -110,7 +129,7 @@ def parse_tags(tags: Optional[List[Dict[str, str]]]) -> Dict[str, str]:
     if not tags:
         return {}
 
-    return {tag['Key']: tag['Value'] for tag in tags if 'Key' in tag}
+    return {tag["Key"]: tag["Value"] for tag in tags if "Key" in tag}
 
 
 def is_public_ip(ip_address: Optional[str]) -> bool:
@@ -128,7 +147,7 @@ def is_public_ip(ip_address: Optional[str]) -> bool:
 
     # Parse IP address
     try:
-        octets = [int(octet) for octet in ip_address.split('.')]
+        octets = [int(octet) for octet in ip_address.split(".")]
     except (ValueError, AttributeError):
         return False
 
@@ -153,9 +172,7 @@ def is_public_ip(ip_address: Optional[str]) -> bool:
 
 
 def validate_aws_credentials(
-    access_key: str,
-    secret_key: str,
-    session_token: Optional[str] = None
+    access_key: str, secret_key: str, session_token: Optional[str] = None
 ) -> bool:
     """
     Validate AWS credentials by making a test API call.
@@ -170,10 +187,10 @@ def validate_aws_credentials(
     """
     try:
         sts_client = boto3.client(
-            'sts',
+            "sts",
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            aws_session_token=session_token
+            aws_session_token=session_token,
         )
         sts_client.get_caller_identity()
         return True
@@ -195,6 +212,6 @@ def get_account_id(session: boto3.Session) -> str:
     Raises:
         ClientError if unable to retrieve account ID
     """
-    sts_client = session.client('sts')
+    sts_client = session.client("sts")
     response = sts_client.get_caller_identity()
-    return response['Account']
+    return response["Account"]

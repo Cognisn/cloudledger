@@ -9,10 +9,11 @@ def test_service_and_check_id_from_arn_and_generator():
         "GeneratorId": "prowler-awslambda_function_inside_vpc",
         "Resources": [{"Id": "arn:aws:lambda:ap-southeast-2:123456789012:function:x"}],
     }
-    assert ProwlerIntegration._derive_service_name(data, data["Resources"][0]) == "lambda"
     assert (
-        ProwlerIntegration._derive_check_id(data, {})
-        == "awslambda_function_inside_vpc"
+        ProwlerIntegration._derive_service_name(data, data["Resources"][0]) == "lambda"
+    )
+    assert (
+        ProwlerIntegration._derive_check_id(data, {}) == "awslambda_function_inside_vpc"
     )
 
 

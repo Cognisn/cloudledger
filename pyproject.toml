@@ -1,5 +1,5 @@
 [project]
-name = "cloudledger"
+name = "cognisn-cloudledger"
 dynamic = ["version"]
 description = "Multi-account AWS security scanning and infrastructure ledger with an MCP server for querying scan history"
 readme = "README.md"

@@ -66,7 +66,9 @@ def add(scan_id: str, tags: Tuple[str, ...], database: str):
         if added:
             console.print(f"[green]✓[/green] Added tags: {', '.join(added)}")
         else:
-            console.print("[yellow]No new tags added (all were duplicates or empty)[/yellow]")
+            console.print(
+                "[yellow]No new tags added (all were duplicates or empty)[/yellow]"
+            )
 
 
 @tag_group.command(name="remove")
@@ -85,7 +87,9 @@ def remove(scan_id: str, tags: Tuple[str, ...], database: str):
         db_ops = _open_database(database)
 
         removed_count = db_ops.remove_tags(scan_id, list(tags))
-        console.print(f"[green]✓[/green] Removed {removed_count} tag(s) from scan {scan_id}")
+        console.print(
+            f"[green]✓[/green] Removed {removed_count} tag(s) from scan {scan_id}"
+        )
 
 
 @tag_group.command(name="list")

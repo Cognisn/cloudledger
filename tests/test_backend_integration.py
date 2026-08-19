@@ -118,7 +118,9 @@ def _reachable(url: str) -> None:
         engine = make_engine(url)
         with engine.connect():
             pass
-    except Exception as exc:  # noqa: BLE001 - deliberately broad: any failure means skip
+    except (
+        Exception
+    ) as exc:  # noqa: BLE001 - deliberately broad: any failure means skip
         pytest.skip(f"backend not reachable: {exc}")
 
 

@@ -123,18 +123,26 @@ def dependency_state(conn: sa.Connection, tables: List[str], scan_id: str) -> st
 def resolve_scan_id(conn: sa.Connection, scan_id: Optional[str]) -> str:
     """Return the requested scan_id, or the latest scan when None."""
     if scan_id:
-        row = conn.execute(
-            sa.text("SELECT scan_id FROM scan_metadata WHERE scan_id = :scan_id"),
-            {"scan_id": scan_id},
-        ).mappings().fetchone()
+        row = (
+            conn.execute(
+                sa.text("SELECT scan_id FROM scan_metadata WHERE scan_id = :scan_id"),
+                {"scan_id": scan_id},
+            )
+            .mappings()
+            .fetchone()
+        )
         if not row:
             raise ValueError(f"Scan not found: {scan_id}")
         return scan_id
-    row = conn.execute(
-        sa.text(
-            "SELECT scan_id FROM scan_metadata ORDER BY scan_timestamp DESC LIMIT 1"
+    row = (
+        conn.execute(
+            sa.text(
+                "SELECT scan_id FROM scan_metadata ORDER BY scan_timestamp DESC LIMIT 1"
+            )
         )
-    ).mappings().fetchone()
+        .mappings()
+        .fetchone()
+    )
     if not row:
         raise ValueError("No scans in database")
     return row["scan_id"]

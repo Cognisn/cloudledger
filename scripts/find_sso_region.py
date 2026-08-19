@@ -20,19 +20,19 @@ session_token = getpass.getpass("AWS Session Token: ").strip()
 session = boto3.Session(
     aws_access_key_id=access_key,
     aws_secret_access_key=secret_key,
-    aws_session_token=session_token
+    aws_session_token=session_token,
 )
 
 # Get list of all AWS regions
 print("\nGetting available regions...")
-ec2 = session.client('ec2', region_name='us-east-1')
+ec2 = session.client("ec2", region_name="us-east-1")
 regions_response = ec2.describe_regions()
-all_regions = [r['RegionName'] for r in regions_response['Regions']]
+all_regions = [r["RegionName"] for r in regions_response["Regions"]]
 
 print(f"Testing {len(all_regions)} regions for Identity Centre instance...\n")
 
 # Common regions to test first
-priority_regions = ['ap-southeast-2', 'us-east-1', 'us-west-2', 'eu-west-1']
+priority_regions = ["ap-southeast-2", "us-east-1", "us-west-2", "eu-west-1"]
 
 # Test priority regions first
 test_order = priority_regions + [r for r in all_regions if r not in priority_regions]
@@ -41,23 +41,25 @@ found_instances = []
 
 for region in test_order:
     try:
-        sso_client = session.client('sso-admin', region_name=region)
+        sso_client = session.client("sso-admin", region_name=region)
         response = sso_client.list_instances()
 
-        instances = response.get('Instances', [])
+        instances = response.get("Instances", [])
         if instances:
             print(f"✓ {region:<20} - FOUND {len(instances)} instance(s)!")
             for instance in instances:
-                found_instances.append({
-                    'region': region,
-                    'instance_arn': instance['InstanceArn'],
-                    'identity_store_id': instance['IdentityStoreId']
-                })
+                found_instances.append(
+                    {
+                        "region": region,
+                        "instance_arn": instance["InstanceArn"],
+                        "identity_store_id": instance["IdentityStoreId"],
+                    }
+                )
         else:
             print(f"  {region:<20} - no instances")
 
     except ClientError as e:
-        if e.response['Error']['Code'] == 'AccessDeniedException':
+        if e.response["Error"]["Code"] == "AccessDeniedException":
             print(f"✗ {region:<20} - Access Denied")
         else:
             print(f"✗ {region:<20} - {e.response['Error']['Code']}")
@@ -77,24 +79,22 @@ if found_instances:
 
         # Test permission sets in this region
         try:
-            sso_client = session.client('sso-admin', region_name=inst['region'])
+            sso_client = session.client("sso-admin", region_name=inst["region"])
             ps_response = sso_client.list_permission_sets(
-                InstanceArn=inst['instance_arn'],
-                MaxResults=10
+                InstanceArn=inst["instance_arn"], MaxResults=10
             )
-            ps_count = len(ps_response.get('PermissionSets', []))
+            ps_count = len(ps_response.get("PermissionSets", []))
 
             print(f"\n  Testing permission set access in {inst['region']}...")
             print(f"  ✓ Found {ps_count} permission set(s) (showing first 10)")
 
             # Get permission set names
-            for ps_arn in ps_response.get('PermissionSets', []):
+            for ps_arn in ps_response.get("PermissionSets", []):
                 try:
                     ps_details = sso_client.describe_permission_set(
-                        InstanceArn=inst['instance_arn'],
-                        PermissionSetArn=ps_arn
+                        InstanceArn=inst["instance_arn"], PermissionSetArn=ps_arn
                     )
-                    ps_name = ps_details['PermissionSet'].get('Name', 'Unnamed')
+                    ps_name = ps_details["PermissionSet"].get("Name", "Unnamed")
                     print(f"    - {ps_name}")
                 except Exception as e:
                     print(f"    - (unable to get details: {e})")

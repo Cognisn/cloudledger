@@ -6,12 +6,12 @@ from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerIntegration, ProwlerRunner
 
 __all__ = [
-    'CredentialManager',
-    'AccountConfig',
-    'AWSCredentials',
-    'CSVAccountReader',
-    'CSVInputError',
-    'AWSCollector',
-    'ProwlerIntegration',
-    'ProwlerRunner'
+    "CredentialManager",
+    "AccountConfig",
+    "AWSCredentials",
+    "CSVAccountReader",
+    "CSVInputError",
+    "AWSCollector",
+    "ProwlerIntegration",
+    "ProwlerRunner",
 ]

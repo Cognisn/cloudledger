@@ -32,7 +32,7 @@ session_token = getpass.getpass("AWS Session Token: ").strip()
 session = boto3.Session(
     aws_access_key_id=access_key,
     aws_secret_access_key=secret_key,
-    aws_session_token=session_token
+    aws_session_token=session_token,
 )
 
 print("\n" + "=" * 80)
@@ -40,7 +40,7 @@ print("TEST 1: Verify Credentials")
 print("=" * 80)
 
 try:
-    sts_client = session.client('sts')
+    sts_client = session.client("sts")
     identity = sts_client.get_caller_identity()
     print(f"✓ Credentials valid")
     print(f"  Account: {identity['Account']}")
@@ -54,12 +54,12 @@ print("TEST 2: List SSO Instances (us-east-1)")
 print("=" * 80)
 
 try:
-    sso_client = session.client('sso-admin', region_name='us-east-1')
+    sso_client = session.client("sso-admin", region_name="us-east-1")
 
     print("Calling sso-admin:ListInstances...")
     instances_response = sso_client.list_instances()
 
-    instances = instances_response.get('Instances', [])
+    instances = instances_response.get("Instances", [])
     print(f"✓ API call successful")
     print(f"  Found {len(instances)} SSO instance(s)")
 
@@ -84,55 +84,60 @@ try:
             # Try to list permission sets for this instance
             print(f"\n    Testing permission set access...")
             try:
-                ps_paginator = sso_client.get_paginator('list_permission_sets')
+                ps_paginator = sso_client.get_paginator("list_permission_sets")
                 ps_count = 0
-                for page in ps_paginator.paginate(InstanceArn=instance['InstanceArn']):
-                    ps_count += len(page.get('PermissionSets', []))
+                for page in ps_paginator.paginate(InstanceArn=instance["InstanceArn"]):
+                    ps_count += len(page.get("PermissionSets", []))
 
                 print(f"    ✓ Found {ps_count} permission set(s)")
 
                 if ps_count > 0:
                     # List first few permission set names
                     ps_response = sso_client.list_permission_sets(
-                        InstanceArn=instance['InstanceArn'],
-                        MaxResults=5
+                        InstanceArn=instance["InstanceArn"], MaxResults=5
                     )
 
                     print(f"\n    Permission Set Names (first 5):")
-                    for ps_arn in ps_response.get('PermissionSets', []):
+                    for ps_arn in ps_response.get("PermissionSets", []):
                         try:
                             ps_details = sso_client.describe_permission_set(
-                                InstanceArn=instance['InstanceArn'],
-                                PermissionSetArn=ps_arn
+                                InstanceArn=instance["InstanceArn"],
+                                PermissionSetArn=ps_arn,
                             )
-                            ps_name = ps_details['PermissionSet'].get('Name', 'Unnamed')
+                            ps_name = ps_details["PermissionSet"].get("Name", "Unnamed")
                             print(f"      - {ps_name}")
                         except ClientError as e:
-                            print(f"      - {ps_arn} (unable to get details: {e.response['Error']['Code']})")
+                            print(
+                                f"      - {ps_arn} (unable to get details: {e.response['Error']['Code']})"
+                            )
 
             except ClientError as e:
-                error_code = e.response['Error']['Code']
-                error_msg = e.response['Error']['Message']
+                error_code = e.response["Error"]["Code"]
+                error_msg = e.response["Error"]["Message"]
                 print(f"    ✗ Failed to list permission sets: {error_code}")
                 print(f"      Message: {error_msg}")
 
-                if error_code == 'AccessDeniedException':
+                if error_code == "AccessDeniedException":
                     print(f"\n    ⚠ PERMISSION DENIED!")
-                    print(f"      Your credentials do not have permission to list SSO permission sets.")
+                    print(
+                        f"      Your credentials do not have permission to list SSO permission sets."
+                    )
                     print(f"      Required IAM permissions:")
                     print(f"        - sso:ListInstances")
                     print(f"        - sso:ListPermissionSets")
                     print(f"        - sso:DescribePermissionSet")
 
 except ClientError as e:
-    error_code = e.response['Error']['Code']
-    error_msg = e.response['Error']['Message']
+    error_code = e.response["Error"]["Code"]
+    error_msg = e.response["Error"]["Message"]
     print(f"✗ Failed to access SSO API: {error_code}")
     print(f"  Message: {error_msg}")
 
-    if error_code == 'AccessDeniedException':
+    if error_code == "AccessDeniedException":
         print(f"\n⚠ PERMISSION DENIED!")
-        print(f"  Your credentials do not have permission to access SSO/Identity Centre.")
+        print(
+            f"  Your credentials do not have permission to access SSO/Identity Centre."
+        )
         print(f"  Required IAM permissions:")
         print(f"    - sso:ListInstances")
         print(f"    - sso:ListPermissionSets")
@@ -143,6 +148,7 @@ except ClientError as e:
 except Exception as e:
     print(f"✗ Unexpected error: {e}")
     import traceback
+
     traceback.print_exc()
 
 print("\n" + "=" * 80)

@@ -21,7 +21,7 @@ for table in tables:
 
 print("\n" + "=" * 80)
 print("Looking for SSO/Identity Centre tables:")
-sso_tables = [t[0] for t in tables if 'sso' in t[0].lower()]
+sso_tables = [t[0] for t in tables if "sso" in t[0].lower()]
 if sso_tables:
     print(f"  Found: {', '.join(sso_tables)}")
 else:

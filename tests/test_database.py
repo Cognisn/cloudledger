@@ -63,7 +63,7 @@ class TestDatabaseOperations:
             scan_timestamp=datetime.utcnow(),
             prowler_level="2",
             regions_scanned=["us-east-1", "us-west-2"],
-            scan_status="in_progress"
+            scan_status="in_progress",
         )
 
         db_ops.insert_scan_metadata(metadata)
@@ -71,8 +71,8 @@ class TestDatabaseOperations:
         # Verify insertion
         scans = db_ops.get_all_scans()
         assert len(scans) == 1
-        assert scans[0]['scan_id'] == "test-scan-123"
-        assert scans[0]['account_name'] == "Test Account"
+        assert scans[0]["scan_id"] == "test-scan-123"
+        assert scans[0]["account_name"] == "Test Account"
 
     def test_insert_ec2_instances(self, db_ops):
         """Test inserting EC2 instances."""
@@ -84,7 +84,7 @@ class TestDatabaseOperations:
             scan_timestamp=datetime.utcnow(),
             prowler_level=None,
             regions_scanned=["us-east-1"],
-            scan_status="in_progress"
+            scan_status="in_progress",
         )
         db_ops.insert_scan_metadata(metadata)
 
@@ -104,7 +104,7 @@ class TestDatabaseOperations:
                 launch_time=datetime.utcnow(),
                 security_groups=["sg-12345678"],
                 tags={"Name": "Test Instance"},
-                raw_data={}
+                raw_data={},
             )
         ]
 
@@ -123,7 +123,7 @@ class TestDatabaseOperations:
             scan_timestamp=datetime.utcnow(),
             prowler_level="1",
             regions_scanned=["us-east-1"],
-            scan_status="in_progress"
+            scan_status="in_progress",
         )
         db_ops.insert_scan_metadata(metadata)
 
@@ -132,8 +132,8 @@ class TestDatabaseOperations:
 
         # Verify update
         scans = db_ops.get_all_scans()
-        assert scans[0]['scan_status'] == "completed"
-        assert scans[0]['scan_duration_seconds'] == 300.5
+        assert scans[0]["scan_status"] == "completed"
+        assert scans[0]["scan_duration_seconds"] == 300.5
 
     def test_get_latest_scan_for_account(self, db_ops):
         """Test retrieving latest scan for an account."""
@@ -146,15 +146,15 @@ class TestDatabaseOperations:
                 scan_timestamp=datetime.utcnow(),
                 prowler_level="2",
                 regions_scanned=["us-east-1"],
-                scan_status="completed"
+                scan_status="completed",
             )
             db_ops.insert_scan_metadata(metadata)
 
         # Get latest scan
         latest = db_ops.get_latest_scan_for_account("123456789012")
         assert latest is not None
-        assert latest['account_number'] == "123456789012"
+        assert latest["account_number"] == "123456789012"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

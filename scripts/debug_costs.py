@@ -35,10 +35,12 @@ print("-" * 80)
 
 total_all = 0.0
 for row in cursor.fetchall():
-    print(f"{row['account_name']:<40} {row['account_number']:<15} ${row['total_cost']:>14,.2f} {row['record_count']:>8}")
-    total_all += row['total_cost']
-    earliest = row['earliest']
-    latest = row['latest']
+    print(
+        f"{row['account_name']:<40} {row['account_number']:<15} ${row['total_cost']:>14,.2f} {row['record_count']:>8}"
+    )
+    total_all += row["total_cost"]
+    earliest = row["earliest"]
+    latest = row["latest"]
 
 print("-" * 80)
 print(f"{'TOTAL':<40} {'':<15} ${total_all:>14,.2f}")
@@ -62,12 +64,14 @@ print("-" * 80)
 
 account_scan_counts = {}
 for row in cursor.fetchall():
-    acct_name = row['account_name']
+    acct_name = row["account_name"]
     if acct_name not in account_scan_counts:
         account_scan_counts[acct_name] = 0
     account_scan_counts[acct_name] += 1
 
-    print(f"{row['account_name']:<30} {row['scan_id']:<40} {row['cost_records']:>15} ${row['total_cost'] or 0:>14,.2f}")
+    print(
+        f"{row['account_name']:<30} {row['scan_id']:<40} {row['cost_records']:>15} ${row['total_cost'] or 0:>14,.2f}"
+    )
 
 print("\n\n3. ACCOUNTS WITH MULTIPLE SCANS:")
 print("-" * 80)
@@ -79,8 +83,9 @@ for acct, count in account_scan_counts.items():
 print("\n\n4. DETAILED BREAKDOWN FOR KEY ACCOUNTS:")
 print("-" * 80)
 
-for account_name in ['FrontierSoftwareOrg', 'Victor Miloshis']:
-    cursor.execute("""
+for account_name in ["FrontierSoftwareOrg", "Victor Miloshis"]:
+    cursor.execute(
+        """
         SELECT cd.service_name, SUM(cd.amount) as service_cost
         FROM cost_data cd
         JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
@@ -88,7 +93,9 @@ for account_name in ['FrontierSoftwareOrg', 'Victor Miloshis']:
         GROUP BY cd.service_name
         ORDER BY service_cost DESC
         LIMIT 10
-    """, (account_name,))
+    """,
+        (account_name,),
+    )
 
     print(f"\n{account_name} - Top 10 Services:")
     print(f"  {'Service':<50} {'Cost':>15}")

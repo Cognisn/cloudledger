@@ -108,7 +108,9 @@ def test_setup_sqlite_rerun_reuses_current_path_as_default(monkeypatch, tmp_path
     assert str(db_path) in second.output
 
 
-def test_setup_server_flow_reports_connection_failure_and_masks_password(monkeypatch, tmp_path):
+def test_setup_server_flow_reports_connection_failure_and_masks_password(
+    monkeypatch, tmp_path
+):
     monkeypatch.setenv("HOME", str(tmp_path))
 
     settings = _RecordingSettings()
@@ -122,17 +124,20 @@ def test_setup_server_flow_reports_connection_failure_and_masks_password(monkeyp
     unreachable_port = _unused_local_port()
     password = "s3cr3t-p@ss"
 
-    user_input = "\n".join(
-        [
-            "postgres",
-            "localhost",
-            str(unreachable_port),
-            "clouddb",
-            "cluser",
-            password,
-            password,
-        ]
-    ) + "\n"
+    user_input = (
+        "\n".join(
+            [
+                "postgres",
+                "localhost",
+                str(unreachable_port),
+                "clouddb",
+                "cluser",
+                password,
+                password,
+            ]
+        )
+        + "\n"
+    )
 
     result = CliRunner().invoke(cli, ["setup"], input=user_input)
 

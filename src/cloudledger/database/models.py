@@ -19,15 +19,35 @@ class ScanMetadata(BaseModel):
     account_name: str = Field(description="Friendly name for the AWS account")
     account_number: str = Field(description="12-digit AWS account ID")
     scan_timestamp: datetime = Field(description="When the scan was initiated")
-    prowler_level: Optional[str] = Field(default=None, description="Prowler scan level (1, 2, 3, or skip)")
+    prowler_level: Optional[str] = Field(
+        default=None, description="Prowler scan level (1, 2, 3, or skip)"
+    )
     regions_scanned: List[str] = Field(description="List of AWS regions scanned")
-    scan_status: str = Field(default="in_progress", description="Status: in_progress, completed, failed")
-    error_message: Optional[str] = Field(default=None, description="Error message if scan failed")
-    scan_duration_seconds: Optional[float] = Field(default=None, description="Total scan duration")
-    org_member: Optional[bool] = Field(default=None, description="Whether the scanned account belongs to an AWS Organization")
-    is_management_account: Optional[bool] = Field(default=None, description="Whether the scanned account is the organisation's management account")
-    management_account_id: Optional[str] = Field(default=None, description="12-digit account ID of the organisation's management account")
-    management_account_name: Optional[str] = Field(default=None, description="Friendly name of the organisation's management account")
+    scan_status: str = Field(
+        default="in_progress", description="Status: in_progress, completed, failed"
+    )
+    error_message: Optional[str] = Field(
+        default=None, description="Error message if scan failed"
+    )
+    scan_duration_seconds: Optional[float] = Field(
+        default=None, description="Total scan duration"
+    )
+    org_member: Optional[bool] = Field(
+        default=None,
+        description="Whether the scanned account belongs to an AWS Organization",
+    )
+    is_management_account: Optional[bool] = Field(
+        default=None,
+        description="Whether the scanned account is the organisation's management account",
+    )
+    management_account_id: Optional[str] = Field(
+        default=None,
+        description="12-digit account ID of the organisation's management account",
+    )
+    management_account_name: Optional[str] = Field(
+        default=None,
+        description="Friendly name of the organisation's management account",
+    )
 
 
 class EC2Instance(BaseModel):
@@ -537,7 +557,9 @@ class IAMPolicy(BaseModel):
     description: Optional[str] = None
     create_date: datetime
     update_date: datetime
-    policy_document: Dict[str, Any] = Field(default_factory=dict)  # The actual policy JSON
+    policy_document: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # The actual policy JSON
     attached_users: List[str] = Field(default_factory=list)  # List of user names
     attached_roles: List[str] = Field(default_factory=list)  # List of role names
     attached_groups: List[str] = Field(default_factory=list)  # List of group names
@@ -615,9 +637,13 @@ class ECSCluster(BaseModel):
     active_services_count: int = 0
     # Configuration
     capacity_providers: List[str] = Field(default_factory=list)
-    default_capacity_provider_strategy: List[Dict[str, Any]] = Field(default_factory=list)
+    default_capacity_provider_strategy: List[Dict[str, Any]] = Field(
+        default_factory=list
+    )
     # Settings
-    settings: List[Dict[str, str]] = Field(default_factory=list)  # containerInsights, etc.
+    settings: List[Dict[str, str]] = Field(
+        default_factory=list
+    )  # containerInsights, etc.
     # Statistics
     statistics: List[Dict[str, Any]] = Field(default_factory=list)
     tags: Dict[str, str] = Field(default_factory=dict)
@@ -646,18 +672,24 @@ class ECSService(BaseModel):
     # Capacity provider strategy
     capacity_provider_strategy: List[Dict[str, Any]] = Field(default_factory=list)
     # Networking
-    network_configuration: Dict[str, Any] = Field(default_factory=dict)  # awsvpcConfiguration
+    network_configuration: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # awsvpcConfiguration
     # Load balancing
-    load_balancers: List[Dict[str, Any]] = Field(default_factory=list)  # target_group_arn, container_name, container_port
+    load_balancers: List[Dict[str, Any]] = Field(
+        default_factory=list
+    )  # target_group_arn, container_name, container_port
     # Service discovery
     service_registries: List[Dict[str, Any]] = Field(default_factory=list)
     # Deployment
-    deployment_configuration: Dict[str, Any] = Field(default_factory=dict)  # max, min healthy percent
+    deployment_configuration: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # max, min healthy percent
     deployments: List[Dict[str, Any]] = Field(default_factory=list)
     # Health
     health_check_grace_period_seconds: Optional[int] = None
     # Scheduling
-    scheduling_strategy: str = 'REPLICA'  # REPLICA or DAEMON
+    scheduling_strategy: str = "REPLICA"  # REPLICA or DAEMON
     # Dates
     created_at: Optional[datetime] = None
     tags: Dict[str, str] = Field(default_factory=dict)
@@ -676,7 +708,9 @@ class ECSTaskDefinition(BaseModel):
     region: str
     status: str  # ACTIVE, INACTIVE, DELETE_IN_PROGRESS
     # Requirements
-    requires_compatibilities: List[str] = Field(default_factory=list)  # EC2, FARGATE, EXTERNAL
+    requires_compatibilities: List[str] = Field(
+        default_factory=list
+    )  # EC2, FARGATE, EXTERNAL
     network_mode: str  # bridge, host, awsvpc, none
     cpu: Optional[str] = None  # For Fargate: '256', '512', '1024', etc.
     memory: Optional[str] = None  # For Fargate: '512', '1024', '2048', etc.
@@ -698,7 +732,9 @@ class ECSTaskDefinition(BaseModel):
     # Ephemeral storage
     ephemeral_storage: Optional[Dict[str, int]] = None  # sizeInGiB
     # Runtime platform
-    runtime_platform: Optional[Dict[str, str]] = None  # operatingSystemFamily, cpuArchitecture
+    runtime_platform: Optional[Dict[str, str]] = (
+        None  # operatingSystemFamily, cpuArchitecture
+    )
     # Dates
     registered_at: Optional[datetime] = None
     deregistered_at: Optional[datetime] = None
@@ -758,7 +794,9 @@ class EKSNodeGroup(BaseModel):
     # Status
     status: str  # CREATING, ACTIVE, UPDATING, DELETING, CREATE_FAILED, DELETE_FAILED, DEGRADED
     # Capacity
-    scaling_config: Dict[str, int] = Field(default_factory=dict)  # minSize, maxSize, desiredSize
+    scaling_config: Dict[str, int] = Field(
+        default_factory=dict
+    )  # minSize, maxSize, desiredSize
     instance_types: List[str] = Field(default_factory=list)
     # AMI
     ami_type: Optional[str] = None  # AL2_x86_64, AL2_x86_64_GPU, AL2_ARM_64, etc.
@@ -773,11 +811,13 @@ class EKSNodeGroup(BaseModel):
     # Disk
     disk_size: Optional[int] = None  # GiB
     # Capacity type
-    capacity_type: str = 'ON_DEMAND'  # ON_DEMAND or SPOT
+    capacity_type: str = "ON_DEMAND"  # ON_DEMAND or SPOT
     # Launch template
     launch_template: Optional[Dict[str, Any]] = None
     # Update config
-    update_config: Optional[Dict[str, int]] = None  # maxUnavailable, maxUnavailablePercentage
+    update_config: Optional[Dict[str, int]] = (
+        None  # maxUnavailable, maxUnavailablePercentage
+    )
     # Health
     health: Optional[Dict[str, Any]] = None
     # Dates
@@ -799,11 +839,15 @@ class ECRRepository(BaseModel):
     region: str
     registry_id: str
     # Scanning
-    image_scanning_configuration: Dict[str, bool] = Field(default_factory=dict)  # scanOnPush
+    image_scanning_configuration: Dict[str, bool] = Field(
+        default_factory=dict
+    )  # scanOnPush
     # Tag mutability
-    image_tag_mutability: str = 'MUTABLE'  # MUTABLE or IMMUTABLE
+    image_tag_mutability: str = "MUTABLE"  # MUTABLE or IMMUTABLE
     # Encryption
-    encryption_configuration: Dict[str, Any] = Field(default_factory=dict)  # encryptionType, kmsKey
+    encryption_configuration: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # encryptionType, kmsKey
     # Dates
     created_at: Optional[datetime] = None
     tags: Dict[str, str] = Field(default_factory=dict)
@@ -828,7 +872,9 @@ class ECRImage(BaseModel):
     image_pushed_at: Optional[datetime] = None
     # Scan findings
     image_scan_status: Optional[str] = None  # IN_PROGRESS, COMPLETE, FAILED, etc.
-    image_scan_findings_summary: Optional[Dict[str, Any]] = None  # findingSeverityCounts
+    image_scan_findings_summary: Optional[Dict[str, Any]] = (
+        None  # findingSeverityCounts
+    )
     last_recorded_pull_time: Optional[datetime] = None
     # Artifact media type
     artifact_media_type: Optional[str] = None
@@ -846,7 +892,9 @@ class APIGatewayRestAPI(BaseModel):
     region: str
     description: Optional[str] = None
     # Endpoint configuration
-    endpoint_configuration: Dict[str, Any] = Field(default_factory=dict)  # types: EDGE, REGIONAL, PRIVATE
+    endpoint_configuration: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # types: EDGE, REGIONAL, PRIVATE
     # Versioning
     version: Optional[str] = None
     # Dates
@@ -959,18 +1007,22 @@ class CloudFrontDistribution(BaseModel):
     default_cache_behavior: Dict[str, Any] = Field(default_factory=dict)
     cache_behaviors: List[Dict[str, Any]] = Field(default_factory=list)
     # SSL/TLS
-    viewer_certificate: Dict[str, Any] = Field(default_factory=dict)  # ACMCertificateArn, SSLSupportMethod, etc.
+    viewer_certificate: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # ACMCertificateArn, SSLSupportMethod, etc.
     # Restrictions
     geo_restriction: Optional[Dict[str, Any]] = None
     # WAF
     web_acl_id: Optional[str] = None  # AWS WAF Web ACL ID
     # HTTP version
-    http_version: str = 'http2'  # http1.1, http2, http2and3, http3
+    http_version: str = "http2"  # http1.1, http2, http2and3, http3
     is_ipv6_enabled: bool = True
     # Logging
     logging: Optional[Dict[str, Any]] = None  # bucket, prefix, enabled
     # Price class
-    price_class: str = 'PriceClass_All'  # PriceClass_100, PriceClass_200, PriceClass_All
+    price_class: str = (
+        "PriceClass_All"  # PriceClass_100, PriceClass_200, PriceClass_All
+    )
     # Custom error responses
     custom_error_responses: List[Dict[str, Any]] = Field(default_factory=list)
     # Comment
@@ -1143,7 +1195,9 @@ class ConfigRecorder(BaseModel):
     # Role ARN
     role_arn: str
     # Recording group
-    recording_group: Dict[str, Any] = Field(default_factory=dict)  # allSupported, includeGlobalResourceTypes, resourceTypes
+    recording_group: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # allSupported, includeGlobalResourceTypes, resourceTypes
     # Status
     is_recording: bool = False
     last_status: Optional[str] = None
@@ -1167,11 +1221,15 @@ class ConfigRule(BaseModel):
     # Scope
     scope: Optional[Dict[str, Any]] = None
     # Source
-    source: Dict[str, Any] = Field(default_factory=dict)  # owner, sourceIdentifier, sourceDetails
+    source: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # owner, sourceIdentifier, sourceDetails
     # Compliance
-    compliance_type: Optional[str] = None  # COMPLIANT, NON_COMPLIANT, NOT_APPLICABLE, INSUFFICIENT_DATA
+    compliance_type: Optional[str] = (
+        None  # COMPLIANT, NON_COMPLIANT, NOT_APPLICABLE, INSUFFICIENT_DATA
+    )
     # Config rule state
-    config_rule_state: str = 'ACTIVE'  # ACTIVE, DELETING, DELETING_RESULTS, EVALUATING
+    config_rule_state: str = "ACTIVE"  # ACTIVE, DELETING, DELETING_RESULTS, EVALUATING
     # Maximum execution frequency
     maximum_execution_frequency: Optional[str] = None
     raw_data: Dict[str, Any] = Field(default_factory=dict)
@@ -1193,7 +1251,9 @@ class BedrockModel(BaseModel):
     customization_type: Optional[str] = None  # FINE_TUNING, CONTINUED_PRE_TRAINING
     base_model_arn: Optional[str] = None
     # Inference types
-    inference_types_supported: List[str] = Field(default_factory=list)  # ON_DEMAND, PROVISIONED
+    inference_types_supported: List[str] = Field(
+        default_factory=list
+    )  # ON_DEMAND, PROVISIONED
     # Input/output modalities
     input_modalities: List[str] = Field(default_factory=list)  # TEXT, IMAGE, EMBEDDING
     output_modalities: List[str] = Field(default_factory=list)
@@ -1566,14 +1626,18 @@ class MSKCluster(BaseModel):
     # Creation time
     creation_time: Optional[datetime] = None
     # Broker node group info
-    broker_node_group_info: Dict[str, Any] = Field(default_factory=dict)  # instanceType, clientSubnets, securityGroups, storageInfo
+    broker_node_group_info: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # instanceType, clientSubnets, securityGroups, storageInfo
     # Number of broker nodes
     number_of_broker_nodes: int
     # Encryption
     encryption_in_transit: Optional[Dict[str, Any]] = None  # clientBroker, inCluster
     encryption_at_rest_kms_key_arn: Optional[str] = None
     # Enhanced monitoring
-    enhanced_monitoring: Optional[str] = None  # DEFAULT, PER_BROKER, PER_TOPIC_PER_BROKER, PER_TOPIC_PER_PARTITION
+    enhanced_monitoring: Optional[str] = (
+        None  # DEFAULT, PER_BROKER, PER_TOPIC_PER_BROKER, PER_TOPIC_PER_PARTITION
+    )
     # Open monitoring (Prometheus)
     open_monitoring: Optional[Dict[str, Any]] = None
     # Logging
@@ -1611,13 +1675,21 @@ class DynamoDBTable(BaseModel):
     # Creation
     creation_date_time: Optional[datetime] = None
     # Key schema
-    key_schema: List[Dict[str, str]] = Field(default_factory=list)  # AttributeName, KeyType
+    key_schema: List[Dict[str, str]] = Field(
+        default_factory=list
+    )  # AttributeName, KeyType
     # Attribute definitions
-    attribute_definitions: List[Dict[str, str]] = Field(default_factory=list)  # AttributeName, AttributeType
+    attribute_definitions: List[Dict[str, str]] = Field(
+        default_factory=list
+    )  # AttributeName, AttributeType
     # Billing mode
-    billing_mode_summary: Optional[Dict[str, Any]] = None  # BillingMode, LastUpdateToPayPerRequestDateTime
+    billing_mode_summary: Optional[Dict[str, Any]] = (
+        None  # BillingMode, LastUpdateToPayPerRequestDateTime
+    )
     # Provisioned throughput
-    provisioned_throughput: Optional[Dict[str, Any]] = None  # ReadCapacityUnits, WriteCapacityUnits
+    provisioned_throughput: Optional[Dict[str, Any]] = (
+        None  # ReadCapacityUnits, WriteCapacityUnits
+    )
     # Table size
     table_size_bytes: int = 0
     item_count: int = 0
@@ -1641,7 +1713,9 @@ class DynamoDBTable(BaseModel):
     # Continuous backups
     continuous_backups_status: Optional[str] = None  # ENABLED, DISABLED
     # Table class
-    table_class_summary: Optional[Dict[str, str]] = None  # TableClass, LastUpdateDateTime
+    table_class_summary: Optional[Dict[str, str]] = (
+        None  # TableClass, LastUpdateDateTime
+    )
     # Deletion protection
     deletion_protection_enabled: bool = False
     tags: Dict[str, str] = Field(default_factory=dict)
