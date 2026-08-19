@@ -7,6 +7,7 @@ Uses Australian English in all documentation and comments.
 
 import json
 import logging
+from datetime import datetime, timedelta, UTC
 from typing import Any, Dict
 import ipaddress
 
@@ -2513,10 +2514,14 @@ class QueryHandler:
 
             # 3. Old EBS snapshots
             if not resource_type or resource_type == "ebs_snapshot":
-                age_days_expr = (
-                    sa.func.julianday("now")
-                    - sa.func.julianday(t_ebs_snapshots.c.start_time)
-                ).label("age_days")
+                # SQLite's julianday() is not portable across dialects. The
+                # cutoff is computed in Python and compared against the
+                # ISO-formatted start_time string lexicographically; age_days
+                # is likewise derived in Python after fetch rather than in
+                # SQL, preserving the same whole-number-of-days truncation
+                # the legacy int(julianday_diff) produced.
+                now = datetime.now(UTC)
+                cutoff = (now - timedelta(days=age_days)).isoformat()
                 stmt = (
                     sa.select(
                         t_ebs_snapshots.c.snapshot_id,
@@ -2529,7 +2534,6 @@ class QueryHandler:
                         t_ebs_snapshots.c.scan_id,
                         t_scan_metadata.c.account_name,
                         t_scan_metadata.c.account_number,
-                        age_days_expr,
                     )
                     .select_from(
                         t_ebs_snapshots.join(
@@ -2538,7 +2542,8 @@ class QueryHandler:
                         )
                     )
                     .where(
-                        age_days_expr > age_days, t_ebs_snapshots.c.state == "completed"
+                        t_ebs_snapshots.c.start_time < cutoff,
+                        t_ebs_snapshots.c.state == "completed",
                     )
                 )
                 if scan_id:
@@ -2547,6 +2552,7 @@ class QueryHandler:
                 old_snapshots = []
                 for row in conn.execute(stmt):
                     tags = json.loads(row[6]) if row[6] else {}
+                    start_time = datetime.fromisoformat(row[4].replace("Z", "+00:00"))
                     old_snapshots.append(
                         {
                             "snapshot_id": row[0],
@@ -2558,7 +2564,7 @@ class QueryHandler:
                             "tags": tags,
                             "account_name": row[8],
                             "account_number": row[9],
-                            "age_days": int(row[10]),
+                            "age_days": (now - start_time).days,
                             "estimated_monthly_cost": row[3]
                             * 0.05,  # $0.05/GB/month for snapshots
                         }
