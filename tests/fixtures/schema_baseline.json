@@ -1,0 +1,8897 @@
+{
+  "tables": {
+    "account_security_posture": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_summary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "password_policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "password_policy_exists",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "account_public_access_block",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "credential_report_generated",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_posture_scan": [
+          "scan_id"
+        ]
+      }
+    },
+    "api_gateway_http_apis": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "api_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "protocol_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "api_endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cors_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "route_selection_expression",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "disable_execute_api_endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "disable_schema_validation",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "import_info",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_apigw_http_region": [
+          "region"
+        ]
+      }
+    },
+    "api_gateway_rest_apis": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "api_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "endpoint_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "api_key_source",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "minimum_compression_size",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "binary_media_types",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "disable_execute_api_endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_apigw_rest_region": [
+          "region"
+        ]
+      }
+    },
+    "api_gateway_stages": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "api_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "stage_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "api_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "deployment_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "last_updated_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "access_log_settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "client_certificate_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "throttle_settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "method_settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "variables",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "tracing_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "web_acl_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "auto_deploy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "route_settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_route_settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_apigw_stage_type": [
+          "api_type"
+        ]
+      }
+    },
+    "auto_scaling_groups": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "auto_scaling_group_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "auto_scaling_group_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "launch_configuration_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "launch_template",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "min_size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "max_size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "desired_capacity",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "default_cooldown",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "availability_zones",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "load_balancer_names",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "target_group_arns",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "health_check_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "health_check_grace_period",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "vpc_zone_identifier",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instances",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_time",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_asg_region": [
+          "region"
+        ]
+      }
+    },
+    "bedrock_agents": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "agent_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "agent_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "agent_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "agent_version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "agent_resource_role_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "foundation_model",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instruction",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "idle_session_ttl_in_seconds",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "agent_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "updated_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "prepared_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_br_agent_status": [
+          "agent_status"
+        ]
+      }
+    },
+    "bedrock_guardrails": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "guardrail_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "guardrail_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "guardrail_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "content_policy_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "topic_policy_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "word_policy_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "sensitive_information_policy_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "blocked_input_messaging",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "blocked_outputs_messaging",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "updated_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_br_guard_status": [
+          "status"
+        ]
+      }
+    },
+    "bedrock_knowledge_bases": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "knowledge_base_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "knowledge_base_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "knowledge_base_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "role_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "knowledge_base_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "storage_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "updated_at_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_br_kb_status": [
+          "status"
+        ]
+      }
+    },
+    "bedrock_models": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "model_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "model_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "model_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "provider_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "customization_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "base_model_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "inference_types_supported",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "input_modalities",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "output_modalities",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "response_streaming_supported",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_br_model_provider": [
+          "provider_name"
+        ]
+      }
+    },
+    "cloudfront_distributions": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "distribution_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "distribution_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "domain_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "enabled",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "aliases",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "origins",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "origin_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_root_object",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_cache_behavior",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_behaviors",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "viewer_certificate",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "geo_restriction",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "web_acl_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "'http2'",
+          "name": "http_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "1",
+          "name": "is_ipv6_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "logging",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "'PriceClass_All'",
+          "name": "price_class",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "custom_error_responses",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "comment",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "last_modified_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_cf_dist_enabled": [
+          "enabled"
+        ]
+      }
+    },
+    "cloudtrail_trails": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "trail_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "trail_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "s3_bucket_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "s3_key_prefix",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "sns_topic_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "sns_topic_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cloud_watch_logs_log_group_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cloud_watch_logs_role_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "is_multi_region_trail",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "is_organization_trail",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "1",
+          "name": "include_global_service_events",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "is_logging",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "has_event_selectors",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "has_insight_selectors",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "home_region",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ct_logging": [
+          "is_logging"
+        ]
+      }
+    },
+    "cloudwatch_log_groups": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "log_group_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "log_group_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "retention_in_days",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "stored_bytes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "metric_filter_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_cw_lg_region": [
+          "region"
+        ]
+      }
+    },
+    "config_recorders": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "recorder_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "role_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "recording_group",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "is_recording",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "last_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "last_start_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "last_stop_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_cfg_rec_recording": [
+          "is_recording"
+        ]
+      }
+    },
+    "config_rules": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "rule_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "rule_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "rule_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scope",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "source",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "compliance_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "'ACTIVE'",
+          "name": "config_rule_state",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "maximum_execution_frequency",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_cfg_rule_compliance": [
+          "compliance_type"
+        ]
+      }
+    },
+    "cost_data": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_number",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "time_period_start",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "time_period_end",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "service_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "amount",
+          "notnull": 1,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "default": null,
+          "name": "currency",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "unit",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_cost_period": [
+          "time_period_start",
+          "time_period_end"
+        ]
+      }
+    },
+    "direct_connect_connections": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "connection_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "connection_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "connection_state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "location",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bandwidth",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vlan",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "partner_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "lag_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "aws_device",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "aws_device_v2",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "aws_logical_device_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "jumbo_frame_capable",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "has_logical_redundancy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "provider_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "mac_sec_capable",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "encryption_mode",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "loa_issue_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_dx_state": [
+          "connection_state"
+        ]
+      }
+    },
+    "directory_services": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "directory_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "directory_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "directory_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "size",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "edition",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_ids",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "dns_ip_addresses",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "access_url",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "stage",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "sso_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "radius_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "launch_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "stage_last_updated_date_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "alias",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "short_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ds_vpc": [
+          "vpc_id"
+        ]
+      }
+    },
+    "dynamodb_tables": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "table_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "table_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "table_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "table_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_date_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "key_schema",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attribute_definitions",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "billing_mode_summary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "provisioned_throughput",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "table_size_bytes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "item_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "global_secondary_indexes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "local_secondary_indexes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "stream_specification",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "latest_stream_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "latest_stream_label",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "restore_summary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "sse_description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "point_in_time_recovery_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "global_table_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "replicas",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "continuous_backups_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "table_class_summary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "deletion_protection_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ddb_status": [
+          "table_status"
+        ]
+      }
+    },
+    "ebs_snapshots": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "snapshot_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volume_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volume_size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "encrypted",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "start_time",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "progress",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "owner_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ebs_snap_start": [
+          "start_time"
+        ]
+      }
+    },
+    "ebs_volumes": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volume_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "volume_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "iops",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "throughput",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "encrypted",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "create_time",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "availability_zone",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "snapshot_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_instance_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "device_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attachment_state",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "multi_attach_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ebs_vol_encrypted": [
+          "encrypted"
+        ]
+      }
+    },
+    "ec2_instances": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_ip",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "private_ip",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "availability_zone",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "launch_time",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "platform",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "iam_instance_profile",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "monitoring_state",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ec2_public_ip": [
+          "public_ip"
+        ]
+      }
+    },
+    "ecr_images": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "repository_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "registry_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "image_digest",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "image_tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "image_size_in_bytes",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "image_pushed_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "image_scan_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "image_scan_findings_summary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "last_recorded_pull_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "artifact_media_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ecr_img_region": [
+          "region"
+        ]
+      }
+    },
+    "ecr_repositories": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "repository_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "repository_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "repository_uri",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "registry_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "image_scanning_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "'MUTABLE'",
+          "name": "image_tag_mutability",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "encryption_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_repo",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ecr_repo_region": [
+          "region"
+        ]
+      }
+    },
+    "ecs_clusters": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "registered_container_instances_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "running_tasks_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "pending_tasks_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "active_services_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "capacity_providers",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_capacity_provider_strategy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "settings",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "statistics",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ecs_cluster_status": [
+          "status"
+        ]
+      }
+    },
+    "ecs_services": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "service_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "service_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "task_definition",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "desired_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "running_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "pending_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "launch_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "platform_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "platform_family",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "capacity_provider_strategy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "network_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "load_balancers",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "service_registries",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "deployment_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "deployments",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "health_check_grace_period_seconds",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "'REPLICA'",
+          "name": "scheduling_strategy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_svc",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ecs_svc_status": [
+          "status"
+        ]
+      }
+    },
+    "ecs_task_definitions": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "task_definition_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "family",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "requires_compatibilities",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "network_mode",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cpu",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "memory",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "task_role_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "execution_role_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "container_definitions",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volumes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "placement_constraints",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "requires_attributes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "pid_mode",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ipc_mode",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "proxy_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ephemeral_storage",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "runtime_platform",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "registered_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "deregistered_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "registered_by",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ecs_task_status": [
+          "status"
+        ]
+      }
+    },
+    "eks_clusters": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "role_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_ids",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_group_ids",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_security_group_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "1",
+          "name": "endpoint_public_access",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "endpoint_private_access",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "public_access_cidrs",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resources_vpc_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "logging",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "identity",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "encryption_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "platform_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_eks",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_eks_cluster_status": [
+          "status"
+        ]
+      }
+    },
+    "eks_node_groups": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "nodegroup_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "nodegroup_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scaling_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_types",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ami_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "release_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnets",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "remote_access",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "node_role",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "labels",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "taints",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "disk_size",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "'ON_DEMAND'",
+          "name": "capacity_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "launch_template",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "update_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "health",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_at_ng",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "modified_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_eks_ng_status": [
+          "status"
+        ]
+      }
+    },
+    "elastic_ips": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "allocation_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_ip",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "domain",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "network_interface_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "network_interface_owner_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "private_ip_address",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "association_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "is_associated",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_eip_associated": [
+          "is_associated"
+        ]
+      }
+    },
+    "elasticache_clusters": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_cluster_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_cluster_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine_version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_node_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "num_cache_nodes",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "preferred_availability_zone",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "preferred_availability_zones",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_cluster_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_subnet_group_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "at_rest_encryption_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "transit_encryption_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "auth_token_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "replication_group_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "snapshot_retention_limit",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "snapshot_window",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "preferred_maintenance_window",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "notification_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_parameter_group_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cache_cluster_create_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ec_status": [
+          "cache_cluster_status"
+        ]
+      }
+    },
+    "iam_credential_report": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "user_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "user_creation_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "password_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "password_last_used",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "mfa_active",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "access_key_1_active",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "access_key_1_last_rotated",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "access_key_1_last_used",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "access_key_2_active",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "access_key_2_last_rotated",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "access_key_2_last_used",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_credreport_user": [
+          "user_name"
+        ]
+      }
+    },
+    "iam_policies": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "policy_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "policy_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "policy_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "path",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_version_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attachment_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "permissions_boundary_usage_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "is_attachable",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "create_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "update_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "policy_document",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_users",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_roles",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_iam_policy_name": [
+          "policy_name"
+        ]
+      }
+    },
+    "iam_roles": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "role_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "role_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "create_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "assume_role_policy",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_policies",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "max_session_duration",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_iam_role_scan": [
+          "scan_id"
+        ]
+      }
+    },
+    "iam_users": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "user_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "create_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "password_last_used",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "mfa_enabled",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "access_keys",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attached_policies",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_iam_user_scan": [
+          "scan_id"
+        ]
+      }
+    },
+    "internet_gateways": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "internet_gateway_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_attachments",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_igw_region": [
+          "region"
+        ]
+      }
+    },
+    "kms_keys": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "key_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "key_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "aws_account_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "key_state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "key_manager",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "key_usage",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "key_spec",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "enabled",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "deletion_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": "0",
+          "name": "rotation_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "key_policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "aliases",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_kms_manager": [
+          "key_manager"
+        ]
+      }
+    },
+    "lambda_exposure": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "function_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "function_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "url_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "url_auth_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_lambdaexp_auth": [
+          "url_auth_type"
+        ]
+      }
+    },
+    "lambda_functions": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "function_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "function_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "runtime",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "handler",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "code_size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "memory_size",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "timeout",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "last_modified",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "role_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "environment_variables",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "layers",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "architectures",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "triggers",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_lambda_runtime": [
+          "runtime"
+        ]
+      }
+    },
+    "load_balancers": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "load_balancer_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "load_balancer_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "load_balancer_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scheme",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "dns_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "availability_zones",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnets",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "listeners",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "target_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_lb_type": [
+          "load_balancer_type"
+        ]
+      }
+    },
+    "msk_clusters": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "kafka_version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "broker_node_group_info",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "number_of_broker_nodes",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "encryption_in_transit",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "encryption_at_rest_kms_key_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "enhanced_monitoring",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "open_monitoring",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "logging_info",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cluster_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "provisioned",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "serverless",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "current_version",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "zookeeper_connect_string",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "zookeeper_connect_string_tls",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bootstrap_broker_string",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bootstrap_broker_string_tls",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_msk_state": [
+          "state"
+        ]
+      }
+    },
+    "nat_gateways": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "nat_gateway_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "connectivity_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_ip",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "private_ip",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "nat_gateway_addresses",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_nat_vpc": [
+          "vpc_id"
+        ]
+      }
+    },
+    "network_interfaces": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "network_interface_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "interface_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "availability_zone",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "private_ip_address",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "private_ip_addresses",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_ip",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "mac_address",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "source_dest_check",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "security_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "attachment",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_eni_subnet": [
+          "subnet_id"
+        ]
+      }
+    },
+    "opensearch_domains": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "domain_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "domain_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "domain_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine_version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "dedicated_master_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "dedicated_master_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "dedicated_master_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "zone_awareness_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "availability_zone_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "warm_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "warm_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "warm_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "cold_storage_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "ebs_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "volume_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volume_size",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "iops",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "throughput",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_ids",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_group_ids",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "endpoints",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "encryption_at_rest_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "node_to_node_encryption_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "enforce_https",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tls_security_policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "custom_endpoint_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "custom_endpoint",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "access_policies",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "internal_user_database_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "saml_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "auto_tune_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "created",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "deleted",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "processing",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "upgrade_processing",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "domain_processing_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_os_vpc": [
+          "vpc_id"
+        ]
+      }
+    },
+    "organization_accounts": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "email",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "joined_method",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "joined_timestamp",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "parent_ou_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_org_acct_parent": [
+          "parent_ou_id"
+        ]
+      }
+    },
+    "organizational_units": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ou_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ou_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ou_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "parent_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ou_parent": [
+          "parent_id"
+        ]
+      }
+    },
+    "organizations": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "organization_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "organization_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "master_account_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "master_account_email",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "feature_set",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "available_policy_types",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_org_id": [
+          "organization_id"
+        ]
+      }
+    },
+    "prowler_findings": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "check_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "check_title",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "severity",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_arn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "status_extended",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "service_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "check_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "risk",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "remediation",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "compliance_frameworks",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_prowler_service": [
+          "service_name"
+        ]
+      }
+    },
+    "rds_instances": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "db_instance_identifier",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "db_instance_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "engine_version",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "db_instance_class",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "allocated_storage",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "storage_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "iops",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "multi_az",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "availability_zone",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "secondary_availability_zone",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "publicly_accessible",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "encrypted",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "kms_key_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_group",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_security_groups",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "backup_retention_period",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "preferred_backup_window",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "latest_restorable_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "endpoint_address",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "endpoint_port",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "db_instance_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "monitoring_interval",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "performance_insights_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "1",
+          "name": "auto_minor_version_upgrade",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": "0",
+          "name": "deletion_protection",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_rds_encrypted": [
+          "encrypted"
+        ]
+      }
+    },
+    "region_security_services": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "guardduty_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "guardduty_detector",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "security_hub_enabled",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "ebs_encryption_by_default",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "access_analyzers",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_regionsec_region": [
+          "region"
+        ]
+      }
+    },
+    "route53_hosted_zones": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "hosted_zone_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "is_private",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "resource_record_set_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "vpc_associations",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_r53_zone_scan": [
+          "scan_id"
+        ]
+      }
+    },
+    "route53_record_sets": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "hosted_zone_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "record_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ttl",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "resource_records",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "alias_target",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_r53_record_zone": [
+          "hosted_zone_id"
+        ]
+      }
+    },
+    "route_tables": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "route_table_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "is_main",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "routes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_associations",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "gateway_associations",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_rt_vpc": [
+          "vpc_id"
+        ]
+      }
+    },
+    "s3_buckets": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bucket_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "versioning_status",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_access_block",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "encryption_config",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "lifecycle_rules",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "logging_enabled",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "size_bytes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "object_count",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_s3_name": [
+          "bucket_name"
+        ]
+      }
+    },
+    "s3_public_access": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bucket_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "public_access_block",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "policy_is_public",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_s3pab_bucket": [
+          "bucket_name"
+        ]
+      }
+    },
+    "scan_metadata": {
+      "columns": [
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "account_number",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scan_timestamp",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "prowler_level",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "regions_scanned",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scan_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "error_message",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "scan_duration_seconds",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": {
+        "idx_scan_timestamp": [
+          "scan_timestamp"
+        ]
+      }
+    },
+    "schema_version": {
+      "columns": [
+        {
+          "default": null,
+          "name": "version",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "applied_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": {}
+    },
+    "security_groups": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "group_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "group_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ingress_rules",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "egress_rules",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_sg_vpc": [
+          "vpc_id"
+        ]
+      }
+    },
+    "sso_assignments": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "permission_set_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "principal_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "principal_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "target_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "target_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_sso_assign_target": [
+          "target_id"
+        ]
+      }
+    },
+    "sso_permission_sets": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "permission_set_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "permission_set_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "session_duration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "relay_state",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "managed_policies",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "inline_policy",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "customer_managed_policies",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "permissions_boundary",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_sso_perm_instance": [
+          "instance_arn"
+        ]
+      }
+    },
+    "subnets": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cidr_block",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "availability_zone",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "available_ip_count",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "map_public_ip",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_subnet_region": [
+          "region"
+        ]
+      }
+    },
+    "transit_gateways": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "transit_gateway_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "transit_gateway_arn",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "owner_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "amazon_side_asn",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "default_route_table_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_route_table_association",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "default_route_table_propagation",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpn_ecmp_support",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "dns_support",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "multicast_support",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "auto_accept_shared_attachments",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "transit_gateway_cidr_blocks",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "creation_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_tgw_state": [
+          "state"
+        ]
+      }
+    },
+    "vpc_flow_logs": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "flow_log_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "resource_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "traffic_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "log_destination_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "log_destination",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "log_format",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "flow_log_status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "created_time",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_flowlog_type": [
+          "resource_type"
+        ]
+      }
+    },
+    "vpcs": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "cidr_block",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "is_default",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "dhcp_options_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "instance_tenancy",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_vpc_region": [
+          "region"
+        ]
+      }
+    },
+    "vpn_connections": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpn_connection_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpn_connection_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "customer_gateway_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpn_gateway_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "transit_gateway_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "customer_gateway_configuration",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "0",
+          "name": "static_routes_only",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "vgw_telemetry",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "routes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "category",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_vpn_state": [
+          "state"
+        ]
+      }
+    },
+    "workspaces": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "region",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "directory_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "user_name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "bundle_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "subnet_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "vpc_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "ip_address",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "compute_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "volume_encryption_enabled",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "user_volume_size_gb",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "root_volume_size_gb",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "running_mode",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tags",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "raw_data",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_ws_directory": [
+          "directory_id"
+        ]
+      }
+    }
+  }
+}
