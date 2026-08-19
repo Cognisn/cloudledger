@@ -10,64 +10,79 @@ import csv
 from pathlib import Path
 
 from cloudledger.scanner.csv_input import CSVAccountReader, CSVInputError
-from cloudledger.scanner.credential_manager import AWSCredentials
 
 
 class TestCSVAccountReader:
     """Test CSV account reader functionality."""
 
     @pytest.fixture
-    def valid_csv(self):
+    def valid_csv(self, tmp_path):
         """Create a valid CSV file for testing."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'account_name', 'account_number', 'access_key_id',
-                'secret_access_key', 'session_token', 'prowler_level'
-            ])
+        csv_path = tmp_path / "valid.csv"
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "account_name",
+                    "account_number",
+                    "access_key_id",
+                    "secret_access_key",
+                    "session_token",
+                    "prowler_level",
+                ],
+            )
             writer.writeheader()
-            writer.writerow({
-                'account_name': 'Test Account',
-                'account_number': '123456789012',
-                'access_key_id': 'ASIAIOSFODNN7EXAMPLE',
-                'secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                'session_token': 'IQoJb3JpZ2luX2VjEHoaCXVzLXdlc3QtMiJHMEUCIQD',
-                'prowler_level': '2'
-            })
-            yield f.name
+            writer.writerow(
+                {
+                    "account_name": "Test Account",
+                    "account_number": "123456789012",
+                    "access_key_id": "ASIAIOSFODNN7EXAMPLE",
+                    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    "session_token": "IQoJb3JpZ2luX2VjEHoaCXVzLXdlc3QtMiJHMEUCIQD",
+                    "prowler_level": "2",
+                }
+            )
 
-        # Cleanup
-        Path(f.name).unlink()
+        return str(csv_path)
 
     @pytest.fixture
-    def invalid_csv_missing_columns(self):
+    def invalid_csv_missing_columns(self, tmp_path):
         """Create CSV with missing required columns."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=['account_name', 'account_number'])
+        csv_path = tmp_path / "missing_columns.csv"
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["account_name", "account_number"])
             writer.writeheader()
-            writer.writerow({'account_name': 'Test', 'account_number': '123456789012'})
-            yield f.name
+            writer.writerow({"account_name": "Test", "account_number": "123456789012"})
 
-        Path(f.name).unlink()
+        return str(csv_path)
 
     @pytest.fixture
-    def invalid_csv_bad_account_number(self):
+    def invalid_csv_bad_account_number(self, tmp_path):
         """Create CSV with invalid account number."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'account_name', 'account_number', 'access_key_id',
-                'secret_access_key', 'session_token'
-            ])
+        csv_path = tmp_path / "bad_account_number.csv"
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "account_name",
+                    "account_number",
+                    "access_key_id",
+                    "secret_access_key",
+                    "session_token",
+                ],
+            )
             writer.writeheader()
-            writer.writerow({
-                'account_name': 'Test Account',
-                'account_number': '12345',  # Too short
-                'access_key_id': 'ASIAIOSFODNN7EXAMPLE',
-                'secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                'session_token': 'IQoJb3JpZ2luX2VjEHoaCXVzLXdlc3QtMiJHMEUCIQD'
-            })
-            yield f.name
+            writer.writerow(
+                {
+                    "account_name": "Test Account",
+                    "account_number": "12345",  # Too short
+                    "access_key_id": "ASIAIOSFODNN7EXAMPLE",
+                    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    "session_token": "IQoJb3JpZ2luX2VjEHoaCXVzLXdlc3QtMiJHMEUCIQD",
+                }
+            )
 
-        Path(f.name).unlink()
+        return str(csv_path)
 
     def test_read_valid_csv(self, valid_csv):
         """Test reading a valid CSV file."""
@@ -119,5 +134,5 @@ class TestCSVAccountReader:
             assert len(accounts) >= 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
