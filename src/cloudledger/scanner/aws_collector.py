@@ -1617,7 +1617,7 @@ class AWSCollector:
             # Calculate time period (last 12 months)
             from dateutil.relativedelta import relativedelta
 
-            end_date = datetime.now().date()
+            end_date = datetime.now(UTC).date()
             start_date = end_date - relativedelta(months=12)
 
             logger.info(
@@ -3480,7 +3480,7 @@ class AWSCollector:
                         log_group_arn=lg_data["arn"],
                         region=region,
                         creation_time=datetime.fromtimestamp(
-                            lg_data["creationTime"] / 1000
+                            lg_data["creationTime"] / 1000, tz=UTC
                         )
                         if "creationTime" in lg_data
                         else None,

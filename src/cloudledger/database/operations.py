@@ -12,6 +12,7 @@ import logging
 
 import sqlalchemy as sa
 
+from ..utils.timeutils import to_utc_iso
 from .engine import make_engine
 from .tables import (
     t_scan_metadata,
@@ -139,7 +140,7 @@ def json_serial(obj):
         Serializable representation of the object
     """
     if isinstance(obj, datetime):
-        return obj.isoformat()
+        return to_utc_iso(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
 
 
@@ -167,7 +168,7 @@ class DatabaseOperations:
             "scan_id": metadata.scan_id,
             "account_name": metadata.account_name,
             "account_number": metadata.account_number,
-            "scan_timestamp": metadata.scan_timestamp.isoformat(),
+            "scan_timestamp": to_utc_iso(metadata.scan_timestamp),
             "prowler_level": metadata.prowler_level,
             "regions_scanned": json.dumps(
                 metadata.regions_scanned, default=json_serial
@@ -735,8 +736,8 @@ class DatabaseOperations:
             {
                 "scan_id": cost.scan_id,
                 "account_number": cost.account_number,
-                "time_period_start": cost.time_period_start.isoformat(),
-                "time_period_end": cost.time_period_end.isoformat(),
+                "time_period_start": to_utc_iso(cost.time_period_start),
+                "time_period_end": to_utc_iso(cost.time_period_end),
                 "service_name": cost.service_name,
                 "amount": cost.amount,
                 "currency": cost.currency,

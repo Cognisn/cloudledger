@@ -10,19 +10,25 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mssql as _mssql
 from sqlalchemy.dialects import mysql as _mysql
 
+from ..utils.timeutils import utc_now_iso
+
 metadata = sa.MetaData()
 
 
 def _timestamp_column(name: str = "created_at") -> sa.Column:
-    """Text timestamp with a server default, typed DATETIME on MySQL.
+    """Text timestamp with a client-side UTC default, typed DATETIME on MySQL.
 
-    MySQL forbids defaults on TEXT columns; every other supported dialect
-    stores the same ISO-style value in a text column, so the SQLite schema
-    (and its equivalence baseline) is unchanged.
+    The Python-side default stamps an ISO-8601 UTC value (`utc_now_iso`) so
+    the recorded time is unambiguous regardless of the database server's
+    timezone; the `server_default` remains as a fallback for rows inserted
+    outside this application. MySQL forbids defaults on TEXT columns;
+    every other supported dialect stores the same text value, so the
+    SQLite schema (and its equivalence baseline) is unchanged.
     """
     return sa.Column(
         name,
         sa.Text().with_variant(_mysql.DATETIME(), "mysql"),
+        default=utc_now_iso,
         server_default=sa.text("CURRENT_TIMESTAMP"),
     )
 

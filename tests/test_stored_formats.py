@@ -7,8 +7,7 @@ Uses Australian English in all documentation and comments.
 
 import json
 import sqlite3
-from datetime import datetime, UTC
-from pathlib import Path
+from datetime import datetime, timedelta, timezone, UTC
 
 import pytest
 
@@ -62,6 +61,41 @@ def test_vpc_stored_formats(db):
         ]
     )
     row = _fetchone(db, "SELECT * FROM vpcs")
-    assert row["is_default"] == 1                     # boolean stored as integer
-    assert json.loads(row["tags"]) == {"Name": "x"}   # JSON stored as text
+    assert row["is_default"] == 1  # boolean stored as integer
+    assert json.loads(row["tags"]) == {"Name": "x"}  # JSON stored as text
     assert isinstance(row["tags"], str)
+
+
+def _scan_metadata(scan_id, scan_timestamp=None):
+    return ScanMetadata(
+        scan_id=scan_id,
+        account_name="a",
+        account_number="123456789012",
+        scan_timestamp=scan_timestamp or datetime.now(UTC),
+        prowler_level="1",
+        regions_scanned=["ap-southeast-2"],
+        scan_status="in_progress",
+    )
+
+
+def test_created_at_stamped_in_utc(db):
+    ops = DatabaseOperations(db)
+    ops.insert_scan_metadata(_scan_metadata(scan_id="s-utc"))
+    row = _fetchone(db, "SELECT created_at FROM scan_metadata WHERE scan_id = 's-utc'")
+    assert row["created_at"].endswith(
+        "+00:00"
+    )  # client-side UTC stamp, not the server default
+
+
+def test_scan_timestamp_stored_as_utc_iso(db):
+    plus_ten = timezone(timedelta(hours=10))
+    ops = DatabaseOperations(db)
+    ops.insert_scan_metadata(
+        _scan_metadata(
+            scan_id="s-tz", scan_timestamp=datetime(2026, 8, 19, 10, 0, tzinfo=plus_ten)
+        )
+    )
+    row = _fetchone(
+        db, "SELECT scan_timestamp FROM scan_metadata WHERE scan_id = 's-tz'"
+    )
+    assert row["scan_timestamp"] == "2026-08-19T00:00:00+00:00"

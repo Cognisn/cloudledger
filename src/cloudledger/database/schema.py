@@ -8,12 +8,12 @@ and comments.
 """
 
 import logging
-from datetime import datetime, UTC
 from typing import Optional
 
 import sqlalchemy as sa
 
 from ..config.context import mask_target
+from ..utils.timeutils import utc_now_iso
 from .engine import make_engine
 from .tables import metadata, t_schema_version
 
@@ -42,7 +42,7 @@ class DatabaseSchema:
                 conn.execute(
                     t_schema_version.insert().values(
                         version=self.SCHEMA_VERSION,
-                        applied_at=datetime.now(UTC).isoformat(),
+                        applied_at=utc_now_iso(),
                     )
                 )
         logger.info("Database initialisation complete")
