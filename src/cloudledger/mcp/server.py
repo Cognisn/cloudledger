@@ -9,7 +9,7 @@ Uses Australian English in all documentation and comments.
 import logging
 import asyncio
 import json
-from pathlib import Path
+from typing import Optional
 
 # MCP SDK imports
 try:
@@ -22,6 +22,7 @@ except ImportError:
     MCP_AVAILABLE = False
     logging.warning("MCP SDK not available. Please install: pip install mcp")
 
+from ..config.context import create_app_context, resolve_database_path
 from ..database.operations import DatabaseOperations
 from .queries import QueryHandler
 from .tools import get_tools
@@ -90,48 +91,41 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps(error_result, indent=2))]
 
 
-async def main(database_path: str) -> None:
+async def main(database_path: Optional[str] = None) -> None:
     """
-    Main entry point for MCP server.
+    Main entry point for the MCP server.
 
     Args:
-        database_path: Path to SQLite database file
+        database_path: Optional path to the SQLite database file. When
+            omitted, the configured or platform-default location is used.
     """
     global db_ops, query_handler
 
-    from ..utils.logging_config import setup_logging
+    async with create_app_context(console_output="stderr") as ctx:
+        db_path = resolve_database_path(database_path, ctx.settings)
+        logger.info(f"Starting MCP server with database: {db_path}")
 
-    # Setup logging
-    log_path = Path(database_path).parent / "mcp_server.log"
-    setup_logging(
-        log_file=str(log_path),
-        log_level="INFO",
-        console_output=False,  # Don't output to console for MCP
-    )
-
-    logger.info(f"Starting MCP server with database: {database_path}")
-
-    # Verify database exists
-    db_path = Path(database_path)
-    if not db_path.exists():
-        raise FileNotFoundError(f"Database not found: {database_path}")
-
-    # Initialise database operations and query handler
-    db_ops = DatabaseOperations(str(db_path))
-    query_handler = QueryHandler(db_ops)
-
-    logger.info("Database operations initialised")
-
-    # Run MCP server with stdio transport
-    try:
-        async with stdio_server() as (read_stream, write_stream):
-            logger.info("MCP server stdio transport established")
-            await app.run(
-                read_stream, write_stream, app.create_initialization_options()
+        if not db_path.exists():
+            raise FileNotFoundError(
+                f"Database not found: {db_path}. Run a scan first, or pass "
+                f"an explicit database path."
             )
-    except Exception as e:
-        logger.error(f"MCP server error: {e}", exc_info=True)
-        raise
+
+        db_ops = DatabaseOperations(str(db_path))
+        query_handler = QueryHandler(db_ops)
+
+        logger.info("Database operations initialised")
+
+        # Run MCP server with stdio transport
+        try:
+            async with stdio_server() as (read_stream, write_stream):
+                logger.info("MCP server stdio transport established")
+                await app.run(
+                    read_stream, write_stream, app.create_initialization_options()
+                )
+        except Exception as e:
+            logger.error(f"MCP server error: {e}", exc_info=True)
+            raise
 
 
 def run() -> None:
@@ -140,14 +134,13 @@ def run() -> None:
 
     Parses the database path from the command line and runs the
     asynchronous server. Used by the cloudledger-mcp console script.
+
+    Usage: cloudledger-mcp [database_path]
     """
     import sys
 
-    if len(sys.argv) < 2:
-        print("Usage: cloudledger-mcp <database_path>", file=sys.stderr)
-        sys.exit(1)
-
-    asyncio.run(main(sys.argv[1]))
+    database_path = sys.argv[1] if len(sys.argv) > 1 else None
+    asyncio.run(main(database_path))
 
 
 if __name__ == "__main__":

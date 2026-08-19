@@ -7,6 +7,7 @@ Uses Australian English in all documentation and comments.
 
 import boto3
 import json
+import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime, UTC
 from botocore.exceptions import ClientError
@@ -77,9 +78,8 @@ from ..database.models import (
     S3PublicAccess,
 )
 from ..utils.aws_helpers import get_all_regions, parse_tags
-from ..utils.logging_config import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AWSCollector:
