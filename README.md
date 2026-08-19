@@ -33,7 +33,7 @@ CloudLedger performs security assessments and collects detailed infrastructure i
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/) (manages Python and all dependencies)
-- Python 3.12 (installed automatically by uv; 3.13+ is not supported because Prowler pins numpy 2.0.2)
+- Python 3.12 (uv installs it on demand, but you must request it with `--python 3.12`; 3.13+ is not supported because Prowler pins numpy 2.0.2)
 - AWS credentials (temporary session tokens recommended)
 - Internet connectivity for AWS API access
 
@@ -41,17 +41,21 @@ CloudLedger performs security assessments and collects detailed infrastructure i
 
 The distribution is named cognisn-cloudledger; the installed command is cloudledger.
 
-From PyPI (once published):
+Always pass `--python 3.12` when installing from PyPI: uv otherwise resolves against its
+default (newest) Python, and the numpy 2.0.2 pin inherited from Prowler does not support
+3.13+, so the install fails.
+
+From PyPI:
 
 ```bash
 # Run ad hoc without installing
-uvx --from cognisn-cloudledger cloudledger --help
+uvx --python 3.12 --from cognisn-cloudledger cloudledger --help
 
 # Or install as a tool
-uv tool install cognisn-cloudledger
+uv tool install --python 3.12 cognisn-cloudledger
 
 # With a server database backend
-uv tool install "cognisn-cloudledger[postgres]"   # or [mysql], [mssql], [all-db]
+uv tool install --python 3.12 "cognisn-cloudledger[postgres]"   # or [mysql], [mssql], [all-db]
 ```
 
 From source:
