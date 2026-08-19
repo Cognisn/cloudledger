@@ -2767,6 +2767,16 @@ class DatabaseOperations:
         with self._engine.connect() as conn:
             rows = conn.execute(stmt).all()
             scans = [dict(row._mapping) for row in rows]
+
+            scan_ids = [scan["scan_id"] for scan in scans]
+            tags_by_scan: Dict[str, List[str]] = {scan_id: [] for scan_id in scan_ids}
+            if scan_ids:
+                tags_stmt = sa.select(
+                    t_scan_tags.c.scan_id, t_scan_tags.c.tag
+                ).where(t_scan_tags.c.scan_id.in_(scan_ids))
+                for row in conn.execute(tags_stmt):
+                    tags_by_scan[row.scan_id].append(row.tag)
+
             for scan in scans:
-                scan["tags"] = self.get_tags_for_scan(scan["scan_id"])
+                scan["tags"] = sorted(tags_by_scan[scan["scan_id"]], key=str.lower)
         return scans
