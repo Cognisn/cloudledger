@@ -1045,6 +1045,640 @@ t_lambda_functions = sa.Table(
     sqlite_autoincrement=True,
 )
 
+t_load_balancers = sa.Table(
+    "load_balancers",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("load_balancer_name", sa.Text, nullable=False),
+    sa.Column("load_balancer_arn", sa.Text, nullable=False),
+    sa.Column("load_balancer_type", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text),
+    sa.Column("scheme", sa.Text, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("dns_name", sa.Text, nullable=False),
+    sa.Column("availability_zones", sa.Text),
+    sa.Column("security_groups", sa.Text),
+    sa.Column("subnets", sa.Text),
+    sa.Column("created_time", sa.Text),
+    sa.Column("listeners", sa.Text),
+    sa.Column("target_groups", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_msk_clusters = sa.Table(
+    "msk_clusters",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("cluster_arn", sa.Text, nullable=False),
+    sa.Column("cluster_name", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("kafka_version", sa.Text, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("creation_time", sa.Text),
+    sa.Column("broker_node_group_info", sa.Text),
+    sa.Column("number_of_broker_nodes", sa.Integer, nullable=False),
+    sa.Column("encryption_in_transit", sa.Text),
+    sa.Column("encryption_at_rest_kms_key_arn", sa.Text),
+    sa.Column("enhanced_monitoring", sa.Text),
+    sa.Column("open_monitoring", sa.Text),
+    sa.Column("logging_info", sa.Text),
+    sa.Column("cluster_type", sa.Text),
+    sa.Column("provisioned", sa.Text),
+    sa.Column("serverless", sa.Text),
+    sa.Column("current_version", sa.Text),
+    sa.Column("zookeeper_connect_string", sa.Text),
+    sa.Column("zookeeper_connect_string_tls", sa.Text),
+    sa.Column("bootstrap_broker_string", sa.Text),
+    sa.Column("bootstrap_broker_string_tls", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_nat_gateways = sa.Table(
+    "nat_gateways",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("nat_gateway_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("subnet_id", sa.Text, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("connectivity_type", sa.Text, nullable=False),
+    sa.Column("public_ip", sa.Text),
+    sa.Column("private_ip", sa.Text),
+    sa.Column("created_time", sa.Text),
+    sa.Column("nat_gateway_addresses", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_network_interfaces = sa.Table(
+    "network_interfaces",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("network_interface_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("interface_type", sa.Text, nullable=False),
+    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("subnet_id", sa.Text, nullable=False),
+    sa.Column("availability_zone", sa.Text, nullable=False),
+    sa.Column("description", sa.Text),
+    sa.Column("private_ip_address", sa.Text),
+    sa.Column("private_ip_addresses", sa.Text),
+    sa.Column("public_ip", sa.Text),
+    sa.Column("mac_address", sa.Text),
+    sa.Column("source_dest_check", sa.Integer, nullable=False),
+    sa.Column("security_groups", sa.Text),
+    sa.Column("attachment", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_opensearch_domains = sa.Table(
+    "opensearch_domains",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("domain_id", sa.Text, nullable=False),
+    sa.Column("domain_name", sa.Text, nullable=False),
+    sa.Column("domain_arn", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("engine_type", sa.Text, nullable=False),
+    sa.Column("engine_version", sa.Text, nullable=False),
+    sa.Column("instance_type", sa.Text, nullable=False),
+    sa.Column("instance_count", sa.Integer, nullable=False),
+    sa.Column("dedicated_master_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("dedicated_master_type", sa.Text),
+    sa.Column("dedicated_master_count", sa.Integer),
+    sa.Column("zone_awareness_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("availability_zone_count", sa.Integer),
+    sa.Column("warm_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("warm_type", sa.Text),
+    sa.Column("warm_count", sa.Integer),
+    sa.Column("cold_storage_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("ebs_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("volume_type", sa.Text),
+    sa.Column("volume_size", sa.Integer),
+    sa.Column("iops", sa.Integer),
+    sa.Column("throughput", sa.Integer),
+    sa.Column("vpc_id", sa.Text),
+    sa.Column("subnet_ids", sa.Text),
+    sa.Column("security_group_ids", sa.Text),
+    sa.Column("endpoint", sa.Text),
+    sa.Column("endpoints", sa.Text),
+    sa.Column("encryption_at_rest_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("kms_key_id", sa.Text),
+    sa.Column(
+        "node_to_node_encryption_enabled", sa.Integer, server_default=sa.text("0")
+    ),
+    sa.Column("enforce_https", sa.Integer, server_default=sa.text("0")),
+    sa.Column("tls_security_policy", sa.Text),
+    sa.Column("custom_endpoint_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("custom_endpoint", sa.Text),
+    sa.Column("access_policies", sa.Text),
+    sa.Column(
+        "internal_user_database_enabled", sa.Integer, server_default=sa.text("0")
+    ),
+    sa.Column("saml_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("auto_tune_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("created", sa.Integer, server_default=sa.text("0")),
+    sa.Column("deleted", sa.Integer, server_default=sa.text("0")),
+    sa.Column("processing", sa.Integer, server_default=sa.text("0")),
+    sa.Column("upgrade_processing", sa.Integer, server_default=sa.text("0")),
+    sa.Column("domain_processing_status", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_organization_accounts = sa.Table(
+    "organization_accounts",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("account_id", sa.Text, nullable=False),
+    sa.Column("account_arn", sa.Text, nullable=False),
+    sa.Column("account_name", sa.Text, nullable=False),
+    sa.Column("email", sa.Text, nullable=False),
+    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("joined_method", sa.Text, nullable=False),
+    sa.Column("joined_timestamp", sa.Text),
+    sa.Column("parent_ou_id", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_organizational_units = sa.Table(
+    "organizational_units",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("ou_id", sa.Text, nullable=False),
+    sa.Column("ou_arn", sa.Text, nullable=False),
+    sa.Column("ou_name", sa.Text, nullable=False),
+    sa.Column("parent_id", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_organizations = sa.Table(
+    "organizations",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("organization_id", sa.Text, nullable=False),
+    sa.Column("organization_arn", sa.Text, nullable=False),
+    sa.Column("master_account_id", sa.Text, nullable=False),
+    sa.Column("master_account_email", sa.Text, nullable=False),
+    sa.Column("feature_set", sa.Text, nullable=False),
+    sa.Column("available_policy_types", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_prowler_findings = sa.Table(
+    "prowler_findings",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("check_id", sa.Text, nullable=False),
+    sa.Column("check_title", sa.Text, nullable=False),
+    sa.Column("severity", sa.Text, nullable=False),
+    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("region", sa.Text),
+    sa.Column("resource_id", sa.Text),
+    sa.Column("resource_arn", sa.Text),
+    sa.Column("resource_tags", sa.Text),
+    sa.Column("status_extended", sa.Text),
+    sa.Column("service_name", sa.Text, nullable=False),
+    sa.Column("check_type", sa.Text, nullable=False),
+    sa.Column("risk", sa.Text),
+    sa.Column("remediation", sa.Text),
+    sa.Column("compliance_frameworks", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_rds_instances = sa.Table(
+    "rds_instances",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("db_instance_identifier", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("db_instance_arn", sa.Text, nullable=False),
+    sa.Column("engine", sa.Text, nullable=False),
+    sa.Column("engine_version", sa.Text, nullable=False),
+    sa.Column("db_instance_class", sa.Text, nullable=False),
+    sa.Column("allocated_storage", sa.Integer, nullable=False),
+    sa.Column("storage_type", sa.Text, nullable=False),
+    sa.Column("iops", sa.Integer),
+    sa.Column("multi_az", sa.Integer, nullable=False),
+    sa.Column("availability_zone", sa.Text),
+    sa.Column("secondary_availability_zone", sa.Text),
+    sa.Column("publicly_accessible", sa.Integer, nullable=False),
+    sa.Column("encrypted", sa.Integer, nullable=False),
+    sa.Column("kms_key_id", sa.Text),
+    sa.Column("vpc_id", sa.Text),
+    sa.Column("subnet_group", sa.Text),
+    sa.Column("vpc_security_groups", sa.Text),
+    sa.Column("backup_retention_period", sa.Integer, nullable=False),
+    sa.Column("preferred_backup_window", sa.Text),
+    sa.Column("latest_restorable_time", sa.Text),
+    sa.Column("endpoint_address", sa.Text),
+    sa.Column("endpoint_port", sa.Integer),
+    sa.Column("db_instance_status", sa.Text, nullable=False),
+    sa.Column("monitoring_interval", sa.Integer, server_default=sa.text("0")),
+    sa.Column("performance_insights_enabled", sa.Integer, server_default=sa.text("0")),
+    sa.Column("auto_minor_version_upgrade", sa.Integer, server_default=sa.text("1")),
+    sa.Column("deletion_protection", sa.Integer, server_default=sa.text("0")),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_region_security_services = sa.Table(
+    "region_security_services",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("guardduty_enabled", sa.Integer),
+    sa.Column("guardduty_detector", sa.Text),
+    sa.Column("security_hub_enabled", sa.Integer),
+    sa.Column("ebs_encryption_by_default", sa.Integer),
+    sa.Column("access_analyzers", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_route53_hosted_zones = sa.Table(
+    "route53_hosted_zones",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("hosted_zone_id", sa.Text, nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("is_private", sa.Integer, nullable=False),
+    sa.Column("resource_record_set_count", sa.Integer, nullable=False),
+    sa.Column("vpc_associations", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_route53_record_sets = sa.Table(
+    "route53_record_sets",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("hosted_zone_id", sa.Text, nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("record_type", sa.Text, nullable=False),
+    sa.Column("ttl", sa.Integer),
+    sa.Column("resource_records", sa.Text),
+    sa.Column("alias_target", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_route_tables = sa.Table(
+    "route_tables",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("route_table_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("is_main", sa.Integer, nullable=False),
+    sa.Column("routes", sa.Text),
+    sa.Column("subnet_associations", sa.Text),
+    sa.Column("gateway_associations", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_s3_buckets = sa.Table(
+    "s3_buckets",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("bucket_name", sa.Text, nullable=False),
+    sa.Column("creation_date", sa.Text, nullable=False),
+    sa.Column("region", sa.Text),
+    sa.Column("versioning_status", sa.Text),
+    sa.Column("public_access_block", sa.Text),
+    sa.Column("encryption_config", sa.Text),
+    sa.Column("lifecycle_rules", sa.Text),
+    sa.Column("logging_enabled", sa.Integer, nullable=False),
+    sa.Column("size_bytes", sa.Integer),
+    sa.Column("object_count", sa.Integer),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_s3_public_access = sa.Table(
+    "s3_public_access",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("bucket_name", sa.Text, nullable=False),
+    sa.Column("public_access_block", sa.Text),
+    sa.Column("policy_is_public", sa.Integer),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_scan_metadata = sa.Table(
+    "scan_metadata",
+    metadata,
+    sa.Column("scan_id", sa.Text, primary_key=True, nullable=True),
+    sa.Column("account_name", sa.Text, nullable=False),
+    sa.Column("account_number", sa.Text, nullable=False),
+    sa.Column("scan_timestamp", sa.Text, nullable=False),
+    sa.Column("prowler_level", sa.Text),
+    sa.Column("regions_scanned", sa.Text, nullable=False),
+    sa.Column("scan_status", sa.Text, nullable=False),
+    sa.Column("error_message", sa.Text),
+    sa.Column("scan_duration_seconds", sa.REAL),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+)
+
+t_schema_version = sa.Table(
+    "schema_version",
+    metadata,
+    sa.Column("version", sa.Integer, primary_key=True, nullable=True),
+    sa.Column("applied_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+)
+
+t_security_groups = sa.Table(
+    "security_groups",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("group_id", sa.Text, nullable=False),
+    sa.Column("group_name", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("description", sa.Text, nullable=False),
+    sa.Column("ingress_rules", sa.Text),
+    sa.Column("egress_rules", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_sso_assignments = sa.Table(
+    "sso_assignments",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("instance_arn", sa.Text, nullable=False),
+    sa.Column("permission_set_arn", sa.Text, nullable=False),
+    sa.Column("principal_type", sa.Text, nullable=False),
+    sa.Column("principal_id", sa.Text, nullable=False),
+    sa.Column("target_type", sa.Text, nullable=False),
+    sa.Column("target_id", sa.Text, nullable=False),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_sso_permission_sets = sa.Table(
+    "sso_permission_sets",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("permission_set_arn", sa.Text, nullable=False),
+    sa.Column("permission_set_name", sa.Text, nullable=False),
+    sa.Column("instance_arn", sa.Text, nullable=False),
+    sa.Column("description", sa.Text),
+    sa.Column("session_duration", sa.Text),
+    sa.Column("relay_state", sa.Text),
+    sa.Column("created_date", sa.Text),
+    sa.Column("managed_policies", sa.Text),
+    sa.Column("inline_policy", sa.Text),
+    sa.Column("customer_managed_policies", sa.Text),
+    sa.Column("permissions_boundary", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_subnets = sa.Table(
+    "subnets",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("subnet_id", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("cidr_block", sa.Text, nullable=False),
+    sa.Column("availability_zone", sa.Text, nullable=False),
+    sa.Column("available_ip_count", sa.Integer, nullable=False),
+    sa.Column("map_public_ip", sa.Integer, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_transit_gateways = sa.Table(
+    "transit_gateways",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("transit_gateway_id", sa.Text, nullable=False),
+    sa.Column("transit_gateway_arn", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("owner_id", sa.Text, nullable=False),
+    sa.Column("description", sa.Text),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("amazon_side_asn", sa.Integer),
+    sa.Column("default_route_table_id", sa.Text),
+    sa.Column("default_route_table_association", sa.Text),
+    sa.Column("default_route_table_propagation", sa.Text),
+    sa.Column("vpn_ecmp_support", sa.Text),
+    sa.Column("dns_support", sa.Text),
+    sa.Column("multicast_support", sa.Text),
+    sa.Column("auto_accept_shared_attachments", sa.Text),
+    sa.Column("transit_gateway_cidr_blocks", sa.Text),
+    sa.Column("creation_time", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_vpc_flow_logs = sa.Table(
+    "vpc_flow_logs",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("flow_log_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("resource_id", sa.Text, nullable=False),
+    sa.Column("resource_type", sa.Text, nullable=False),
+    sa.Column("traffic_type", sa.Text, nullable=False),
+    sa.Column("log_destination_type", sa.Text, nullable=False),
+    sa.Column("log_destination", sa.Text, nullable=False),
+    sa.Column("log_format", sa.Text),
+    sa.Column("flow_log_status", sa.Text, nullable=False),
+    sa.Column("created_time", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_vpcs = sa.Table(
+    "vpcs",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("cidr_block", sa.Text, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("is_default", sa.Integer, nullable=False),
+    sa.Column("dhcp_options_id", sa.Text),
+    sa.Column("instance_tenancy", sa.Text, nullable=False),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_vpn_connections = sa.Table(
+    "vpn_connections",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("vpn_connection_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("vpn_connection_type", sa.Text, nullable=False),
+    sa.Column("customer_gateway_id", sa.Text, nullable=False),
+    sa.Column("vpn_gateway_id", sa.Text),
+    sa.Column("transit_gateway_id", sa.Text),
+    sa.Column("customer_gateway_configuration", sa.Text),
+    sa.Column("static_routes_only", sa.Integer, server_default=sa.text("0")),
+    sa.Column("vgw_telemetry", sa.Text),
+    sa.Column("routes", sa.Text),
+    sa.Column("category", sa.Text),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
+t_workspaces = sa.Table(
+    "workspaces",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("workspace_id", sa.Text, nullable=False),
+    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("directory_id", sa.Text, nullable=False),
+    sa.Column("user_name", sa.Text, nullable=False),
+    sa.Column("bundle_id", sa.Text, nullable=False),
+    sa.Column("subnet_id", sa.Text, nullable=False),
+    sa.Column("vpc_id", sa.Text),
+    sa.Column("ip_address", sa.Text),
+    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("compute_type", sa.Text, nullable=False),
+    sa.Column("volume_encryption_enabled", sa.Integer, nullable=False),
+    sa.Column("user_volume_size_gb", sa.Integer, nullable=False),
+    sa.Column("root_volume_size_gb", sa.Integer, nullable=False),
+    sa.Column("running_mode", sa.Text, nullable=False),
+    sa.Column("tags", sa.Text),
+    sa.Column("raw_data", sa.Text),
+    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    sqlite_autoincrement=True,
+)
+
 
 # Indices, verbatim from the legacy DDL (names and column order preserved).
 
@@ -1254,3 +1888,124 @@ sa.Index("idx_lambda_scan", t_lambda_functions.c.scan_id)
 sa.Index("idx_lambda_name", t_lambda_functions.c.function_name)
 sa.Index("idx_lambda_region", t_lambda_functions.c.region)
 sa.Index("idx_lambda_runtime", t_lambda_functions.c.runtime)
+sa.Index("idx_lb_scan", t_load_balancers.c.scan_id)
+sa.Index("idx_lb_arn", t_load_balancers.c.load_balancer_arn)
+sa.Index("idx_lb_region", t_load_balancers.c.region)
+sa.Index("idx_lb_vpc", t_load_balancers.c.vpc_id)
+sa.Index("idx_lb_type", t_load_balancers.c.load_balancer_type)
+
+sa.Index("idx_msk_scan", t_msk_clusters.c.scan_id)
+sa.Index("idx_msk_arn", t_msk_clusters.c.cluster_arn)
+sa.Index("idx_msk_name", t_msk_clusters.c.cluster_name)
+sa.Index("idx_msk_region", t_msk_clusters.c.region)
+sa.Index("idx_msk_state", t_msk_clusters.c.state)
+
+sa.Index("idx_nat_scan", t_nat_gateways.c.scan_id)
+sa.Index("idx_nat_id", t_nat_gateways.c.nat_gateway_id)
+sa.Index("idx_nat_region", t_nat_gateways.c.region)
+sa.Index("idx_nat_vpc", t_nat_gateways.c.vpc_id)
+
+sa.Index("idx_eni_scan", t_network_interfaces.c.scan_id)
+sa.Index("idx_eni_id", t_network_interfaces.c.network_interface_id)
+sa.Index("idx_eni_region", t_network_interfaces.c.region)
+sa.Index("idx_eni_vpc", t_network_interfaces.c.vpc_id)
+sa.Index("idx_eni_subnet", t_network_interfaces.c.subnet_id)
+
+sa.Index("idx_os_scan", t_opensearch_domains.c.scan_id)
+sa.Index("idx_os_id", t_opensearch_domains.c.domain_id)
+sa.Index("idx_os_name", t_opensearch_domains.c.domain_name)
+sa.Index("idx_os_arn", t_opensearch_domains.c.domain_arn)
+sa.Index("idx_os_region", t_opensearch_domains.c.region)
+sa.Index("idx_os_vpc", t_opensearch_domains.c.vpc_id)
+
+sa.Index("idx_org_acct_scan", t_organization_accounts.c.scan_id)
+sa.Index("idx_org_acct_id", t_organization_accounts.c.account_id)
+sa.Index("idx_org_acct_status", t_organization_accounts.c.status)
+sa.Index("idx_org_acct_parent", t_organization_accounts.c.parent_ou_id)
+
+sa.Index("idx_ou_scan", t_organizational_units.c.scan_id)
+sa.Index("idx_ou_id", t_organizational_units.c.ou_id)
+sa.Index("idx_ou_parent", t_organizational_units.c.parent_id)
+
+sa.Index("idx_org_scan", t_organizations.c.scan_id)
+sa.Index("idx_org_id", t_organizations.c.organization_id)
+
+sa.Index("idx_prowler_scan", t_prowler_findings.c.scan_id)
+sa.Index("idx_prowler_severity", t_prowler_findings.c.severity)
+sa.Index("idx_prowler_status", t_prowler_findings.c.status)
+sa.Index("idx_prowler_service", t_prowler_findings.c.service_name)
+
+sa.Index("idx_rds_scan", t_rds_instances.c.scan_id)
+sa.Index("idx_rds_id", t_rds_instances.c.db_instance_identifier)
+sa.Index("idx_rds_region", t_rds_instances.c.region)
+sa.Index("idx_rds_engine", t_rds_instances.c.engine)
+sa.Index("idx_rds_vpc", t_rds_instances.c.vpc_id)
+sa.Index("idx_rds_public", t_rds_instances.c.publicly_accessible)
+sa.Index("idx_rds_encrypted", t_rds_instances.c.encrypted)
+
+sa.Index("idx_regionsec_scan", t_region_security_services.c.scan_id)
+sa.Index("idx_regionsec_region", t_region_security_services.c.region)
+
+sa.Index("idx_r53_zone_scan", t_route53_hosted_zones.c.scan_id)
+
+sa.Index("idx_r53_record_scan", t_route53_record_sets.c.scan_id)
+sa.Index("idx_r53_record_zone", t_route53_record_sets.c.hosted_zone_id)
+
+sa.Index("idx_rt_scan", t_route_tables.c.scan_id)
+sa.Index("idx_rt_id", t_route_tables.c.route_table_id)
+sa.Index("idx_rt_region", t_route_tables.c.region)
+sa.Index("idx_rt_vpc", t_route_tables.c.vpc_id)
+
+sa.Index("idx_s3_scan", t_s3_buckets.c.scan_id)
+sa.Index("idx_s3_name", t_s3_buckets.c.bucket_name)
+
+sa.Index("idx_s3pab_scan", t_s3_public_access.c.scan_id)
+sa.Index("idx_s3pab_bucket", t_s3_public_access.c.bucket_name)
+
+sa.Index("idx_scan_account", t_scan_metadata.c.account_number)
+sa.Index("idx_scan_timestamp", t_scan_metadata.c.scan_timestamp)
+
+sa.Index("idx_sg_scan", t_security_groups.c.scan_id)
+sa.Index("idx_sg_id", t_security_groups.c.group_id)
+sa.Index("idx_sg_vpc", t_security_groups.c.vpc_id)
+
+sa.Index("idx_sso_assign_scan", t_sso_assignments.c.scan_id)
+sa.Index("idx_sso_assign_perm", t_sso_assignments.c.permission_set_arn)
+sa.Index("idx_sso_assign_principal", t_sso_assignments.c.principal_id)
+sa.Index("idx_sso_assign_target", t_sso_assignments.c.target_id)
+
+sa.Index("idx_sso_perm_scan", t_sso_permission_sets.c.scan_id)
+sa.Index("idx_sso_perm_arn", t_sso_permission_sets.c.permission_set_arn)
+sa.Index("idx_sso_perm_name", t_sso_permission_sets.c.permission_set_name)
+sa.Index("idx_sso_perm_instance", t_sso_permission_sets.c.instance_arn)
+
+sa.Index("idx_subnet_scan", t_subnets.c.scan_id)
+sa.Index("idx_subnet_vpc", t_subnets.c.vpc_id)
+sa.Index("idx_subnet_region", t_subnets.c.region)
+
+sa.Index("idx_tgw_scan", t_transit_gateways.c.scan_id)
+sa.Index("idx_tgw_id", t_transit_gateways.c.transit_gateway_id)
+sa.Index("idx_tgw_arn", t_transit_gateways.c.transit_gateway_arn)
+sa.Index("idx_tgw_region", t_transit_gateways.c.region)
+sa.Index("idx_tgw_state", t_transit_gateways.c.state)
+
+sa.Index("idx_flowlog_scan", t_vpc_flow_logs.c.scan_id)
+sa.Index("idx_flowlog_id", t_vpc_flow_logs.c.flow_log_id)
+sa.Index("idx_flowlog_region", t_vpc_flow_logs.c.region)
+sa.Index("idx_flowlog_resource", t_vpc_flow_logs.c.resource_id)
+sa.Index("idx_flowlog_type", t_vpc_flow_logs.c.resource_type)
+
+sa.Index("idx_vpc_scan", t_vpcs.c.scan_id)
+sa.Index("idx_vpc_id", t_vpcs.c.vpc_id)
+sa.Index("idx_vpc_region", t_vpcs.c.region)
+
+sa.Index("idx_vpn_scan", t_vpn_connections.c.scan_id)
+sa.Index("idx_vpn_id", t_vpn_connections.c.vpn_connection_id)
+sa.Index("idx_vpn_region", t_vpn_connections.c.region)
+sa.Index("idx_vpn_state", t_vpn_connections.c.state)
+
+sa.Index("idx_ws_scan", t_workspaces.c.scan_id)
+sa.Index("idx_ws_id", t_workspaces.c.workspace_id)
+sa.Index("idx_ws_region", t_workspaces.c.region)
+sa.Index("idx_ws_vpc", t_workspaces.c.vpc_id)
+sa.Index("idx_ws_directory", t_workspaces.c.directory_id)
