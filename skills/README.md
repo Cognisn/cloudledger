@@ -9,8 +9,12 @@ server's raw security findings into a scored, written security assessment.
 - **security-assessment** — a full, scored security assessment of a scanned
   account: gathers the server's findings and exposure evidence, applies a
   deterministic scoring model, and produces a tiered report (executive summary
-  through to technical remediation). The server returns evidence with advisory
-  severities; this skill supplies the scoring methodology and report.
+  through to technical remediation), closed out by an adversarial challenge
+  round that argues the client's side of every significant finding — false
+  positive, compensating control, intentional design — and records each
+  challenge's disposition, so the assessment is never one-sided. The server
+  returns evidence with advisory severities; this skill supplies the scoring
+  methodology, the challenge round, and the report.
 - **account-inventory** — a complete inventory of the services a scanned account
   uses and to what extent, with accurate counts. Directs the client to the
   summary and resource tools (not the findings tools, which undercount).
@@ -35,7 +39,16 @@ is present).
 
 ### Install
 
-Copy or symlink the skill into your client's skills directory. For Claude Code:
+Export each skill as a ZIP archive ready for your client's skill installer
+(claude.ai, Claude Desktop, and other clients that accept skill uploads):
+
+```bash
+cloudledger skills export            # one ZIP per skill, written to the current directory
+cloudledger skills export --output ~/Desktop/cloudledger-skills
+```
+
+For filesystem-based clients, copy or symlink the skill folder instead. For
+Claude Code:
 
 ```bash
 ln -s "$(pwd)/skills/security-assessment" ~/.claude/skills/security-assessment

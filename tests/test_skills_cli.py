@@ -40,6 +40,7 @@ def test_zip_holds_the_skill_folder_as_its_root(tmp_path):
         names = archive.namelist()
     assert "security-assessment/SKILL.md" in names
     assert "security-assessment/references/scoring-rubric.md" in names
+    assert "security-assessment/references/challenge-guide.md" in names
     assert all(n.startswith("security-assessment/") for n in names)
 
 

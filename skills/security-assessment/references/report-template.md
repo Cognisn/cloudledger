@@ -20,6 +20,9 @@ Overall: <grade> (<score>/100) — coverage <n>% (<confidence> confidence)
   what a breach costs in trust/compliance terms) — drawn from the highest
   severity `findings` checks and the exposure evidence.
 - The single most important next action.
+- If the challenge round (section 8) moderated any top risk or left it awaiting
+  client input, say so here in one sentence — the summary must not read as more
+  certain than the challenged findings support.
 
 ## 3. Category scorecard
 
@@ -56,12 +59,31 @@ Only when Prowler ran. Summarise `failed_by_severity`, note where Prowler aligns
 with or extends the native findings, and reference `get_prowler_findings` for
 detail.
 
-## 8. Detailed findings appendix
+## 8. Challenge and response
+
+The adversarial round from challenge-guide.md, presented so the client sees
+their side was argued before the report reached them.
+
+- A table: Finding | Client-side challenge | Disposition | Basis. One row per
+  challenged finding; the challenge column carries the strongest good-faith
+  objection (with its scan evidence), the disposition is Upheld / Moderated /
+  Needs client input, and the basis cites the adjudicating evidence.
+- Findings with no credible challenge are listed on one line as such — that is
+  assurance, not filler.
+- **Open questions for the client**: every "needs client input" disposition,
+  each stating the specific fact required and how the answer would change the
+  assessment.
+- If any disposition is Moderated, close with the adjusted-risk view from
+  challenge-guide.md — one clearly-labelled narrative sentence; the rubric
+  score and grades above remain exactly as computed.
+
+## 9. Detailed findings appendix
 
 Every finding, grouped by category then severity: `resource_id`, region, the
-evidence, and the remediation reference.
+evidence, and the remediation reference. Mark challenged findings with their
+section 8 disposition.
 
-## 9. Prioritised remediation roadmap
+## 10. Prioritised remediation roadmap
 
 All findings ordered by severity then effort, each with its concrete fix from
 the playbooks, grouped into Immediate, Short term, and Hardening.

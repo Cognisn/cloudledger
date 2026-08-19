@@ -85,6 +85,10 @@ cloudledger tag list
 cloudledger tag find client-acme
 cloudledger tag add <scan-id> follow-up
 
+# Package the bundled MCP-client skills as ZIP archives, one per skill,
+# ready to upload to your client's skill installer (see skills/README.md)
+cloudledger skills export
+
 # Start the MCP server (stdio); reads the configured database by default
 cloudledger-mcp
 ```

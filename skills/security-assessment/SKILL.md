@@ -10,9 +10,11 @@ assessment of a scanned AWS account.
 
 The server returns deterministic evidence with **advisory** severities and a
 coverage report; it does not compute a score. This skill supplies the scoring
-methodology (`references/scoring-rubric.md`) and the report
-(`references/report-template.md`). The score is computed here, by the rubric —
-not by the server.
+methodology (`references/scoring-rubric.md`), the report
+(`references/report-template.md`), and an adversarial challenge round
+(`references/challenge-guide.md`) that argues the client's side of every
+significant finding before delivery, so the assessment is never one-sided. The
+score is computed here, by the rubric — not by the server.
 
 ## Workflow
 
@@ -67,7 +69,17 @@ framing from `references/check-interpretation.md` and fixes from
 `references/remediation-playbooks.md`. Report affected-resource counts even
 though the score counts the check, not the resources.
 
-### 9. Deliver
+### 9. Challenge the assessment
+
+Apply `references/challenge-guide.md` before delivering. Take the client's
+side: contest every critical and high finding (and the summary's top risks)
+through the guide's lenses — false positive, compensating control, intentional
+design, staleness, materiality — citing scan evidence only. Adjudicate each
+challenge as upheld, moderated, or needs client input, and fill the report's
+"Challenge and response" section, including the open questions for the client.
+Dispositions never change the rubric score.
+
+### 10. Deliver
 
 Present the report as Markdown. If the client supports artifacts and the user
 prefers, offer to render it as a page.
@@ -75,7 +87,9 @@ prefers, offer to render it as a page.
 ## Determinism
 
 The same scan must always yield the same score. Do not improvise weights or
-deductions — the rubric is fixed. If you deviate, say why.
+deductions — the rubric is fixed. If you deviate, say why. The challenge round
+annotates findings; it never moves the score — a moderated disposition tempers
+the narrative, not the number.
 
 ## Keeping in step with the server
 
