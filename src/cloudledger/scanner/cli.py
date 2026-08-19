@@ -25,6 +25,7 @@ from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerRunner
 from .setup_cmd import setup_command
+from .tag_cli import tag_group
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -60,7 +61,19 @@ def cli():
     type=str,
     help="Comma-separated list of regions to scan (default: all regions)",
 )
-def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[str]):
+@click.option(
+    "--tag",
+    "tags",
+    multiple=True,
+    help="Tag to apply to each scanned account (repeatable)",
+)
+def scan(
+    database: str,
+    csv: Optional[str],
+    log_level: str,
+    regions: Optional[str],
+    tags: tuple,
+):
     """
     Run AWS infrastructure and security scan.
 
@@ -80,10 +93,12 @@ def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[st
     """
     with create_app_context(console_output="none", log_level=log_level) as ctx:
         database = resolve_database_target(database, ctx.settings, ctx.secrets)
-        _run_scan(database, csv, regions)
+        _run_scan(database, csv, regions, tags)
 
 
-def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None:
+def _run_scan(
+    database: str, csv: Optional[str], regions: Optional[str], tags: tuple = ()
+) -> None:
     console.print("\n[bold blue]CloudLedger[/bold blue]", style="bold")
     console.print("=" * 60)
 
@@ -155,7 +170,7 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
         console.print(f"Account Number: {account.account_number}")
 
         try:
-            _scan_account(account, db_ops, region_list)
+            _scan_account(account, db_ops, region_list, cli_tags=list(tags))
             console.print(
                 f"[green]✓[/green] Scan completed for {account.account_name}\n"
             )
@@ -170,7 +185,10 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
 
 
 def _scan_account(
-    account: AccountConfig, db_ops: DatabaseOperations, regions: Optional[List[str]]
+    account: AccountConfig,
+    db_ops: DatabaseOperations,
+    regions: Optional[List[str]],
+    cli_tags: Optional[List[str]] = None,
 ) -> None:
     """
     Scan a single AWS account.
@@ -179,6 +197,8 @@ def _scan_account(
         account: Account configuration
         db_ops: Database operations instance
         regions: Optional list of specific regions to scan
+        cli_tags: Tags supplied via the `scan --tag` option, applied
+            alongside any tags entered interactively for this account
     """
     scan_id = str(uuid.uuid4())
     start_time = datetime.now(UTC)
@@ -210,6 +230,18 @@ def _scan_account(
     )
 
     db_ops.insert_scan_metadata(metadata)
+
+    merged_tags: List[str] = []
+    seen_lower = set()
+    for tag in list(cli_tags or []) + list(account.tags or []):
+        lowered = tag.strip().lower()
+        if not lowered or lowered in seen_lower:
+            continue
+        seen_lower.add(lowered)
+        merged_tags.append(tag)
+    if merged_tags:
+        db_ops.add_tags(scan_id, merged_tags)
+
     logger.info(f"Started scan {scan_id} for account {account.account_name}")
 
     try:
@@ -579,6 +611,7 @@ def delete_scan(database: str, scan_id: Optional[str]):
 
 
 cli.add_command(setup_command, name="setup")
+cli.add_command(tag_group, name="tag")
 
 
 if __name__ == "__main__":

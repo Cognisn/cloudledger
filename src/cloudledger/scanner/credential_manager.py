@@ -7,8 +7,8 @@ Uses Australian English in all documentation and comments.
 
 import boto3
 import getpass
-from typing import Optional, Dict
-from dataclasses import dataclass
+from typing import Optional, Dict, List
+from dataclasses import dataclass, field
 import logging
 
 from ..utils.aws_helpers import validate_aws_credentials, get_account_id
@@ -33,6 +33,7 @@ class AccountConfig:
     account_number: str
     credentials: AWSCredentials
     prowler_level: Optional[str] = None
+    tags: List[str] = field(default_factory=list)
 
 
 class CredentialManager:
@@ -43,9 +44,7 @@ class CredentialManager:
         self._sessions: Dict[str, boto3.Session] = {}
 
     def create_session(
-        self,
-        credentials: AWSCredentials,
-        region: str = 'us-east-1'
+        self, credentials: AWSCredentials, region: str = "us-east-1"
     ) -> boto3.Session:
         """
         Create a boto3 session with the provided credentials.
@@ -64,7 +63,7 @@ class CredentialManager:
         if not validate_aws_credentials(
             credentials.access_key_id,
             credentials.secret_access_key,
-            credentials.session_token
+            credentials.session_token,
         ):
             raise ValueError("Invalid AWS credentials")
 
@@ -73,17 +72,14 @@ class CredentialManager:
             aws_access_key_id=credentials.access_key_id,
             aws_secret_access_key=credentials.secret_access_key,
             aws_session_token=credentials.session_token,
-            region_name=region
+            region_name=region,
         )
 
         logger.info(f"Created AWS session for region {region}")
         return session
 
     def get_client(
-        self,
-        session: boto3.Session,
-        service: str,
-        region: Optional[str] = None
+        self, session: boto3.Session, service: str, region: Optional[str] = None
     ):
         """
         Get an AWS service client from a session.
@@ -101,9 +97,7 @@ class CredentialManager:
         return session.client(service)
 
     def verify_account_number(
-        self,
-        session: boto3.Session,
-        expected_account_number: str
+        self, session: boto3.Session, expected_account_number: str
     ) -> bool:
         """
         Verify that the session credentials match the expected account number.
@@ -141,12 +135,14 @@ class CredentialManager:
         print("\nEnter AWS credentials:")
         access_key = input("AWS Access Key ID: ").strip()
         secret_key = getpass.getpass("AWS Secret Access Key: ").strip()
-        session_token = getpass.getpass("AWS Session Token (press Enter to skip): ").strip()
+        session_token = getpass.getpass(
+            "AWS Session Token (press Enter to skip): "
+        ).strip()
 
         return AWSCredentials(
             access_key_id=access_key,
             secret_access_key=secret_key,
-            session_token=session_token if session_token else None
+            session_token=session_token if session_token else None,
         )
 
     @staticmethod
@@ -157,9 +153,9 @@ class CredentialManager:
         Returns:
             Account configuration from user input
         """
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("AWS Account Configuration")
-        print("="*60)
+        print("=" * 60)
 
         account_name = input("Account Name (friendly identifier): ").strip()
         account_number = input("Account Number (12-digit): ").strip()
@@ -176,17 +172,23 @@ class CredentialManager:
         print("  2 - Standard compliance checks (CIS Benchmarks)")
         print("  3 - Comprehensive security assessment")
         print("  skip - Skip Prowler scanning")
-        prowler_choice = input("Select Prowler scan level [1/2/3/skip]: ").strip().lower()
+        prowler_choice = (
+            input("Select Prowler scan level [1/2/3/skip]: ").strip().lower()
+        )
 
         prowler_level = None
-        if prowler_choice in ['1', '2', '3']:
+        if prowler_choice in ["1", "2", "3"]:
             prowler_level = prowler_choice
-        elif prowler_choice != 'skip':
+        elif prowler_choice != "skip":
             print("Invalid choice, defaulting to skip Prowler scan")
+
+        tags_input = input("Tags (comma-separated, optional): ").strip()
+        tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
 
         return AccountConfig(
             account_name=account_name,
             account_number=account_number,
             credentials=credentials,
-            prowler_level=prowler_level
+            prowler_level=prowler_level,
+            tags=tags,
         )
