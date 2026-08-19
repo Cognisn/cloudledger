@@ -5,6 +5,7 @@ import json
 import pytest
 
 from cloudledger.assessment.exposure import run_exposure
+from cloudledger.database.engine import make_engine
 from tests.assessment_fixtures import SCAN_ID, make_db, execute
 
 SSH_WORLD_OPEN = [
@@ -77,7 +78,7 @@ def test_public_instance_with_open_sg_flags(tmp_path):
     _insert_instance(db_path, "i-exposed", "3.3.3.3", ["sg-open"])
     _insert_instance(db_path, "i-shielded", "4.4.4.4", ["sg-closed"])
     _insert_instance(db_path, "i-private", None, ["sg-open"])
-    result = run_exposure(db_path, SCAN_ID, service="ec2")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="ec2")
     findings = result["services"]["ec2"]["findings"]
     assert [f["resource_id"] for f in findings] == ["i-exposed"]
     evidence = findings[0]["evidence"]
@@ -122,7 +123,7 @@ def test_lambda_none_auth_url_flags(tmp_path):
             ),
         ),
     )
-    result = run_exposure(db_path, SCAN_ID, service="lambda")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="lambda")
     findings = result["services"]["lambda"]["findings"]
     ids = {f["resource_id"] for f in findings}
     assert ids == {"open-fn", "star-fn"}
@@ -158,7 +159,7 @@ def test_public_rds_with_open_port_flags(tmp_path):
             json.dumps(["sg-db"]),
         ),
     )
-    result = run_exposure(db_path, SCAN_ID, service="databases")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="databases")
     findings = result["services"]["databases"]["findings"]
     assert findings[0]["resource_id"] == "db-open"
     assert findings[0]["evidence"]["port_world_open"] is True
@@ -182,7 +183,7 @@ def test_entry_points_inventory(tmp_path):
             "public-alb.example.aws",
         ),
     )
-    result = run_exposure(db_path, SCAN_ID, service="entry_points")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="entry_points")
     findings = result["services"]["entry_points"]["findings"]
     assert findings[0]["resource_id"] == "public-alb"
     assert findings[0]["evidence"]["entry_point_type"] == "load_balancer"
@@ -191,7 +192,7 @@ def test_entry_points_inventory(tmp_path):
 def test_unknown_service_raises(tmp_path):
     db_path = make_db(tmp_path)
     with pytest.raises(ValueError):
-        run_exposure(db_path, SCAN_ID, service="mainframe")
+        run_exposure(make_engine(db_path), SCAN_ID, service="mainframe")
 
 
 def test_missing_table_degrades_to_not_evaluated(tmp_path):
@@ -204,9 +205,12 @@ def test_missing_table_degrades_to_not_evaluated(tmp_path):
     with __import__("sqlite3").connect(db_path) as conn:
         conn.execute("DROP TABLE lambda_exposure")
         conn.commit()
-    result = run_exposure(db_path, SCAN_ID, service="lambda")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="lambda")
     assert result["services"]["lambda"]["status"] == "not_evaluated"
-    assert "scan predates this data" in result["services"]["lambda"]["not_evaluated_reason"]
+    assert (
+        "scan predates this data"
+        in result["services"]["lambda"]["not_evaluated_reason"]
+    )
 
 
 def test_empty_table_is_not_applicable(tmp_path):
@@ -215,7 +219,7 @@ def test_empty_table_is_not_applicable(tmp_path):
     of the resource: not_applicable (scanned, none found), not a coverage gap.
     """
     db_path = make_db(tmp_path)  # fresh schema, no lambda_exposure rows
-    result = run_exposure(db_path, SCAN_ID, service="lambda")
+    result = run_exposure(make_engine(db_path), SCAN_ID, service="lambda")
     svc = result["services"]["lambda"]
     assert svc["status"] == "not_applicable"
     assert "none found" in svc["not_applicable_reason"]

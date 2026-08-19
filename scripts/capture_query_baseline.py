@@ -30,21 +30,6 @@ def _load_fixtures():
     return mod
 
 
-def _normalise(value, volatile_keys):
-    """Recursively replace any dict key in `volatile_keys`, at any depth, with a placeholder."""
-    if isinstance(value, dict):
-        out = {}
-        for key, val in value.items():
-            if key in volatile_keys:
-                out[key] = "<volatile>"
-            else:
-                out[key] = _normalise(val, volatile_keys)
-        return out
-    if isinstance(value, list):
-        return [_normalise(item, volatile_keys) for item in value]
-    return value
-
-
 def capture(db_path: str, fixtures) -> dict:
     """Run every CALL_MATRIX entry through handle_query and return the normalised results."""
     db_ops = DatabaseOperations(db_path)
@@ -54,7 +39,7 @@ def capture(db_path: str, fixtures) -> dict:
     for index, (tool_name, params) in enumerate(fixtures.CALL_MATRIX):
         key = f"{index:03d}:{tool_name}"
         output = handler.handle_query(tool_name, params)
-        baseline[key] = _normalise(output, fixtures.VOLATILE_KEYS)
+        baseline[key] = fixtures._normalise(output, fixtures.VOLATILE_KEYS)
     return baseline
 
 
@@ -66,7 +51,9 @@ if __name__ == "__main__":
         fixtures.seed_database(db)
         baseline = capture(db, fixtures)
 
-        out = Path(__file__).parent.parent / "tests" / "fixtures" / "query_baseline.json"
+        out = (
+            Path(__file__).parent.parent / "tests" / "fixtures" / "query_baseline.json"
+        )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(baseline, indent=2, sort_keys=True))
         print(f"Baseline written: {out}")

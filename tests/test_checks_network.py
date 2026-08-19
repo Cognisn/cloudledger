@@ -4,6 +4,7 @@ import json
 
 from cloudledger.assessment.sg_rules import world_open_rules
 from cloudledger.assessment.registry import run_checks
+from cloudledger.database.engine import make_engine
 from tests.assessment_fixtures import SCAN_ID, make_db, execute
 
 SSH_WORLD_OPEN = [
@@ -43,7 +44,7 @@ def _insert_sg(db_path, group_id, name, ingress):
 
 
 def _checks(db_path):
-    result = run_checks(db_path, SCAN_ID, category="network_exposure")
+    result = run_checks(make_engine(db_path), SCAN_ID, category="network_exposure")
     return {c["check_id"]: c for c in result["categories"].get("network_exposure", [])}
 
 

@@ -6,9 +6,10 @@ a scan and groups results. Severities are advisory facts only.
 Uses Australian English in all documentation and comments.
 """
 
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
+
+import sqlalchemy as sa
 
 from .types import CheckResult, Finding
 
@@ -20,7 +21,7 @@ CATEGORIES = (
     "service_exposure",
 )
 
-CheckFn = Callable[[sqlite3.Connection, str], CheckResult]
+CheckFn = Callable[[sa.Connection, str], CheckResult]
 
 
 @dataclass
@@ -91,9 +92,7 @@ def make_not_applicable(meta: CheckMeta, reason: str) -> CheckResult:
     )
 
 
-def dependency_state(
-    conn: sqlite3.Connection, tables: List[str], scan_id: str
-) -> str:
+def dependency_state(conn: sa.Connection, tables: List[str], scan_id: str) -> str:
     """
     Classify a check's data dependency for a scan.
 
@@ -109,9 +108,10 @@ def dependency_state(
     for table in tables:
         try:
             count = conn.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE scan_id = ?", (scan_id,)
-            ).fetchone()[0]
-        except sqlite3.OperationalError:
+                sa.text(f"SELECT COUNT(*) FROM {table} WHERE scan_id = :scan_id"),
+                {"scan_id": scan_id},
+            ).scalar()
+        except sa.exc.OperationalError:
             continue  # table absent from this scan's schema
         present_tables += 1
         total_rows += count
@@ -120,26 +120,28 @@ def dependency_state(
     return "present" if total_rows > 0 else "empty"
 
 
-def resolve_scan_id(conn: sqlite3.Connection, scan_id: Optional[str]) -> str:
+def resolve_scan_id(conn: sa.Connection, scan_id: Optional[str]) -> str:
     """Return the requested scan_id, or the latest scan when None."""
-    cursor = conn.cursor()
     if scan_id:
-        row = cursor.execute(
-            "SELECT scan_id FROM scan_metadata WHERE scan_id = ?", (scan_id,)
-        ).fetchone()
+        row = conn.execute(
+            sa.text("SELECT scan_id FROM scan_metadata WHERE scan_id = :scan_id"),
+            {"scan_id": scan_id},
+        ).mappings().fetchone()
         if not row:
             raise ValueError(f"Scan not found: {scan_id}")
         return scan_id
-    row = cursor.execute(
-        "SELECT scan_id FROM scan_metadata ORDER BY scan_timestamp DESC LIMIT 1"
-    ).fetchone()
+    row = conn.execute(
+        sa.text(
+            "SELECT scan_id FROM scan_metadata ORDER BY scan_timestamp DESC LIMIT 1"
+        )
+    ).mappings().fetchone()
     if not row:
         raise ValueError("No scans in database")
-    return row[0]
+    return row["scan_id"]
 
 
 def run_checks(
-    db_path: str,
+    engine: sa.Engine,
     scan_id: Optional[str],
     category: Optional[str] = None,
 ) -> Dict:
@@ -149,9 +151,7 @@ def run_checks(
     Returns findings grouped by category plus a list of checks that could
     not be evaluated, so the client always knows its coverage gaps.
     """
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
+    with engine.connect() as conn:
         resolved = resolve_scan_id(conn, scan_id)
         categories: Dict[str, List[Dict]] = {}
         not_evaluated: List[Dict] = []
@@ -174,8 +174,6 @@ def run_checks(
             "categories": categories,
             "not_evaluated": not_evaluated,
         }
-    finally:
-        conn.close()
 
 
 def get_catalogue() -> List[Dict]:

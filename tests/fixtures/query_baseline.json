@@ -1167,14 +1167,38 @@
   },
   "031:find_unused_resources": {
     "summary": {
-      "categories": {},
-      "potential_monthly_savings": 0.0,
-      "total_unused": 0
+      "categories": {
+        "old_snapshots": 1
+      },
+      "potential_monthly_savings": 0.4,
+      "total_unused": 1
     },
-    "unused_resources": {}
+    "unused_resources": {
+      "old_snapshots": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "age_days": "<volatile>",
+          "description": "Fixture old snapshot",
+          "estimated_monthly_cost": 0.4,
+          "region": "ap-southeast-2",
+          "size_gb": 8,
+          "snapshot_id": "snap-fixture-old",
+          "start_time": "2026-01-01T00:00:00+00:00",
+          "tags": {},
+          "volume_id": "vol-fixture-old"
+        }
+      ]
+    }
   },
   "032:analyze_encryption_coverage": {
     "by_resource_type": {
+      "ebs_snapshots": {
+        "encrypted": 2,
+        "encryption_percentage": 100.0,
+        "total": 2,
+        "unencrypted": 0
+      },
       "s3_buckets": {
         "encrypted": 1,
         "encryption_percentage": 50.0,
@@ -1183,9 +1207,9 @@
       }
     },
     "summary": {
-      "encrypted_resources": 1,
-      "encryption_percentage": 50.0,
-      "total_resources": 2,
+      "encrypted_resources": 3,
+      "encryption_percentage": 75.0,
+      "total_resources": 4,
       "unencrypted_resources": 1
     },
     "unencrypted_resources": {
@@ -1594,10 +1618,10 @@
           "check_id": "data.unencrypted_ebs_snapshots",
           "default_severity": "high",
           "findings": [],
-          "not_applicable_reason": "no EBS snapshots in this account (scanned, none found)",
+          "not_applicable_reason": null,
           "not_evaluated_reason": null,
           "recommendation": "Copy snapshots with encryption enabled and remove the plaintext originals",
-          "status": "not_applicable"
+          "status": "clean"
         },
         {
           "category": "data_protection",
@@ -2448,6 +2472,12 @@
   },
   "055:analyze_encryption_coverage": {
     "by_resource_type": {
+      "ebs_snapshots": {
+        "encrypted": 2,
+        "encryption_percentage": 100.0,
+        "total": 2,
+        "unencrypted": 0
+      },
       "s3_buckets": {
         "encrypted": 1,
         "encryption_percentage": 50.0,
@@ -2456,9 +2486,9 @@
       }
     },
     "summary": {
-      "encrypted_resources": 1,
-      "encryption_percentage": 50.0,
-      "total_resources": 2,
+      "encrypted_resources": 3,
+      "encryption_percentage": 75.0,
+      "total_resources": 4,
       "unencrypted_resources": 1
     },
     "unencrypted_resources": {
@@ -2873,11 +2903,29 @@
   },
   "069:find_unused_resources": {
     "summary": {
-      "categories": {},
-      "potential_monthly_savings": 0.0,
-      "total_unused": 0
+      "categories": {
+        "old_snapshots": 1
+      },
+      "potential_monthly_savings": 0.4,
+      "total_unused": 1
     },
-    "unused_resources": {}
+    "unused_resources": {
+      "old_snapshots": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "age_days": "<volatile>",
+          "description": "Fixture old snapshot",
+          "estimated_monthly_cost": 0.4,
+          "region": "ap-southeast-2",
+          "size_gb": 8,
+          "snapshot_id": "snap-fixture-old",
+          "start_time": "2026-01-01T00:00:00+00:00",
+          "tags": {},
+          "volume_id": "vol-fixture-old"
+        }
+      ]
+    }
   },
   "070:find_vpc_endpoint_opportunities": {
     "endpoint_opportunities": [

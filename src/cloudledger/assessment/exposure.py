@@ -8,8 +8,9 @@ Uses Australian English in all documentation and comments.
 """
 
 import json
-import sqlite3
 from typing import Dict, List, Optional
+
+import sqlalchemy as sa
 
 from .registry import (
     CheckMeta,
@@ -28,9 +29,12 @@ def _world_rules_by_group(conn, scan_id) -> Dict[str, list]:
     """Map of security group id to its world-open ingress rules."""
     result = {}
     for row in conn.execute(
-        "SELECT group_id, ingress_rules FROM security_groups WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT group_id, ingress_rules FROM security_groups"
+            " WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         ingress = json.loads(row["ingress_rules"]) if row["ingress_rules"] else []
         rules = world_open_rules(ingress)
         if rules:
@@ -85,11 +89,13 @@ def check_ec2_public(conn, scan_id):
     open_groups = _world_rules_by_group(conn, scan_id)
     findings = []
     instance_rows = conn.execute(
-        "SELECT instance_id, region, public_ip, security_groups, state"
-        " FROM ec2_instances WHERE scan_id = ? AND public_ip IS NOT NULL"
-        " AND public_ip != ''",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            "SELECT instance_id, region, public_ip, security_groups, state"
+            " FROM ec2_instances WHERE scan_id = :scan_id AND public_ip IS NOT NULL"
+            " AND public_ip != ''"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     for row in instance_rows:
         exposed = [
             {"group_id": group_id, "rules": open_groups[group_id]}
@@ -158,10 +164,13 @@ def check_lambda_public(conn, scan_id):
         )
     findings = []
     function_rows = conn.execute(
-        "SELECT function_name, function_arn, region, url_auth_type,"
-        " url_config, resource_policy FROM lambda_exposure WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            "SELECT function_name, function_arn, region, url_auth_type,"
+            " url_config, resource_policy FROM lambda_exposure"
+            " WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     for row in function_rows:
         reasons = {}
         if row["url_auth_type"] == "NONE":
@@ -225,11 +234,13 @@ def check_database_exposure(conn, scan_id):
     findings = []
 
     for row in conn.execute(
-        "SELECT db_instance_identifier, region, engine, endpoint_port,"
-        " vpc_security_groups FROM rds_instances"
-        " WHERE scan_id = ? AND publicly_accessible = 1",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT db_instance_identifier, region, engine, endpoint_port,"
+            " vpc_security_groups FROM rds_instances"
+            " WHERE scan_id = :scan_id AND publicly_accessible = 1"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         group_ids = _group_ids(row["vpc_security_groups"])
         port = row["endpoint_port"]
         port_open = (
@@ -261,10 +272,12 @@ def check_database_exposure(conn, scan_id):
         )
 
     for row in conn.execute(
-        "SELECT domain_name, region, vpc_id, endpoint FROM opensearch_domains"
-        " WHERE scan_id = ? AND (vpc_id IS NULL OR vpc_id = '')",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT domain_name, region, vpc_id, endpoint FROM opensearch_domains"
+            " WHERE scan_id = :scan_id AND (vpc_id IS NULL OR vpc_id = '')"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         findings.append(
             Finding(
                 resource_id=row["domain_name"],
@@ -279,10 +292,12 @@ def check_database_exposure(conn, scan_id):
         )
 
     for row in conn.execute(
-        "SELECT cache_cluster_id, region, engine, security_groups"
-        " FROM elasticache_clusters WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT cache_cluster_id, region, engine, security_groups"
+            " FROM elasticache_clusters WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         world_open = [
             group_id
             for group_id in _group_ids(row["security_groups"])
@@ -342,11 +357,13 @@ def check_entry_points(conn, scan_id):
     findings = []
 
     for row in conn.execute(
-        "SELECT load_balancer_name, region, load_balancer_type, dns_name,"
-        " listeners FROM load_balancers WHERE scan_id = ?"
-        " AND scheme = 'internet-facing'",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT load_balancer_name, region, load_balancer_type, dns_name,"
+            " listeners FROM load_balancers WHERE scan_id = :scan_id"
+            " AND scheme = 'internet-facing'"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         findings.append(
             Finding(
                 resource_id=row["load_balancer_name"],
@@ -364,10 +381,12 @@ def check_entry_points(conn, scan_id):
         )
 
     for row in conn.execute(
-        "SELECT api_id, stage_name, region, api_type, web_acl_arn"
-        " FROM api_gateway_stages WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT api_id, stage_name, region, api_type, web_acl_arn"
+            " FROM api_gateway_stages WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         findings.append(
             Finding(
                 resource_id=f"{row['api_id']}/{row['stage_name']}",
@@ -382,10 +401,12 @@ def check_entry_points(conn, scan_id):
         )
 
     for row in conn.execute(
-        "SELECT distribution_id, domain_name, web_acl_id"
-        " FROM cloudfront_distributions WHERE scan_id = ? AND enabled = 1",
-        (scan_id,),
-    ).fetchall():
+        sa.text(
+            "SELECT distribution_id, domain_name, web_acl_id"
+            " FROM cloudfront_distributions WHERE scan_id = :scan_id AND enabled = 1"
+        ),
+        {"scan_id": scan_id},
+    ).mappings():
         findings.append(
             Finding(
                 resource_id=row["distribution_id"],
@@ -411,7 +432,7 @@ SERVICE_CHECKS = {
 
 
 def run_exposure(
-    db_path: str, scan_id: Optional[str], service: Optional[str] = None
+    engine: sa.Engine, scan_id: Optional[str], service: Optional[str] = None
 ) -> Dict:
     """Run the exposure correlations for one service area or all of them."""
     if service is not None and service not in SERVICE_CHECKS:
@@ -420,9 +441,7 @@ def run_exposure(
         )
     selected = {service: SERVICE_CHECKS[service]} if service else SERVICE_CHECKS
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
+    with engine.connect() as conn:
         resolved = resolve_scan_id(conn, scan_id)
         services = {}
         for name, check_id in selected.items():
@@ -433,5 +452,3 @@ def run_exposure(
                 result = make_result(meta, not_evaluated_reason=f"check error: {e}")
             services[name] = result.to_dict()
         return {"scan_id": resolved, "services": services}
-    finally:
-        conn.close()

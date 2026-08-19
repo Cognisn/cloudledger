@@ -33,6 +33,7 @@ from cloudledger.database.models import (
     Route53RecordSet,
     Organization,
     OrganizationAccount,
+    EBSSnapshot,
 )
 from cloudledger.database.operations import DatabaseOperations
 from cloudledger.database.schema import DatabaseSchema
@@ -320,6 +321,44 @@ def seed_database(db_path: str) -> None:
                     "CostCentre": "fixture-cc",
                     "Project": "fixture-proj",
                 },
+            ),
+        ]
+    )
+
+    # -- ebs_snapshots ------------------------------------------------------
+    # Two deterministic rows so age-based queries (find_unused_resources'
+    # "old snapshots" category, the assessment engine's unencrypted-snapshot
+    # check) have a genuine old/recent split to evaluate: one dated well
+    # before the default 90-day cutoff, one dated well within it.
+    db_ops.insert_ebs_snapshots(
+        [
+            EBSSnapshot(
+                scan_id=SCAN_ID,
+                snapshot_id="snap-fixture-old",
+                region="ap-southeast-2",
+                volume_id="vol-fixture-old",
+                volume_size=8,
+                encrypted=True,
+                state="completed",
+                start_time=_dt("2026-01-01T00:00:00+00:00"),
+                progress="100%",
+                owner_id=FIXTURE_ACCOUNT_NUMBER,
+                description="Fixture old snapshot",
+                tags={},
+            ),
+            EBSSnapshot(
+                scan_id=SCAN_ID,
+                snapshot_id="snap-fixture-recent",
+                region="ap-southeast-2",
+                volume_id="vol-fixture-recent",
+                volume_size=8,
+                encrypted=True,
+                state="completed",
+                start_time=_dt(TIMESTAMP_1),
+                progress="100%",
+                owner_id=FIXTURE_ACCOUNT_NUMBER,
+                description="Fixture recent snapshot",
+                tags={},
             ),
         ]
     )
@@ -739,3 +778,25 @@ CALL_MATRIX: list[tuple[str, dict]] = list(_CURATED_CALLS) + [
 #   wall-clock moment the fixture row was seeded, which differs between the
 #   baseline capture run and every later equivalence-test run.
 VOLATILE_KEYS = {"age_days", "created_at"}
+
+
+def _normalise(value, volatile_keys=None):
+    """
+    Recursively replace any dict key in `volatile_keys` (default VOLATILE_KEYS),
+    at any depth, with a placeholder.
+
+    Shared by the equivalence test and the baseline-capture script so both
+    normalise volatile fields identically.
+    """
+    if volatile_keys is None:
+        volatile_keys = VOLATILE_KEYS
+    if isinstance(value, dict):
+        return {
+            key: (
+                "<volatile>" if key in volatile_keys else _normalise(val, volatile_keys)
+            )
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [_normalise(item, volatile_keys) for item in value]
+    return value

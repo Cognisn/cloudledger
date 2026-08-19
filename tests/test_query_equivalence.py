@@ -18,23 +18,11 @@ import pytest
 from cloudledger.database.operations import DatabaseOperations
 from cloudledger.mcp.queries import QueryHandler
 
-from tests.mcp_query_fixtures import CALL_MATRIX, VOLATILE_KEYS, seed_database
+from tests.mcp_query_fixtures import CALL_MATRIX, _normalise, seed_database
 
 BASELINE = json.loads(
     (Path(__file__).parent / "fixtures" / "query_baseline.json").read_text()
 )
-
-
-def _normalise(value):
-    """Recursively replace any dict key in VOLATILE_KEYS, at any depth, with a placeholder."""
-    if isinstance(value, dict):
-        return {
-            key: ("<volatile>" if key in VOLATILE_KEYS else _normalise(val))
-            for key, val in value.items()
-        }
-    if isinstance(value, list):
-        return [_normalise(item) for item in value]
-    return value
 
 
 HANDLER = None

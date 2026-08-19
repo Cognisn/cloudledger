@@ -3,6 +3,8 @@ Data protection checks.
 Uses Australian English in all documentation and comments.
 """
 
+import sqlalchemy as sa
+
 from .registry import (
     CheckMeta,
     dependency_state,
@@ -50,8 +52,9 @@ def _simple_rows_check(
             )
         return make_result(meta, not_evaluated_reason=f"{table} not collected")
     matched = conn.execute(
-        f"SELECT {columns} FROM {table} WHERE scan_id = ? AND {where}", (scan_id,)
-    ).fetchall()
+        sa.text(f"SELECT {columns} FROM {table} WHERE scan_id = :scan_id AND {where}"),
+        {"scan_id": scan_id},
+    ).mappings()
     findings = [
         Finding(
             resource_id=row[resource_column],
@@ -225,11 +228,17 @@ ACCOUNT_PAB = CheckMeta(
 
 @register(ACCOUNT_PAB)
 def check_account_pab(conn, scan_id):
-    row = conn.execute(
-        "SELECT account_public_access_block FROM account_security_posture"
-        " WHERE scan_id = ? ORDER BY id DESC LIMIT 1",
-        (scan_id,),
-    ).fetchone()
+    row = (
+        conn.execute(
+            sa.text(
+                "SELECT account_public_access_block FROM account_security_posture"
+                " WHERE scan_id = :scan_id ORDER BY id DESC LIMIT 1"
+            ),
+            {"scan_id": scan_id},
+        )
+        .mappings()
+        .fetchone()
+    )
     if row is None:
         return make_result(
             ACCOUNT_PAB, not_evaluated_reason="account security posture not collected"
