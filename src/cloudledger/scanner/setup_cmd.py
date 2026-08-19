@@ -9,6 +9,7 @@ Uses Australian English in all documentation and comments.
 
 import sys
 from typing import Optional, Tuple
+from urllib.parse import quote_plus
 
 import click
 import sqlalchemy as sa
@@ -146,6 +147,7 @@ def _test_connection(target: str, password: Optional[str]) -> bool:
         message = str(e)
         if password:
             message = message.replace(password, "***")
+            message = message.replace(quote_plus(password), "***")
         console.print(f"[red]✗[/red] Connection test failed for {mask_target(target)}")
         console.print(f"[red]{type(e).__name__}:[/red] {message}")
         return False
@@ -176,4 +178,6 @@ def setup_command() -> None:
             sys.exit(1)
 
         DatabaseSchema(target).initialise_database()
-        console.print(f"[green]✓[/green] Database schema created: {mask_target(target)}")
+        console.print(
+            f"[green]✓[/green] Database schema created: {mask_target(target)}"
+        )
