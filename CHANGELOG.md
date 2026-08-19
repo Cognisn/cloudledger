@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+- `cloudledger skills export`: packages each bundled MCP-client skill into its own ZIP archive (one per skill, the folder as the archive root) ready to upload to an MCP client's skill installer, with `--output` and `--force` options. The skills now ship inside the wheel, so the command works from a PyPI install.
+- Adversarial challenge round in the security-assessment skill: before delivery the assessment argues the client's side of every significant finding (false positive, compensating control, intentional design, staleness, materiality), adjudicates each challenge as upheld, moderated, or needs client input, and reports a "Challenge and response" section with open questions for the client. Dispositions annotate the narrative only; the rubric score is unchanged.
+
 ## [0.1.0a1] - 2026-08-19
 
 ### Added

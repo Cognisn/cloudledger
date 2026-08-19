@@ -19,4 +19,5 @@ Index of the tests in this folder. Keep it current as tests are added, changed, 
 | `test_prowler_parsing.py` | Prowler output parsing into findings |
 | `test_region_security_services.py` | Regional security-service detection |
 | `test_s3_public_access_collection.py` | S3 public-access configuration collection |
+| `test_skills_cli.py` | `skills export` command and the packaged-skills resolver |
 | `test_security_posture_collection.py` | Account security-posture collection |

@@ -25,6 +25,7 @@ from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerRunner
 from .setup_cmd import setup_command
+from .skills_cli import skills_group
 from .tag_cli import tag_group
 
 console = Console()
@@ -714,6 +715,7 @@ def delete_scan(database: str, scan_id: Optional[str]):
 
 
 cli.add_command(setup_command, name="setup")
+cli.add_command(skills_group, name="skills")
 cli.add_command(tag_group, name="tag")
 
 
