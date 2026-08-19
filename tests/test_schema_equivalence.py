@@ -3,7 +3,7 @@ Schema equivalence harness: the schema produced by DatabaseSchema must match
 the frozen baseline captured from the legacy hand-written DDL.
 
 TIMESTAMP columns are declared as Text in the SQLAlchemy metadata (ISO-string
-storage, unchanged behaviour); the comparison normalises the baseline
+storage, unchanged behaviour); the comparison normalises both sides
 accordingly. Uses Australian English in all comments.
 """
 
@@ -20,7 +20,7 @@ BASELINE = json.loads(
     (Path(__file__).parent / "fixtures" / "schema_baseline.json").read_text()
 )
 
-# Declared-type normalisation applied to the BASELINE side (see module docstring).
+# Declared-type normalisation applied to both sides of the comparison (see module docstring).
 TYPE_NORMALISATION = {"TIMESTAMP": "TEXT"}
 
 

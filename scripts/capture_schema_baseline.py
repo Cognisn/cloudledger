@@ -41,7 +41,7 @@ def snapshot_schema(db_path: str) -> dict:
             for c in cur.execute(f"PRAGMA table_info('{name}')")
         ]
         indexes = {}
-        for idx in cur.execute(f"PRAGMA index_list('{name}')"):
+        for idx in cur.execute(f"PRAGMA index_list('{name}')").fetchall():
             if idx["name"].startswith("sqlite_autoindex"):
                 continue
             indexes[idx["name"]] = [
@@ -60,7 +60,9 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmp:
         db = str(Path(tmp) / "baseline.db")
         DatabaseSchema(db).initialise_database()
-        out = Path(__file__).parent.parent / "tests" / "fixtures" / "schema_baseline.json"
+        out = (
+            Path(__file__).parent.parent / "tests" / "fixtures" / "schema_baseline.json"
+        )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(snapshot_schema(db), indent=2, sort_keys=True))
         print(f"Baseline written: {out}")

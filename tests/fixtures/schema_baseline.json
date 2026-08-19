@@ -216,8 +216,17 @@
         }
       ],
       "indexes": {
+        "idx_apigw_http_id": [
+          "api_id"
+        ],
+        "idx_apigw_http_name": [
+          "name"
+        ],
         "idx_apigw_http_region": [
           "region"
+        ],
+        "idx_apigw_http_scan": [
+          "scan_id"
         ]
       }
     },
@@ -351,8 +360,17 @@
         }
       ],
       "indexes": {
+        "idx_apigw_rest_id": [
+          "api_id"
+        ],
+        "idx_apigw_rest_name": [
+          "name"
+        ],
         "idx_apigw_rest_region": [
           "region"
+        ],
+        "idx_apigw_rest_scan": [
+          "scan_id"
         ]
       }
     },
@@ -528,6 +546,18 @@
         }
       ],
       "indexes": {
+        "idx_apigw_stage_api": [
+          "api_id"
+        ],
+        "idx_apigw_stage_name": [
+          "stage_name"
+        ],
+        "idx_apigw_stage_region": [
+          "region"
+        ],
+        "idx_apigw_stage_scan": [
+          "scan_id"
+        ],
         "idx_apigw_stage_type": [
           "api_type"
         ]
@@ -698,8 +728,14 @@
         }
       ],
       "indexes": {
+        "idx_asg_name": [
+          "auto_scaling_group_name"
+        ],
         "idx_asg_region": [
           "region"
+        ],
+        "idx_asg_scan": [
+          "scan_id"
         ]
       }
     },
@@ -847,6 +883,18 @@
         }
       ],
       "indexes": {
+        "idx_br_agent_arn": [
+          "agent_arn"
+        ],
+        "idx_br_agent_id": [
+          "agent_id"
+        ],
+        "idx_br_agent_region": [
+          "region"
+        ],
+        "idx_br_agent_scan": [
+          "scan_id"
+        ],
         "idx_br_agent_status": [
           "agent_status"
         ]
@@ -1003,6 +1051,18 @@
         }
       ],
       "indexes": {
+        "idx_br_guard_arn": [
+          "guardrail_arn"
+        ],
+        "idx_br_guard_id": [
+          "guardrail_id"
+        ],
+        "idx_br_guard_region": [
+          "region"
+        ],
+        "idx_br_guard_scan": [
+          "scan_id"
+        ],
         "idx_br_guard_status": [
           "status"
         ]
@@ -1131,6 +1191,18 @@
         }
       ],
       "indexes": {
+        "idx_br_kb_arn": [
+          "knowledge_base_arn"
+        ],
+        "idx_br_kb_id": [
+          "knowledge_base_id"
+        ],
+        "idx_br_kb_region": [
+          "region"
+        ],
+        "idx_br_kb_scan": [
+          "scan_id"
+        ],
         "idx_br_kb_status": [
           "status"
         ]
@@ -1252,8 +1324,20 @@
         }
       ],
       "indexes": {
+        "idx_br_model_arn": [
+          "model_arn"
+        ],
+        "idx_br_model_id": [
+          "model_id"
+        ],
         "idx_br_model_provider": [
           "provider_name"
+        ],
+        "idx_br_model_region": [
+          "region"
+        ],
+        "idx_br_model_scan": [
+          "scan_id"
         ]
       }
     },
@@ -1450,8 +1534,20 @@
         }
       ],
       "indexes": {
+        "idx_cf_dist_arn": [
+          "distribution_arn"
+        ],
         "idx_cf_dist_enabled": [
           "enabled"
+        ],
+        "idx_cf_dist_id": [
+          "distribution_id"
+        ],
+        "idx_cf_dist_scan": [
+          "scan_id"
+        ],
+        "idx_cf_dist_status": [
+          "status"
         ]
       }
     },
@@ -1620,8 +1716,20 @@
         }
       ],
       "indexes": {
+        "idx_ct_arn": [
+          "trail_arn"
+        ],
         "idx_ct_logging": [
           "is_logging"
+        ],
+        "idx_ct_name": [
+          "trail_name"
+        ],
+        "idx_ct_region": [
+          "region"
+        ],
+        "idx_ct_scan": [
+          "scan_id"
         ]
       }
     },
@@ -1727,8 +1835,17 @@
         }
       ],
       "indexes": {
+        "idx_cw_lg_arn": [
+          "log_group_arn"
+        ],
+        "idx_cw_lg_name": [
+          "log_group_name"
+        ],
         "idx_cw_lg_region": [
           "region"
+        ],
+        "idx_cw_lg_scan": [
+          "scan_id"
         ]
       }
     },
@@ -1827,8 +1944,17 @@
         }
       ],
       "indexes": {
+        "idx_cfg_rec_name": [
+          "recorder_name"
+        ],
         "idx_cfg_rec_recording": [
           "is_recording"
+        ],
+        "idx_cfg_rec_region": [
+          "region"
+        ],
+        "idx_cfg_rec_scan": [
+          "scan_id"
         ]
       }
     },
@@ -1941,8 +2067,20 @@
         }
       ],
       "indexes": {
+        "idx_cfg_rule_arn": [
+          "rule_arn"
+        ],
         "idx_cfg_rule_compliance": [
           "compliance_type"
+        ],
+        "idx_cfg_rule_name": [
+          "rule_name"
+        ],
+        "idx_cfg_rule_region": [
+          "region"
+        ],
+        "idx_cfg_rule_scan": [
+          "scan_id"
         ]
       }
     },
@@ -2034,9 +2172,18 @@
         }
       ],
       "indexes": {
+        "idx_cost_account": [
+          "account_number"
+        ],
         "idx_cost_period": [
           "time_period_start",
           "time_period_end"
+        ],
+        "idx_cost_scan": [
+          "scan_id"
+        ],
+        "idx_cost_service": [
+          "service_name"
         ]
       }
     },
@@ -2212,6 +2359,18 @@
         }
       ],
       "indexes": {
+        "idx_dx_id": [
+          "connection_id"
+        ],
+        "idx_dx_name": [
+          "connection_name"
+        ],
+        "idx_dx_region": [
+          "region"
+        ],
+        "idx_dx_scan": [
+          "scan_id"
+        ],
         "idx_dx_state": [
           "connection_state"
         ]
@@ -2389,6 +2548,21 @@
         }
       ],
       "indexes": {
+        "idx_ds_id": [
+          "directory_id"
+        ],
+        "idx_ds_name": [
+          "directory_name"
+        ],
+        "idx_ds_region": [
+          "region"
+        ],
+        "idx_ds_scan": [
+          "scan_id"
+        ],
+        "idx_ds_type": [
+          "directory_type"
+        ],
         "idx_ds_vpc": [
           "vpc_id"
         ]
@@ -2615,6 +2789,18 @@
         }
       ],
       "indexes": {
+        "idx_ddb_arn": [
+          "table_arn"
+        ],
+        "idx_ddb_name": [
+          "table_name"
+        ],
+        "idx_ddb_region": [
+          "region"
+        ],
+        "idx_ddb_scan": [
+          "scan_id"
+        ],
         "idx_ddb_status": [
           "table_status"
         ]
@@ -2743,8 +2929,23 @@
         }
       ],
       "indexes": {
+        "idx_ebs_snap_encrypted": [
+          "encrypted"
+        ],
+        "idx_ebs_snap_id": [
+          "snapshot_id"
+        ],
+        "idx_ebs_snap_region": [
+          "region"
+        ],
+        "idx_ebs_snap_scan": [
+          "scan_id"
+        ],
         "idx_ebs_snap_start": [
           "start_time"
+        ],
+        "idx_ebs_snap_volume": [
+          "volume_id"
         ]
       }
     },
@@ -2908,6 +3109,21 @@
       "indexes": {
         "idx_ebs_vol_encrypted": [
           "encrypted"
+        ],
+        "idx_ebs_vol_id": [
+          "volume_id"
+        ],
+        "idx_ebs_vol_instance": [
+          "attached_instance_id"
+        ],
+        "idx_ebs_vol_region": [
+          "region"
+        ],
+        "idx_ebs_vol_scan": [
+          "scan_id"
+        ],
+        "idx_ebs_vol_state": [
+          "state"
         ]
       }
     },
@@ -3055,8 +3271,20 @@
         }
       ],
       "indexes": {
+        "idx_ec2_instance": [
+          "instance_id"
+        ],
         "idx_ec2_public_ip": [
           "public_ip"
+        ],
+        "idx_ec2_region": [
+          "region"
+        ],
+        "idx_ec2_scan": [
+          "scan_id"
+        ],
+        "idx_ec2_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -3176,8 +3404,17 @@
         }
       ],
       "indexes": {
+        "idx_ecr_img_digest": [
+          "image_digest"
+        ],
         "idx_ecr_img_region": [
           "region"
+        ],
+        "idx_ecr_img_repo": [
+          "repository_name"
+        ],
+        "idx_ecr_img_scan": [
+          "scan_id"
         ]
       }
     },
@@ -3290,8 +3527,17 @@
         }
       ],
       "indexes": {
+        "idx_ecr_repo_arn": [
+          "repository_arn"
+        ],
+        "idx_ecr_repo_name": [
+          "repository_name"
+        ],
         "idx_ecr_repo_region": [
           "region"
+        ],
+        "idx_ecr_repo_scan": [
+          "scan_id"
         ]
       }
     },
@@ -3425,6 +3671,18 @@
         }
       ],
       "indexes": {
+        "idx_ecs_cluster_arn": [
+          "cluster_arn"
+        ],
+        "idx_ecs_cluster_name": [
+          "cluster_name"
+        ],
+        "idx_ecs_cluster_region": [
+          "region"
+        ],
+        "idx_ecs_cluster_scan": [
+          "scan_id"
+        ],
         "idx_ecs_cluster_status": [
           "status"
         ]
@@ -3623,6 +3881,21 @@
         }
       ],
       "indexes": {
+        "idx_ecs_svc_arn": [
+          "service_arn"
+        ],
+        "idx_ecs_svc_cluster": [
+          "cluster_arn"
+        ],
+        "idx_ecs_svc_name": [
+          "service_name"
+        ],
+        "idx_ecs_svc_region": [
+          "region"
+        ],
+        "idx_ecs_svc_scan": [
+          "scan_id"
+        ],
         "idx_ecs_svc_status": [
           "status"
         ]
@@ -3835,6 +4108,18 @@
         }
       ],
       "indexes": {
+        "idx_ecs_task_arn": [
+          "task_definition_arn"
+        ],
+        "idx_ecs_task_family": [
+          "family"
+        ],
+        "idx_ecs_task_region": [
+          "region"
+        ],
+        "idx_ecs_task_scan": [
+          "scan_id"
+        ],
         "idx_ecs_task_status": [
           "status"
         ]
@@ -4026,8 +4311,23 @@
         }
       ],
       "indexes": {
+        "idx_eks_cluster_arn": [
+          "cluster_arn"
+        ],
+        "idx_eks_cluster_name": [
+          "cluster_name"
+        ],
+        "idx_eks_cluster_region": [
+          "region"
+        ],
+        "idx_eks_cluster_scan": [
+          "scan_id"
+        ],
         "idx_eks_cluster_status": [
           "status"
+        ],
+        "idx_eks_cluster_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -4224,6 +4524,21 @@
         }
       ],
       "indexes": {
+        "idx_eks_ng_arn": [
+          "nodegroup_arn"
+        ],
+        "idx_eks_ng_cluster": [
+          "cluster_name"
+        ],
+        "idx_eks_ng_name": [
+          "nodegroup_name"
+        ],
+        "idx_eks_ng_region": [
+          "region"
+        ],
+        "idx_eks_ng_scan": [
+          "scan_id"
+        ],
         "idx_eks_ng_status": [
           "status"
         ]
@@ -4345,8 +4660,20 @@
         }
       ],
       "indexes": {
+        "idx_eip_alloc": [
+          "allocation_id"
+        ],
         "idx_eip_associated": [
           "is_associated"
+        ],
+        "idx_eip_instance": [
+          "instance_id"
+        ],
+        "idx_eip_region": [
+          "region"
+        ],
+        "idx_eip_scan": [
+          "scan_id"
         ]
       }
     },
@@ -4557,8 +4884,26 @@
         }
       ],
       "indexes": {
+        "idx_ec_arn": [
+          "cache_cluster_arn"
+        ],
+        "idx_ec_engine": [
+          "engine"
+        ],
+        "idx_ec_id": [
+          "cache_cluster_id"
+        ],
+        "idx_ec_region": [
+          "region"
+        ],
+        "idx_ec_scan": [
+          "scan_id"
+        ],
         "idx_ec_status": [
           "cache_cluster_status"
+        ],
+        "idx_ec_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -4685,6 +5030,9 @@
         }
       ],
       "indexes": {
+        "idx_credreport_scan": [
+          "scan_id"
+        ],
         "idx_credreport_user": [
           "user_name"
         ]
@@ -4841,8 +5189,14 @@
         }
       ],
       "indexes": {
+        "idx_iam_policy_arn": [
+          "policy_arn"
+        ],
         "idx_iam_policy_name": [
           "policy_name"
+        ],
+        "idx_iam_policy_scan": [
+          "scan_id"
         ]
       }
     },
@@ -5127,8 +5481,14 @@
         }
       ],
       "indexes": {
+        "idx_igw_id": [
+          "internet_gateway_id"
+        ],
         "idx_igw_region": [
           "region"
+        ],
+        "idx_igw_scan": [
+          "scan_id"
         ]
       }
     },
@@ -5283,8 +5643,23 @@
         }
       ],
       "indexes": {
+        "idx_kms_arn": [
+          "key_arn"
+        ],
+        "idx_kms_id": [
+          "key_id"
+        ],
         "idx_kms_manager": [
           "key_manager"
+        ],
+        "idx_kms_region": [
+          "region"
+        ],
+        "idx_kms_scan": [
+          "scan_id"
+        ],
+        "idx_kms_state": [
+          "key_state"
         ]
       }
     },
@@ -5371,6 +5746,9 @@
       "indexes": {
         "idx_lambdaexp_auth": [
           "url_auth_type"
+        ],
+        "idx_lambdaexp_scan": [
+          "scan_id"
         ]
       }
     },
@@ -5532,8 +5910,17 @@
         }
       ],
       "indexes": {
+        "idx_lambda_name": [
+          "function_name"
+        ],
+        "idx_lambda_region": [
+          "region"
+        ],
         "idx_lambda_runtime": [
           "runtime"
+        ],
+        "idx_lambda_scan": [
+          "scan_id"
         ]
       }
     },
@@ -5681,8 +6068,20 @@
         }
       ],
       "indexes": {
+        "idx_lb_arn": [
+          "load_balancer_arn"
+        ],
+        "idx_lb_region": [
+          "region"
+        ],
+        "idx_lb_scan": [
+          "scan_id"
+        ],
         "idx_lb_type": [
           "load_balancer_type"
+        ],
+        "idx_lb_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -5879,6 +6278,18 @@
         }
       ],
       "indexes": {
+        "idx_msk_arn": [
+          "cluster_arn"
+        ],
+        "idx_msk_name": [
+          "cluster_name"
+        ],
+        "idx_msk_region": [
+          "region"
+        ],
+        "idx_msk_scan": [
+          "scan_id"
+        ],
         "idx_msk_state": [
           "state"
         ]
@@ -6000,6 +6411,15 @@
         }
       ],
       "indexes": {
+        "idx_nat_id": [
+          "nat_gateway_id"
+        ],
+        "idx_nat_region": [
+          "region"
+        ],
+        "idx_nat_scan": [
+          "scan_id"
+        ],
         "idx_nat_vpc": [
           "vpc_id"
         ]
@@ -6156,8 +6576,20 @@
         }
       ],
       "indexes": {
+        "idx_eni_id": [
+          "network_interface_id"
+        ],
+        "idx_eni_region": [
+          "region"
+        ],
+        "idx_eni_scan": [
+          "scan_id"
+        ],
         "idx_eni_subnet": [
           "subnet_id"
+        ],
+        "idx_eni_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -6508,6 +6940,21 @@
         }
       ],
       "indexes": {
+        "idx_os_arn": [
+          "domain_arn"
+        ],
+        "idx_os_id": [
+          "domain_id"
+        ],
+        "idx_os_name": [
+          "domain_name"
+        ],
+        "idx_os_region": [
+          "region"
+        ],
+        "idx_os_scan": [
+          "scan_id"
+        ],
         "idx_os_vpc": [
           "vpc_id"
         ]
@@ -6608,8 +7055,17 @@
         }
       ],
       "indexes": {
+        "idx_org_acct_id": [
+          "account_id"
+        ],
         "idx_org_acct_parent": [
           "parent_ou_id"
+        ],
+        "idx_org_acct_scan": [
+          "scan_id"
+        ],
+        "idx_org_acct_status": [
+          "status"
         ]
       }
     },
@@ -6680,8 +7136,14 @@
         }
       ],
       "indexes": {
+        "idx_ou_id": [
+          "ou_id"
+        ],
         "idx_ou_parent": [
           "parent_id"
+        ],
+        "idx_ou_scan": [
+          "scan_id"
         ]
       }
     },
@@ -6768,6 +7230,9 @@
       "indexes": {
         "idx_org_id": [
           "organization_id"
+        ],
+        "idx_org_scan": [
+          "scan_id"
         ]
       }
     },
@@ -6908,8 +7373,17 @@
         }
       ],
       "indexes": {
+        "idx_prowler_scan": [
+          "scan_id"
+        ],
         "idx_prowler_service": [
           "service_name"
+        ],
+        "idx_prowler_severity": [
+          "severity"
+        ],
+        "idx_prowler_status": [
+          "status"
         ]
       }
     },
@@ -7157,6 +7631,24 @@
       "indexes": {
         "idx_rds_encrypted": [
           "encrypted"
+        ],
+        "idx_rds_engine": [
+          "engine"
+        ],
+        "idx_rds_id": [
+          "db_instance_identifier"
+        ],
+        "idx_rds_public": [
+          "publicly_accessible"
+        ],
+        "idx_rds_region": [
+          "region"
+        ],
+        "idx_rds_scan": [
+          "scan_id"
+        ],
+        "idx_rds_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -7243,6 +7735,9 @@
       "indexes": {
         "idx_regionsec_region": [
           "region"
+        ],
+        "idx_regionsec_scan": [
+          "scan_id"
         ]
       }
     },
@@ -7413,6 +7908,9 @@
         }
       ],
       "indexes": {
+        "idx_r53_record_scan": [
+          "scan_id"
+        ],
         "idx_r53_record_zone": [
           "hosted_zone_id"
         ]
@@ -7513,6 +8011,15 @@
         }
       ],
       "indexes": {
+        "idx_rt_id": [
+          "route_table_id"
+        ],
+        "idx_rt_region": [
+          "region"
+        ],
+        "idx_rt_scan": [
+          "scan_id"
+        ],
         "idx_rt_vpc": [
           "vpc_id"
         ]
@@ -7636,6 +8143,9 @@
       "indexes": {
         "idx_s3_name": [
           "bucket_name"
+        ],
+        "idx_s3_scan": [
+          "scan_id"
         ]
       }
     },
@@ -7701,6 +8211,9 @@
       "indexes": {
         "idx_s3pab_bucket": [
           "bucket_name"
+        ],
+        "idx_s3pab_scan": [
+          "scan_id"
         ]
       }
     },
@@ -7779,6 +8292,9 @@
       ],
       "foreign_keys": [],
       "indexes": {
+        "idx_scan_account": [
+          "account_number"
+        ],
         "idx_scan_timestamp": [
           "scan_timestamp"
         ]
@@ -7899,6 +8415,12 @@
         }
       ],
       "indexes": {
+        "idx_sg_id": [
+          "group_id"
+        ],
+        "idx_sg_scan": [
+          "scan_id"
+        ],
         "idx_sg_vpc": [
           "vpc_id"
         ]
@@ -7985,6 +8507,15 @@
         }
       ],
       "indexes": {
+        "idx_sso_assign_perm": [
+          "permission_set_arn"
+        ],
+        "idx_sso_assign_principal": [
+          "principal_id"
+        ],
+        "idx_sso_assign_scan": [
+          "scan_id"
+        ],
         "idx_sso_assign_target": [
           "target_id"
         ]
@@ -8113,8 +8644,17 @@
         }
       ],
       "indexes": {
+        "idx_sso_perm_arn": [
+          "permission_set_arn"
+        ],
         "idx_sso_perm_instance": [
           "instance_arn"
+        ],
+        "idx_sso_perm_name": [
+          "permission_set_name"
+        ],
+        "idx_sso_perm_scan": [
+          "scan_id"
         ]
       }
     },
@@ -8222,6 +8762,12 @@
       "indexes": {
         "idx_subnet_region": [
           "region"
+        ],
+        "idx_subnet_scan": [
+          "scan_id"
+        ],
+        "idx_subnet_vpc": [
+          "vpc_id"
         ]
       }
     },
@@ -8383,6 +8929,18 @@
         }
       ],
       "indexes": {
+        "idx_tgw_arn": [
+          "transit_gateway_arn"
+        ],
+        "idx_tgw_id": [
+          "transit_gateway_id"
+        ],
+        "idx_tgw_region": [
+          "region"
+        ],
+        "idx_tgw_scan": [
+          "scan_id"
+        ],
         "idx_tgw_state": [
           "state"
         ]
@@ -8504,6 +9062,18 @@
         }
       ],
       "indexes": {
+        "idx_flowlog_id": [
+          "flow_log_id"
+        ],
+        "idx_flowlog_region": [
+          "region"
+        ],
+        "idx_flowlog_resource": [
+          "resource_id"
+        ],
+        "idx_flowlog_scan": [
+          "scan_id"
+        ],
         "idx_flowlog_type": [
           "resource_type"
         ]
@@ -8604,8 +9174,14 @@
         }
       ],
       "indexes": {
+        "idx_vpc_id": [
+          "vpc_id"
+        ],
         "idx_vpc_region": [
           "region"
+        ],
+        "idx_vpc_scan": [
+          "scan_id"
         ]
       }
     },
@@ -8739,6 +9315,15 @@
         }
       ],
       "indexes": {
+        "idx_vpn_id": [
+          "vpn_connection_id"
+        ],
+        "idx_vpn_region": [
+          "region"
+        ],
+        "idx_vpn_scan": [
+          "scan_id"
+        ],
         "idx_vpn_state": [
           "state"
         ]
@@ -8890,6 +9475,18 @@
       "indexes": {
         "idx_ws_directory": [
           "directory_id"
+        ],
+        "idx_ws_id": [
+          "workspace_id"
+        ],
+        "idx_ws_region": [
+          "region"
+        ],
+        "idx_ws_scan": [
+          "scan_id"
+        ],
+        "idx_ws_vpc": [
+          "vpc_id"
         ]
       }
     }
