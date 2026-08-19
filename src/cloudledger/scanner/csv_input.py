@@ -7,7 +7,7 @@ Uses Australian English in all documentation and comments.
 
 import csv
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 
 from .credential_manager import AccountConfig, AWSCredentials
@@ -32,7 +32,17 @@ class CSVAccountReader:
         "session_token",
     ]
 
-    OPTIONAL_COLUMNS = ["prowler_level", "tags"]
+    OPTIONAL_COLUMNS = [
+        "prowler_level",
+        "tags",
+        "org_member",
+        "is_management_account",
+        "management_account_id",
+        "management_account_name",
+    ]
+
+    TRUE_VALUES = {"yes", "true", "1"}
+    FALSE_VALUES = {"no", "false", "0"}
 
     def __init__(self, csv_path: str):
         """
@@ -181,12 +191,55 @@ class CSVAccountReader:
         tags_raw = row.get("tags", "").strip()
         tags = [tag.strip() for tag in tags_raw.split(";") if tag.strip()]
 
+        # Extract optional AWS Organisation / control-tower fields
+        org_member = self._parse_optional_bool(row, "org_member")
+        is_management_account = self._parse_optional_bool(row, "is_management_account")
+        management_account_id = row.get("management_account_id", "").strip() or None
+        management_account_name = row.get("management_account_name", "").strip() or None
+
         return AccountConfig(
             account_name=account_name,
             account_number=account_number,
             credentials=credentials,
             prowler_level=prowler_level_final,
             tags=tags,
+            org_member=org_member,
+            is_management_account=is_management_account,
+            management_account_id=management_account_id,
+            management_account_name=management_account_name,
+        )
+
+    def _parse_optional_bool(
+        self, row: Dict[str, str], column_name: str
+    ) -> Optional[bool]:
+        """
+        Parse an optional boolean column.
+
+        Accepts yes/no/true/false/1/0, case-insensitive. An empty or missing
+        value returns None (not provided).
+
+        Args:
+            row: Dictionary of column values
+            column_name: Name of the column to parse
+
+        Returns:
+            Parsed boolean, or None if the column was blank
+
+        Raises:
+            ValueError: If the value isn't a recognised boolean
+        """
+        raw_value = row.get(column_name, "").strip()
+        if not raw_value:
+            return None
+
+        lowered = raw_value.lower()
+        if lowered in self.TRUE_VALUES:
+            return True
+        if lowered in self.FALSE_VALUES:
+            return False
+
+        raise ValueError(
+            f"{column_name} must be one of yes/no/true/false/1/0, got: {raw_value}"
         )
 
     @staticmethod

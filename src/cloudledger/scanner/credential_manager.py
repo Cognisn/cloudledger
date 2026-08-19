@@ -34,6 +34,10 @@ class AccountConfig:
     credentials: AWSCredentials
     prowler_level: Optional[str] = None
     tags: List[str] = field(default_factory=list)
+    org_member: Optional[bool] = None
+    is_management_account: Optional[bool] = None
+    management_account_id: Optional[str] = None
+    management_account_name: Optional[str] = None
 
 
 class CredentialManager:
@@ -146,9 +150,88 @@ class CredentialManager:
         )
 
     @staticmethod
-    def prompt_for_account_config() -> AccountConfig:
+    def prompt_for_prowler_level() -> Optional[str]:
+        """
+        Interactively prompt user for the Prowler scan level.
+
+        Returns:
+            Prowler scan level ("1", "2", or "3"), or None to skip Prowler
+        """
+        print("\nProwler Scan Level:")
+        print("  1 - Basic security checks")
+        print("  2 - Standard compliance checks (CIS Benchmarks)")
+        print("  3 - Comprehensive security assessment")
+        print("  skip - Skip Prowler scanning")
+        prowler_choice = (
+            input("Select Prowler scan level [1/2/3/skip]: ").strip().lower()
+        )
+
+        if prowler_choice in ["1", "2", "3"]:
+            return prowler_choice
+        if prowler_choice != "skip":
+            print("Invalid choice, defaulting to skip Prowler scan")
+        return None
+
+    @staticmethod
+    def _ask_yes_no(prompt: str) -> bool:
+        """Ask a yes/no question that defaults to No on any other answer."""
+        return input(prompt).strip().lower() == "y"
+
+    @staticmethod
+    def prompt_for_org_questions() -> Dict[str, Optional[object]]:
+        """
+        Interactively prompt user for AWS Organisation / control-tower details.
+
+        Returns:
+            Dictionary with keys `org_member`, `is_management_account`,
+            `management_account_id`, `management_account_name`
+        """
+        org_member = CredentialManager._ask_yes_no(
+            "Is this account a member of an AWS Organisation? [y/N]: "
+        )
+
+        is_management_account: Optional[bool] = None
+        management_account_id: Optional[str] = None
+        management_account_name: Optional[str] = None
+
+        if org_member:
+            is_management_account = CredentialManager._ask_yes_no(
+                "Is this the control-tower (management) account? [y/N]: "
+            )
+
+            if not is_management_account:
+                management_account_name = input(
+                    "Management account name: "
+                ).strip()
+
+                while True:
+                    management_account_id = input(
+                        "Management account id (12-digit): "
+                    ).strip()
+                    if (
+                        management_account_id.isdigit()
+                        and len(management_account_id) == 12
+                    ):
+                        break
+                    print("Management account id must be exactly 12 digits")
+
+        return {
+            "org_member": org_member,
+            "is_management_account": is_management_account,
+            "management_account_id": management_account_id,
+            "management_account_name": management_account_name,
+        }
+
+    @staticmethod
+    def prompt_for_account_config(include_org_questions: bool = True) -> AccountConfig:
         """
         Interactively prompt user for account configuration.
+
+        Args:
+            include_org_questions: Whether to ask the AWS Organisation /
+                control-tower questions after the tags prompt. Set to False
+                when building a queued management-account scan, whose org
+                details are already known and must not be re-asked.
 
         Returns:
             Account configuration from user input
@@ -166,24 +249,19 @@ class CredentialManager:
 
         credentials = CredentialManager.prompt_for_credentials()
 
-        # Prompt for Prowler scan level
-        print("\nProwler Scan Level:")
-        print("  1 - Basic security checks")
-        print("  2 - Standard compliance checks (CIS Benchmarks)")
-        print("  3 - Comprehensive security assessment")
-        print("  skip - Skip Prowler scanning")
-        prowler_choice = (
-            input("Select Prowler scan level [1/2/3/skip]: ").strip().lower()
-        )
-
-        prowler_level = None
-        if prowler_choice in ["1", "2", "3"]:
-            prowler_level = prowler_choice
-        elif prowler_choice != "skip":
-            print("Invalid choice, defaulting to skip Prowler scan")
+        prowler_level = CredentialManager.prompt_for_prowler_level()
 
         tags_input = input("Tags (comma-separated, optional): ").strip()
         tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
+
+        org_fields: Dict[str, Optional[object]] = {
+            "org_member": None,
+            "is_management_account": None,
+            "management_account_id": None,
+            "management_account_name": None,
+        }
+        if include_org_questions:
+            org_fields = CredentialManager.prompt_for_org_questions()
 
         return AccountConfig(
             account_name=account_name,
@@ -191,4 +269,8 @@ class CredentialManager:
             credentials=credentials,
             prowler_level=prowler_level,
             tags=tags,
+            org_member=org_fields["org_member"],
+            is_management_account=org_fields["is_management_account"],
+            management_account_id=org_fields["management_account_id"],
+            management_account_name=org_fields["management_account_name"],
         )
