@@ -9,6 +9,7 @@ Uses Australian English in all documentation and comments.
 import logging
 import asyncio
 import json
+from pathlib import Path
 from typing import Optional
 
 # MCP SDK imports
@@ -22,7 +23,7 @@ except ImportError:
     MCP_AVAILABLE = False
     logging.warning("MCP SDK not available. Please install: pip install mcp")
 
-from ..config.context import create_app_context, resolve_database_path
+from ..config.context import create_app_context, resolve_database_target
 from ..database.operations import DatabaseOperations
 from .queries import QueryHandler
 from .tools import get_tools
@@ -102,16 +103,18 @@ async def main(database_path: Optional[str] = None) -> None:
     global db_ops, query_handler
 
     async with create_app_context(console_output="stderr") as ctx:
-        db_path = resolve_database_path(database_path, ctx.settings)
-        logger.info(f"Starting MCP server with database: {db_path}")
+        db_target = resolve_database_target(database_path, ctx.settings, ctx.secrets)
+        logger.info(f"Starting MCP server with database: {db_target}")
 
-        if not db_path.exists():
+        # Existence can only be checked for a local SQLite file; a server
+        # backend URL is validated on connection instead.
+        if "://" not in db_target and not Path(db_target).exists():
             raise FileNotFoundError(
-                f"Database not found: {db_path}. Run a scan first, or pass "
+                f"Database not found: {db_target}. Run a scan first, or pass "
                 f"an explicit database path."
             )
 
-        db_ops = DatabaseOperations(str(db_path))
+        db_ops = DatabaseOperations(db_target)
         query_handler = QueryHandler(db_ops)
 
         logger.info("Database operations initialised")

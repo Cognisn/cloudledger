@@ -9,6 +9,7 @@ and comments.
 
 import logging
 from datetime import datetime, UTC
+from typing import Optional
 
 import sqlalchemy as sa
 
@@ -45,7 +46,7 @@ class DatabaseSchema:
                 )
         logger.info("Database initialisation complete")
 
-    def get_schema_version(self):
+    def get_schema_version(self) -> Optional[int]:
         """Return the recorded schema version, or None before initialisation."""
         try:
             with self._engine.connect() as conn:

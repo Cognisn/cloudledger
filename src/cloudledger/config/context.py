@@ -10,6 +10,7 @@ import os
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote_plus
 
 from konfig import AppContext
 from konfig.paths import data_dir
@@ -17,6 +18,15 @@ from konfig.paths import data_dir
 APP_NAME = "CloudLedger"
 ENV_PREFIX = "CLOUDLEDGER"
 APP_ID = "cloudledger"
+
+# Backends resolved via a SQLAlchemy server URL rather than a local file.
+_SERVER_BACKENDS = {
+    "postgres": "postgresql+psycopg",
+    "mysql": "mysql+pymysql",
+    "mssql": "mssql+pyodbc",
+}
+
+_DEFAULT_ODBC_DRIVER = "ODBC Driver 18 for SQL Server"
 
 # Lowest-precedence defaults; config files and environment override these.
 DEFAULTS = {
@@ -39,14 +49,67 @@ def default_database_path() -> Path:
     return data_dir(APP_ID) / "cloudledger.db"
 
 
-def resolve_database_path(cli_value: Optional[str], settings) -> Path:
-    """Resolve the database path: CLI option, then settings, then platform default."""
+def _require_setting(settings, key: str) -> str:
+    """Return a required setting value, raising ValueError naming the key when absent."""
+    value = settings.get(key)
+    if not value:
+        raise ValueError(f"Missing required setting: {key}")
+    return value
+
+
+def build_database_url(settings, secrets) -> str:
+    """Build a SQLAlchemy database URL for a configured server backend.
+
+    Reads the ``database.*`` settings and resolves ``database.password``:
+    a value starting with ``secret://`` is looked up in the secrets store
+    (the remainder of the URI is the secret name); any other value is used
+    literally. The password (and, for mssql, the ODBC driver name) is
+    percent-encoded with ``quote_plus`` before assembly. Raises
+    ``ValueError`` naming the first missing required setting.
+    """
+    backend = _require_setting(settings, "database.backend")
+    host = _require_setting(settings, "database.host")
+    port = _require_setting(settings, "database.port")
+    database = _require_setting(settings, "database.database")
+    username = _require_setting(settings, "database.username")
+    password_setting = _require_setting(settings, "database.password")
+
+    if password_setting.startswith("secret://"):
+        password = secrets.get(password_setting[len("secret://") :])
+    else:
+        password = password_setting
+    encoded_password = quote_plus(password)
+
+    scheme = _SERVER_BACKENDS.get(backend)
+    if scheme is None:
+        raise ValueError(f"Unsupported database backend: {backend}")
+
+    url = f"{scheme}://{username}:{encoded_password}@{host}:{port}/{database}"
+    if backend == "mssql":
+        driver = settings.get("database.odbc_driver", _DEFAULT_ODBC_DRIVER)
+        url += f"?driver={quote_plus(driver)}&TrustServerCertificate=yes"
+    return url
+
+
+def resolve_database_target(cli_value: Optional[str], settings, secrets) -> str:
+    """Resolve the database target: CLI value, then configured backend, then default.
+
+    An explicit CLI/argv value (a filesystem path or a full URL) passes
+    through unchanged. Otherwise, the configured backend decides: a server
+    backend builds a SQLAlchemy URL from settings and secrets; ``sqlite``
+    uses ``database.path`` when set. Absent any configuration, the
+    platform-conventional default SQLite database path is used.
+    """
     if cli_value:
-        return Path(cli_value)
-    configured = settings.get("database.path")
-    if configured:
-        return Path(configured)
-    return default_database_path()
+        return cli_value
+    backend = settings.get("database.backend")
+    if backend in _SERVER_BACKENDS:
+        return build_database_url(settings, secrets)
+    if backend == "sqlite":
+        configured = settings.get("database.path")
+        if configured:
+            return configured
+    return str(default_database_path())
 
 
 def create_app_context(

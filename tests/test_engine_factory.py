@@ -4,8 +4,6 @@ Tests for the database engine factory.
 Uses Australian English in all documentation and comments.
 """
 
-from pathlib import Path
-
 from cloudledger.database.engine import make_engine
 
 

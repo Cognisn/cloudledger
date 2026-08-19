@@ -19,7 +19,7 @@ from rich.table import Table
 from ..database.schema import DatabaseSchema
 from ..database.operations import DatabaseOperations
 from ..database.models import ScanMetadata
-from ..config.context import create_app_context, resolve_database_path
+from ..config.context import create_app_context, resolve_database_target
 from .credential_manager import CredentialManager, AccountConfig
 from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
@@ -78,7 +78,7 @@ def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[st
         cloudledger scan --database /path/to/scanner.db --regions us-east-1,us-west-2
     """
     with create_app_context(console_output="none", log_level=log_level) as ctx:
-        database = str(resolve_database_path(database, ctx.settings))
+        database = resolve_database_target(database, ctx.settings, ctx.secrets)
         _run_scan(database, csv, regions)
 
 
@@ -433,7 +433,7 @@ def delete_scan(database: str, scan_id: Optional[str]):
     This operation cannot be undone, so use with caution.
     """
     with create_app_context(console_output="none") as ctx:
-        database = str(resolve_database_path(database, ctx.settings))
+        database = resolve_database_target(database, ctx.settings, ctx.secrets)
         if not Path(database).exists():
             console.print(f"[red]✗[/red] Database not found: {database}")
             sys.exit(1)
