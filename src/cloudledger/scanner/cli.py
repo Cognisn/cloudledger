@@ -24,6 +24,7 @@ from .credential_manager import CredentialManager, AccountConfig
 from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerRunner
+from .setup_cmd import setup_command
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -575,6 +576,9 @@ def delete_scan(database: str, scan_id: Optional[str]):
             console.print(f"[red]✗[/red] Failed to delete scan: {e}")
             logger.error(f"Failed to delete scan {scan_id}: {e}", exc_info=True)
             sys.exit(1)
+
+
+cli.add_command(setup_command, name="setup")
 
 
 if __name__ == "__main__":
