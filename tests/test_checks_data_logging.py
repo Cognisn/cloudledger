@@ -3,11 +3,12 @@
 import json
 
 from cloudledger.assessment.registry import run_checks
+from cloudledger.database.engine import make_engine
 from tests.assessment_fixtures import SCAN_ID, make_db, execute
 
 
 def _category(db_path, category):
-    result = run_checks(db_path, SCAN_ID, category=category)
+    result = run_checks(make_engine(db_path), SCAN_ID, category=category)
     return {c["check_id"]: c for c in result["categories"].get(category, [])}
 
 

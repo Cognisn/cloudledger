@@ -109,7 +109,7 @@ This tool is designed for authorised security assessments only. Ensure you have 
 ```bash
 uv sync
 uv run pytest            # SQLite-backed tests
-uv run pytest -m db      # opt-in backend integration tests (requires docker compose up)
+uv run pytest -m db      # opt-in backend integration tests (run `docker compose up -d` first to start the postgres/mysql/mssql containers)
 ```
 
 Contributions should use Australian English in comments and documentation, include unit tests for new features, and keep `CHANGELOG.md` current under the Unreleased heading.

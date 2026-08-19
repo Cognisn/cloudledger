@@ -9,6 +9,8 @@ import json
 from datetime import datetime, UTC
 from typing import Optional
 
+import sqlalchemy as sa
+
 from .registry import (
     CheckMeta,
     make_result,
@@ -22,18 +24,29 @@ STALE_DAYS = 90
 
 
 def _posture(conn, scan_id) -> Optional[dict]:
-    row = conn.execute(
-        "SELECT * FROM account_security_posture WHERE scan_id = ?"
-        " ORDER BY id DESC LIMIT 1",
-        (scan_id,),
-    ).fetchone()
+    row = (
+        conn.execute(
+            sa.text(
+                "SELECT * FROM account_security_posture WHERE scan_id = :scan_id"
+                " ORDER BY id DESC LIMIT 1"
+            ),
+            {"scan_id": scan_id},
+        )
+        .mappings()
+        .fetchone()
+    )
     return dict(row) if row else None
 
 
 def _report_rows(conn, scan_id) -> list:
-    return conn.execute(
-        "SELECT * FROM iam_credential_report WHERE scan_id = ?", (scan_id,)
-    ).fetchall()
+    return (
+        conn.execute(
+            sa.text("SELECT * FROM iam_credential_report WHERE scan_id = :scan_id"),
+            {"scan_id": scan_id},
+        )
+        .mappings()
+        .all()
+    )
 
 
 def _age_days(timestamp: Optional[str]) -> Optional[int]:
@@ -348,10 +361,12 @@ def check_admin_wildcard_policies(conn, scan_id):
             ADMIN_WILDCARDS, "no IAM policies in this account (scanned, none found)"
         )
     policy_rows = conn.execute(
-        "SELECT policy_arn, policy_name, policy_document, attachment_count"
-        " FROM iam_policies WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            "SELECT policy_arn, policy_name, policy_document, attachment_count"
+            " FROM iam_policies WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     findings = []
     for row in policy_rows:
         if not row["policy_document"]:
@@ -401,11 +416,13 @@ def check_administrator_access(conn, scan_id):
             ADMIN_ATTACHED, "no IAM policies in this account (scanned, none found)"
         )
     policy_rows = conn.execute(
-        "SELECT policy_arn, policy_name, attachment_count, attached_users,"
-        " attached_roles, attached_groups FROM iam_policies"
-        " WHERE scan_id = ? AND policy_name = 'AdministratorAccess'",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            "SELECT policy_arn, policy_name, attachment_count, attached_users,"
+            " attached_roles, attached_groups FROM iam_policies"
+            " WHERE scan_id = :scan_id AND policy_name = 'AdministratorAccess'"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     findings = []
     for row in policy_rows:
         if row["attachment_count"] and row["attachment_count"] > 0:

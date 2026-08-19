@@ -40,6 +40,12 @@ dependencies = [
 path = "src/cloudledger/version.txt"
 pattern = "^(?P<version>.+?)\\s*$"
 
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1"]
+mysql = ["pymysql>=1.1"]
+mssql = ["pyodbc>=5.0"]
+all-db = ["psycopg[binary]>=3.1", "pymysql>=1.1", "pyodbc>=5.0"]
+
 [project.scripts]
 cloudledger = "cloudledger.scanner.cli:cli"
 cloudledger-mcp = "cloudledger.mcp.server:run"
@@ -60,6 +66,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["db: opt-in real-backend integration tests (docker compose up first)"]
 
 [build-system]
 requires = ["hatchling"]

@@ -19,11 +19,12 @@ from rich.table import Table
 from ..database.schema import DatabaseSchema
 from ..database.operations import DatabaseOperations
 from ..database.models import ScanMetadata
-from ..config.context import create_app_context, resolve_database_path
+from ..config.context import create_app_context, mask_target, resolve_database_target
 from .credential_manager import CredentialManager, AccountConfig
 from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerRunner
+from .setup_cmd import setup_command
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[st
         cloudledger scan --database /path/to/scanner.db --regions us-east-1,us-west-2
     """
     with create_app_context(console_output="none", log_level=log_level) as ctx:
-        database = str(resolve_database_path(database, ctx.settings))
+        database = resolve_database_target(database, ctx.settings, ctx.secrets)
         _run_scan(database, csv, regions)
 
 
@@ -91,7 +92,7 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
         db_schema = DatabaseSchema(database)
         db_schema.initialise_database()
         db_ops = DatabaseOperations(database)
-        console.print(f"[green]✓[/green] Database initialised: {database}")
+        console.print(f"[green]✓[/green] Database initialised: {mask_target(database)}")
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to initialise database: {e}")
         logger.error(f"Database initialisation failed: {e}", exc_info=True)
@@ -433,9 +434,12 @@ def delete_scan(database: str, scan_id: Optional[str]):
     This operation cannot be undone, so use with caution.
     """
     with create_app_context(console_output="none") as ctx:
-        database = str(resolve_database_path(database, ctx.settings))
-        if not Path(database).exists():
-            console.print(f"[red]✗[/red] Database not found: {database}")
+        database = resolve_database_target(database, ctx.settings, ctx.secrets)
+        # Existence can only be checked for a local SQLite file; a server
+        # backend URL proceeds directly and surfaces connection failures
+        # naturally from the engine.
+        if "://" not in database and not Path(database).exists():
+            console.print(f"[red]✗[/red] Database not found: {mask_target(database)}")
             sys.exit(1)
 
         # Initialise database
@@ -572,6 +576,9 @@ def delete_scan(database: str, scan_id: Optional[str]):
             console.print(f"[red]✗[/red] Failed to delete scan: {e}")
             logger.error(f"Failed to delete scan {scan_id}: {e}", exc_info=True)
             sys.exit(1)
+
+
+cli.add_command(setup_command, name="setup")
 
 
 if __name__ == "__main__":

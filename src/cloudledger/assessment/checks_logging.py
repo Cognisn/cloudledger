@@ -3,6 +3,8 @@ Logging and monitoring checks.
 Uses Australian English in all documentation and comments.
 """
 
+import sqlalchemy as sa
+
 from .registry import CheckMeta, make_result, register
 from .types import Finding
 
@@ -20,17 +22,20 @@ MULTI_REGION_TRAIL = CheckMeta(
 @register(MULTI_REGION_TRAIL)
 def check_multi_region_trail(conn, scan_id):
     total = conn.execute(
-        "SELECT COUNT(*) FROM cloudtrail_trails WHERE scan_id = ?", (scan_id,)
-    ).fetchone()[0]
+        sa.text("SELECT COUNT(*) FROM cloudtrail_trails WHERE scan_id = :scan_id"),
+        {"scan_id": scan_id},
+    ).scalar()
     if not total:
         return make_result(
             MULTI_REGION_TRAIL, not_evaluated_reason="CloudTrail trails not collected"
         )
     active = conn.execute(
-        "SELECT COUNT(*) FROM cloudtrail_trails WHERE scan_id = ?"
-        " AND is_multi_region_trail = 1 AND is_logging = 1",
-        (scan_id,),
-    ).fetchone()[0]
+        sa.text(
+            "SELECT COUNT(*) FROM cloudtrail_trails WHERE scan_id = :scan_id"
+            " AND is_multi_region_trail = 1 AND is_logging = 1"
+        ),
+        {"scan_id": scan_id},
+    ).scalar()
     if active:
         return make_result(MULTI_REGION_TRAIL)
     return make_result(
@@ -48,17 +53,22 @@ def check_multi_region_trail(conn, scan_id):
 
 def _region_service_check(conn, scan_id, meta, column, service_name):
     total = conn.execute(
-        "SELECT COUNT(*) FROM region_security_services WHERE scan_id = ?", (scan_id,)
-    ).fetchone()[0]
+        sa.text(
+            "SELECT COUNT(*) FROM region_security_services WHERE scan_id = :scan_id"
+        ),
+        {"scan_id": scan_id},
+    ).scalar()
     if not total:
         return make_result(
             meta, not_evaluated_reason="region security services not collected"
         )
     matched = conn.execute(
-        f"SELECT region FROM region_security_services"
-        f" WHERE scan_id = ? AND {column} = 0",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            f"SELECT region FROM region_security_services"
+            f" WHERE scan_id = :scan_id AND {column} = 0"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     findings = [
         Finding(
             resource_id=row["region"],
@@ -123,13 +133,16 @@ def check_config_recorder(conn, scan_id):
     # Zero collected recorders is itself the finding: an account with
     # Config enabled always returns recorder rows.
     total = conn.execute(
-        "SELECT COUNT(*) FROM config_recorders WHERE scan_id = ?", (scan_id,)
-    ).fetchone()[0]
+        sa.text("SELECT COUNT(*) FROM config_recorders WHERE scan_id = :scan_id"),
+        {"scan_id": scan_id},
+    ).scalar()
     recording = conn.execute(
-        "SELECT COUNT(*) FROM config_recorders WHERE scan_id = ?"
-        " AND is_recording = 1",
-        (scan_id,),
-    ).fetchone()[0]
+        sa.text(
+            "SELECT COUNT(*) FROM config_recorders"
+            " WHERE scan_id = :scan_id AND is_recording = 1"
+        ),
+        {"scan_id": scan_id},
+    ).scalar()
     if not total:
         return make_result(
             CONFIG_RECORDER,

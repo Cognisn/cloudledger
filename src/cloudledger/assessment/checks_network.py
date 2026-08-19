@@ -5,6 +5,8 @@ Uses Australian English in all documentation and comments.
 
 import json
 
+import sqlalchemy as sa
+
 from .registry import (
     CheckMeta,
     make_result,
@@ -35,11 +37,17 @@ def _empty_or_absent(conn, scan_id, meta, table, resource_label):
 
 
 def _security_groups(conn, scan_id):
-    return conn.execute(
-        "SELECT group_id, group_name, vpc_id, region, ingress_rules"
-        " FROM security_groups WHERE scan_id = ?",
-        (scan_id,),
-    ).fetchall()
+    return (
+        conn.execute(
+            sa.text(
+                "SELECT group_id, group_name, vpc_id, region, ingress_rules"
+                " FROM security_groups WHERE scan_id = :scan_id"
+            ),
+            {"scan_id": scan_id},
+        )
+        .mappings()
+        .all()
+    )
 
 
 def _sg_world_rules(row):
@@ -175,10 +183,12 @@ def check_public_subnets(conn, scan_id):
     if blocked:
         return blocked
     subnet_rows = conn.execute(
-        "SELECT subnet_id, vpc_id, region, cidr_block FROM subnets"
-        " WHERE scan_id = ? AND map_public_ip = 1",
-        (scan_id,),
-    ).fetchall()
+        sa.text(
+            "SELECT subnet_id, vpc_id, region, cidr_block FROM subnets"
+            " WHERE scan_id = :scan_id AND map_public_ip = 1"
+        ),
+        {"scan_id": scan_id},
+    ).mappings()
     findings = [
         Finding(
             resource_id=row["subnet_id"],
@@ -212,13 +222,15 @@ def check_vpcs_without_flow_logs(conn, scan_id):
     if blocked:
         return blocked
     vpc_rows = conn.execute(
-        "SELECT vpc_id, region, cidr_block FROM vpcs WHERE scan_id = ?", (scan_id,)
-    ).fetchall()
+        sa.text("SELECT vpc_id, region, cidr_block FROM vpcs WHERE scan_id = :scan_id"),
+        {"scan_id": scan_id},
+    ).mappings()
     logged = {
         row["resource_id"]
         for row in conn.execute(
-            "SELECT resource_id FROM vpc_flow_logs WHERE scan_id = ?", (scan_id,)
-        ).fetchall()
+            sa.text("SELECT resource_id FROM vpc_flow_logs WHERE scan_id = :scan_id"),
+            {"scan_id": scan_id},
+        ).mappings()
     }
     findings = [
         Finding(

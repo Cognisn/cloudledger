@@ -9,9 +9,11 @@ and comments.
 
 import logging
 from datetime import datetime, UTC
+from typing import Optional
 
 import sqlalchemy as sa
 
+from ..config.context import mask_target
 from .engine import make_engine
 from .tables import metadata, t_schema_version
 
@@ -30,7 +32,7 @@ class DatabaseSchema:
 
     def initialise_database(self) -> None:
         """Create all tables and indices if they do not exist."""
-        logger.info(f"Initialising database at {self.db_path}")
+        logger.info(f"Initialising database at {mask_target(self.db_path)}")
         metadata.create_all(self._engine)
         with self._engine.begin() as conn:
             existing = conn.execute(
@@ -45,7 +47,7 @@ class DatabaseSchema:
                 )
         logger.info("Database initialisation complete")
 
-    def get_schema_version(self):
+    def get_schema_version(self) -> Optional[int]:
         """Return the recorded schema version, or None before initialisation."""
         try:
             with self._engine.connect() as conn:

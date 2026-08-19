@@ -2,16 +2,16 @@
 
 import pytest
 
-from cloudledger.assessment.types import CheckResult, Finding
+from cloudledger.assessment.types import Finding
 from cloudledger.assessment.registry import (
     CheckMeta,
     get_catalogue,
     make_result,
     register,
     run_checks,
-    resolve_scan_id,
     CHECKS,
 )
+from cloudledger.database.engine import make_engine
 from tests.assessment_fixtures import SCAN_ID, make_db
 
 TEST_META = CheckMeta(
@@ -59,8 +59,8 @@ def test_run_checks_groups_by_category_and_status(tmp_path):
             ],
         )
 
-    db_path = make_db(tmp_path)
-    result = run_checks(db_path, SCAN_ID, category="identity_access")
+    engine = make_engine(make_db(tmp_path))
+    result = run_checks(engine, SCAN_ID, category="identity_access")
     checks = result["categories"]["identity_access"]
     mine = [c for c in checks if c["check_id"] == "test.always_finds"]
     assert mine[0]["status"] == "findings"
@@ -82,15 +82,15 @@ def test_not_evaluated_is_surfaced(tmp_path):
     def check(conn, scan_id):
         return make_result(meta, not_evaluated_reason="posture not collected")
 
-    db_path = make_db(tmp_path)
-    result = run_checks(db_path, SCAN_ID, category="identity_access")
+    engine = make_engine(make_db(tmp_path))
+    result = run_checks(engine, SCAN_ID, category="identity_access")
     skipped = [c for c in result["not_evaluated"] if c["check_id"] == "test.never_ran"]
     assert skipped[0]["not_evaluated_reason"] == "posture not collected"
 
 
 def test_latest_scan_resolution_and_unknown_scan(tmp_path):
-    db_path = make_db(tmp_path)
-    result = run_checks(db_path, None)
+    engine = make_engine(make_db(tmp_path))
+    result = run_checks(engine, None)
     assert result["scan_id"] == SCAN_ID
     with pytest.raises(ValueError):
-        run_checks(db_path, "no-such-scan")
+        run_checks(engine, "no-such-scan")

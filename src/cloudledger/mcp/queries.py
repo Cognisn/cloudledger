@@ -5070,7 +5070,7 @@ class QueryHandler:
         """Run the native security checks and attach Prowler linkage."""
         try:
             result = run_assessment_checks(
-                str(self.db_ops.db_path),
+                self.db_ops.engine,
                 params.get("scan_id"),
                 params.get("category"),
             )
@@ -5103,7 +5103,7 @@ class QueryHandler:
         """Run the service exposure correlations."""
         try:
             return run_exposure(
-                str(self.db_ops.db_path),
+                self.db_ops.engine,
                 params.get("scan_id"),
                 params.get("service"),
             )
