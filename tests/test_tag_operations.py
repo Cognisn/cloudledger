@@ -76,3 +76,15 @@ def test_find_scans_by_tag(db_ops):
     assert {s["scan_id"] for s in scans} == {"s1", "s2"}
     s1 = next(s for s in scans if s["scan_id"] == "s1")
     assert set(s1["tags"]) == {"Engagement-X", "extra"}
+
+
+def test_delete_scan_removes_tagged_scan_and_its_tags(db_ops):
+    db_ops.add_tags("s1", ["Client-Acme", "q3-review"])
+
+    db_ops.delete_scan("s1")
+
+    with pytest.raises(ValueError, match="not found"):
+        db_ops.delete_scan("s1")
+    assert db_ops.get_tags_for_scan("s1") == []
+    # s2 and its scan_metadata row are untouched by deleting s1.
+    assert db_ops.get_tags_for_scan("s2") == []

@@ -100,6 +100,34 @@ class TestPromptForAccountConfigOrgQuestions:
             account.management_account_name,
         ) == (True, False, "999999999999", "Mgmt")
 
+    def test_management_account_name_reprompts_on_blank(self, monkeypatch):
+        _stub_credentials(monkeypatch)
+        calls = _feed_input(
+            monkeypatch,
+            [
+                "Test Account",
+                "123456789012",
+                "AKIAEXAMPLE",
+                "skip",
+                "",
+                "y",  # org member?
+                "n",  # is management account?
+                "",  # blank management account name -> re-prompt
+                "Mgmt",  # management account name
+                "999999999999",  # management account id
+            ],
+        )
+
+        account = CredentialManager.prompt_for_account_config()
+
+        assert (
+            account.org_member,
+            account.is_management_account,
+            account.management_account_id,
+            account.management_account_name,
+        ) == (True, False, "999999999999", "Mgmt")
+        assert len(calls) == 10
+
     def test_non_member_account(self, monkeypatch):
         _stub_credentials(monkeypatch)
         _feed_input(

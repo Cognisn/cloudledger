@@ -2449,6 +2449,7 @@ class DatabaseOperations:
             "opensearch_domains",
             "msk_clusters",
             "dynamodb_tables",
+            "scan_tags",
         ]
 
         deleted_counts = {}
