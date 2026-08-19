@@ -7,8 +7,37 @@ Uses Australian English in all documentation and comments.
 """
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import mssql as _mssql
+from sqlalchemy.dialects import mysql as _mysql
 
 metadata = sa.MetaData()
+
+
+def _timestamp_column(name: str = "created_at") -> sa.Column:
+    """Text timestamp with a server default, typed DATETIME on MySQL.
+
+    MySQL forbids defaults on TEXT columns; every other supported dialect
+    stores the same ISO-style value in a text column, so the SQLite schema
+    (and its equivalence baseline) is unchanged.
+    """
+    return sa.Column(
+        name,
+        sa.Text().with_variant(_mysql.DATETIME(), "mysql"),
+        server_default=sa.text("CURRENT_TIMESTAMP"),
+    )
+
+
+# Text on SQLite/PostgreSQL; bounded VARCHAR where the dialect forbids
+# keys or indexes on unbounded text (MySQL error 1170, MSSQL VARCHAR(MAX)).
+KeyText = (
+    sa.Text()
+    .with_variant(_mysql.VARCHAR(255), "mysql")
+    .with_variant(_mssql.VARCHAR(450), "mssql")
+)
+
+# Text on every dialect except MySQL, which forbids defaults on TEXT
+# columns; these hold short enum-like values with literal defaults.
+EnumText = sa.Text().with_variant(_mysql.VARCHAR(64), "mysql")
 
 
 t_account_security_posture = sa.Table(
@@ -16,7 +45,7 @@ t_account_security_posture = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("account_summary", sa.Text),
     sa.Column("password_policy", sa.Text),
@@ -29,7 +58,7 @@ t_account_security_posture = sa.Table(
     sa.Column("account_public_access_block", sa.Text),
     sa.Column("credential_report_generated", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -38,11 +67,11 @@ t_api_gateway_http_apis = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("api_id", sa.Text, nullable=False),
-    sa.Column("name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("api_id", KeyText, nullable=False),
+    sa.Column("name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("protocol_type", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("api_endpoint", sa.Text),
@@ -55,7 +84,7 @@ t_api_gateway_http_apis = sa.Table(
     sa.Column("created_date", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -64,11 +93,11 @@ t_api_gateway_rest_apis = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("api_id", sa.Text, nullable=False),
-    sa.Column("name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("api_id", KeyText, nullable=False),
+    sa.Column("name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("endpoint_configuration", sa.Text),
     sa.Column("version", sa.Text),
@@ -80,7 +109,7 @@ t_api_gateway_rest_apis = sa.Table(
     sa.Column("disable_execute_api_endpoint", sa.Integer, server_default=sa.text("0")),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -89,12 +118,12 @@ t_api_gateway_stages = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("api_id", sa.Text, nullable=False),
-    sa.Column("stage_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("api_type", sa.Text, nullable=False),
+    sa.Column("api_id", KeyText, nullable=False),
+    sa.Column("stage_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("api_type", KeyText, nullable=False),
     sa.Column("deployment_id", sa.Text),
     sa.Column("description", sa.Text),
     sa.Column("created_date", sa.Text),
@@ -111,7 +140,7 @@ t_api_gateway_stages = sa.Table(
     sa.Column("default_route_settings", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -120,11 +149,11 @@ t_auto_scaling_groups = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("auto_scaling_group_name", sa.Text, nullable=False),
+    sa.Column("auto_scaling_group_name", KeyText, nullable=False),
     sa.Column("auto_scaling_group_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("launch_configuration_name", sa.Text),
     sa.Column("launch_template", sa.Text),
     sa.Column("min_size", sa.Integer, nullable=False),
@@ -141,7 +170,7 @@ t_auto_scaling_groups = sa.Table(
     sa.Column("created_time", sa.Text, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -150,25 +179,25 @@ t_bedrock_agents = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("agent_id", sa.Text, nullable=False),
-    sa.Column("agent_arn", sa.Text, nullable=False),
+    sa.Column("agent_id", KeyText, nullable=False),
+    sa.Column("agent_arn", KeyText, nullable=False),
     sa.Column("agent_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("agent_version", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("agent_resource_role_arn", sa.Text, nullable=False),
     sa.Column("foundation_model", sa.Text, nullable=False),
     sa.Column("instruction", sa.Text),
     sa.Column("idle_session_ttl_in_seconds", sa.Integer),
-    sa.Column("agent_status", sa.Text, nullable=False),
+    sa.Column("agent_status", KeyText, nullable=False),
     sa.Column("created_at_time", sa.Text),
     sa.Column("updated_at_time", sa.Text),
     sa.Column("prepared_at_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -177,15 +206,15 @@ t_bedrock_guardrails = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("guardrail_id", sa.Text, nullable=False),
-    sa.Column("guardrail_arn", sa.Text, nullable=False),
+    sa.Column("guardrail_id", KeyText, nullable=False),
+    sa.Column("guardrail_arn", KeyText, nullable=False),
     sa.Column("guardrail_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("version", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("content_policy_config", sa.Text),
     sa.Column("topic_policy_config", sa.Text),
     sa.Column("word_policy_config", sa.Text),
@@ -196,7 +225,7 @@ t_bedrock_guardrails = sa.Table(
     sa.Column("updated_at_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -205,22 +234,22 @@ t_bedrock_knowledge_bases = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("knowledge_base_id", sa.Text, nullable=False),
-    sa.Column("knowledge_base_arn", sa.Text, nullable=False),
+    sa.Column("knowledge_base_id", KeyText, nullable=False),
+    sa.Column("knowledge_base_arn", KeyText, nullable=False),
     sa.Column("knowledge_base_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("role_arn", sa.Text, nullable=False),
     sa.Column("knowledge_base_configuration", sa.Text),
     sa.Column("storage_configuration", sa.Text),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("created_at_time", sa.Text),
     sa.Column("updated_at_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -229,13 +258,13 @@ t_bedrock_models = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("model_id", sa.Text, nullable=False),
-    sa.Column("model_arn", sa.Text, nullable=False),
+    sa.Column("model_id", KeyText, nullable=False),
+    sa.Column("model_arn", KeyText, nullable=False),
     sa.Column("model_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("provider_name", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("provider_name", KeyText, nullable=False),
     sa.Column("customization_type", sa.Text),
     sa.Column("base_model_arn", sa.Text),
     sa.Column("inference_types_supported", sa.Text),
@@ -243,7 +272,7 @@ t_bedrock_models = sa.Table(
     sa.Column("output_modalities", sa.Text),
     sa.Column("response_streaming_supported", sa.Integer, server_default=sa.text("0")),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -252,12 +281,12 @@ t_cloudfront_distributions = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("distribution_id", sa.Text, nullable=False),
-    sa.Column("distribution_arn", sa.Text, nullable=False),
+    sa.Column("distribution_id", KeyText, nullable=False),
+    sa.Column("distribution_arn", KeyText, nullable=False),
     sa.Column("domain_name", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("enabled", sa.Integer, nullable=False),
     sa.Column("aliases", sa.Text),
     sa.Column("origins", sa.Text),
@@ -268,16 +297,16 @@ t_cloudfront_distributions = sa.Table(
     sa.Column("viewer_certificate", sa.Text),
     sa.Column("geo_restriction", sa.Text),
     sa.Column("web_acl_id", sa.Text),
-    sa.Column("http_version", sa.Text, server_default=sa.text("'http2'")),
+    sa.Column("http_version", EnumText, server_default=sa.text("'http2'")),
     sa.Column("is_ipv6_enabled", sa.Integer, server_default=sa.text("1")),
     sa.Column("logging", sa.Text),
-    sa.Column("price_class", sa.Text, server_default=sa.text("'PriceClass_All'")),
+    sa.Column("price_class", EnumText, server_default=sa.text("'PriceClass_All'")),
     sa.Column("custom_error_responses", sa.Text),
     sa.Column("comment", sa.Text),
     sa.Column("last_modified_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -286,11 +315,11 @@ t_cloudtrail_trails = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("trail_name", sa.Text, nullable=False),
-    sa.Column("trail_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("trail_name", KeyText, nullable=False),
+    sa.Column("trail_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("s3_bucket_name", sa.Text, nullable=False),
     sa.Column("s3_key_prefix", sa.Text),
     sa.Column("sns_topic_name", sa.Text),
@@ -320,7 +349,7 @@ t_cloudtrail_trails = sa.Table(
     sa.Column("home_region", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -329,11 +358,11 @@ t_cloudwatch_log_groups = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("log_group_name", sa.Text, nullable=False),
-    sa.Column("log_group_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("log_group_name", KeyText, nullable=False),
+    sa.Column("log_group_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("creation_time", sa.Text),
     sa.Column("retention_in_days", sa.Integer),
     sa.Column("stored_bytes", sa.Integer, server_default=sa.text("0")),
@@ -341,7 +370,7 @@ t_cloudwatch_log_groups = sa.Table(
     sa.Column("metric_filter_count", sa.Integer, server_default=sa.text("0")),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -350,10 +379,10 @@ t_config_recorders = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("recorder_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("recorder_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("role_arn", sa.Text, nullable=False),
     sa.Column("recording_group", sa.Text),
     sa.Column("is_recording", sa.Integer, nullable=False, server_default=sa.text("0")),
@@ -361,7 +390,7 @@ t_config_recorders = sa.Table(
     sa.Column("last_start_time", sa.Text),
     sa.Column("last_stop_time", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -370,20 +399,20 @@ t_config_rules = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("rule_name", sa.Text, nullable=False),
-    sa.Column("rule_arn", sa.Text, nullable=False),
+    sa.Column("rule_name", KeyText, nullable=False),
+    sa.Column("rule_arn", KeyText, nullable=False),
     sa.Column("rule_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("scope", sa.Text),
     sa.Column("source", sa.Text),
-    sa.Column("compliance_type", sa.Text),
-    sa.Column("config_rule_state", sa.Text, server_default=sa.text("'ACTIVE'")),
+    sa.Column("compliance_type", KeyText),
+    sa.Column("config_rule_state", EnumText, server_default=sa.text("'ACTIVE'")),
     sa.Column("maximum_execution_frequency", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -392,17 +421,17 @@ t_cost_data = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("account_number", sa.Text, nullable=False),
-    sa.Column("time_period_start", sa.Text, nullable=False),
-    sa.Column("time_period_end", sa.Text, nullable=False),
-    sa.Column("service_name", sa.Text, nullable=False),
+    sa.Column("account_number", KeyText, nullable=False),
+    sa.Column("time_period_start", KeyText, nullable=False),
+    sa.Column("time_period_end", KeyText, nullable=False),
+    sa.Column("service_name", KeyText, nullable=False),
     sa.Column("amount", sa.REAL, nullable=False),
     sa.Column("currency", sa.Text, nullable=False),
     sa.Column("unit", sa.Text, nullable=False),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -411,12 +440,12 @@ t_direct_connect_connections = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("connection_id", sa.Text, nullable=False),
-    sa.Column("connection_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("connection_state", sa.Text, nullable=False),
+    sa.Column("connection_id", KeyText, nullable=False),
+    sa.Column("connection_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("connection_state", KeyText, nullable=False),
     sa.Column("location", sa.Text, nullable=False),
     sa.Column("bandwidth", sa.Text, nullable=False),
     sa.Column("vlan", sa.Integer),
@@ -433,7 +462,7 @@ t_direct_connect_connections = sa.Table(
     sa.Column("loa_issue_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -442,15 +471,15 @@ t_directory_services = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("directory_id", sa.Text, nullable=False),
-    sa.Column("directory_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("directory_type", sa.Text, nullable=False),
+    sa.Column("directory_id", KeyText, nullable=False),
+    sa.Column("directory_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("directory_type", KeyText, nullable=False),
     sa.Column("size", sa.Text),
     sa.Column("edition", sa.Text),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("subnet_ids", sa.Text),
     sa.Column("dns_ip_addresses", sa.Text),
     sa.Column("access_url", sa.Text),
@@ -464,7 +493,7 @@ t_directory_services = sa.Table(
     sa.Column("short_name", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -473,13 +502,13 @@ t_dynamodb_tables = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("table_name", sa.Text, nullable=False),
-    sa.Column("table_arn", sa.Text, nullable=False),
+    sa.Column("table_name", KeyText, nullable=False),
+    sa.Column("table_arn", KeyText, nullable=False),
     sa.Column("table_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("table_status", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("table_status", KeyText, nullable=False),
     sa.Column("creation_date_time", sa.Text),
     sa.Column("key_schema", sa.Text),
     sa.Column("attribute_definitions", sa.Text),
@@ -504,7 +533,7 @@ t_dynamodb_tables = sa.Table(
     sa.Column("deletion_protection_enabled", sa.Integer, server_default=sa.text("0")),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -513,22 +542,22 @@ t_ebs_snapshots = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("snapshot_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("volume_id", sa.Text),
+    sa.Column("snapshot_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("volume_id", KeyText),
     sa.Column("volume_size", sa.Integer, nullable=False),
     sa.Column("encrypted", sa.Integer, nullable=False),
     sa.Column("kms_key_id", sa.Text),
     sa.Column("state", sa.Text, nullable=False),
-    sa.Column("start_time", sa.Text, nullable=False),
+    sa.Column("start_time", KeyText, nullable=False),
     sa.Column("progress", sa.Text, nullable=False),
     sa.Column("owner_id", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -537,27 +566,27 @@ t_ebs_volumes = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("volume_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("volume_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("size", sa.Integer, nullable=False),
     sa.Column("volume_type", sa.Text, nullable=False),
     sa.Column("iops", sa.Integer),
     sa.Column("throughput", sa.Integer),
     sa.Column("encrypted", sa.Integer, nullable=False),
     sa.Column("kms_key_id", sa.Text),
-    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("state", KeyText, nullable=False),
     sa.Column("create_time", sa.Text, nullable=False),
     sa.Column("availability_zone", sa.Text, nullable=False),
     sa.Column("snapshot_id", sa.Text),
-    sa.Column("attached_instance_id", sa.Text),
+    sa.Column("attached_instance_id", KeyText),
     sa.Column("device_name", sa.Text),
     sa.Column("attachment_state", sa.Text),
     sa.Column("multi_attach_enabled", sa.Integer, server_default=sa.text("0")),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -566,15 +595,15 @@ t_ec2_instances = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("instance_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("instance_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("instance_type", sa.Text, nullable=False),
     sa.Column("state", sa.Text, nullable=False),
-    sa.Column("public_ip", sa.Text),
+    sa.Column("public_ip", KeyText),
     sa.Column("private_ip", sa.Text),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("subnet_id", sa.Text),
     sa.Column("availability_zone", sa.Text, nullable=False),
     sa.Column("launch_time", sa.Text, nullable=False),
@@ -584,7 +613,7 @@ t_ec2_instances = sa.Table(
     sa.Column("iam_instance_profile", sa.Text),
     sa.Column("monitoring_state", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -593,12 +622,12 @@ t_ecr_images = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("repository_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("repository_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("registry_id", sa.Text, nullable=False),
-    sa.Column("image_digest", sa.Text, nullable=False),
+    sa.Column("image_digest", KeyText, nullable=False),
     sa.Column("image_tags", sa.Text),
     sa.Column("image_size_in_bytes", sa.Integer, nullable=False),
     sa.Column("image_pushed_at", sa.Text),
@@ -607,7 +636,7 @@ t_ecr_images = sa.Table(
     sa.Column("last_recorded_pull_time", sa.Text),
     sa.Column("artifact_media_type", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -616,20 +645,20 @@ t_ecr_repositories = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("repository_arn", sa.Text, nullable=False),
-    sa.Column("repository_name", sa.Text, nullable=False),
+    sa.Column("repository_arn", KeyText, nullable=False),
+    sa.Column("repository_name", KeyText, nullable=False),
     sa.Column("repository_uri", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("registry_id", sa.Text, nullable=False),
     sa.Column("image_scanning_configuration", sa.Text),
-    sa.Column("image_tag_mutability", sa.Text, server_default=sa.text("'MUTABLE'")),
+    sa.Column("image_tag_mutability", EnumText, server_default=sa.text("'MUTABLE'")),
     sa.Column("encryption_configuration", sa.Text),
     sa.Column("created_at_repo", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -638,12 +667,12 @@ t_ecs_clusters = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("cluster_arn", sa.Text, nullable=False),
-    sa.Column("cluster_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("cluster_arn", KeyText, nullable=False),
+    sa.Column("cluster_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column(
         "registered_container_instances_count", sa.Integer, server_default=sa.text("0")
     ),
@@ -656,7 +685,7 @@ t_ecs_clusters = sa.Table(
     sa.Column("statistics", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -665,13 +694,13 @@ t_ecs_services = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("service_arn", sa.Text, nullable=False),
-    sa.Column("service_name", sa.Text, nullable=False),
-    sa.Column("cluster_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("service_arn", KeyText, nullable=False),
+    sa.Column("service_name", KeyText, nullable=False),
+    sa.Column("cluster_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("task_definition", sa.Text, nullable=False),
     sa.Column("desired_count", sa.Integer, nullable=False),
     sa.Column("running_count", sa.Integer, nullable=False),
@@ -686,11 +715,11 @@ t_ecs_services = sa.Table(
     sa.Column("deployment_configuration", sa.Text),
     sa.Column("deployments", sa.Text),
     sa.Column("health_check_grace_period_seconds", sa.Integer),
-    sa.Column("scheduling_strategy", sa.Text, server_default=sa.text("'REPLICA'")),
+    sa.Column("scheduling_strategy", EnumText, server_default=sa.text("'REPLICA'")),
     sa.Column("created_at_svc", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -699,13 +728,13 @@ t_ecs_task_definitions = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("task_definition_arn", sa.Text, nullable=False),
-    sa.Column("family", sa.Text, nullable=False),
+    sa.Column("task_definition_arn", KeyText, nullable=False),
+    sa.Column("family", KeyText, nullable=False),
     sa.Column("revision", sa.Integer, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("requires_compatibilities", sa.Text),
     sa.Column("network_mode", sa.Text, nullable=False),
     sa.Column("cpu", sa.Text),
@@ -726,7 +755,7 @@ t_ecs_task_definitions = sa.Table(
     sa.Column("registered_by", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -735,16 +764,16 @@ t_eks_clusters = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("cluster_name", sa.Text, nullable=False),
-    sa.Column("cluster_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("cluster_name", KeyText, nullable=False),
+    sa.Column("cluster_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("version", sa.Text, nullable=False),
     sa.Column("endpoint", sa.Text),
     sa.Column("role_arn", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
     sa.Column("subnet_ids", sa.Text),
     sa.Column("security_group_ids", sa.Text),
     sa.Column("cluster_security_group_id", sa.Text),
@@ -759,7 +788,7 @@ t_eks_clusters = sa.Table(
     sa.Column("created_at_eks", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -768,13 +797,13 @@ t_eks_node_groups = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("cluster_name", sa.Text, nullable=False),
-    sa.Column("nodegroup_name", sa.Text, nullable=False),
-    sa.Column("nodegroup_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("cluster_name", KeyText, nullable=False),
+    sa.Column("nodegroup_name", KeyText, nullable=False),
+    sa.Column("nodegroup_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("scaling_config", sa.Text),
     sa.Column("instance_types", sa.Text),
     sa.Column("ami_type", sa.Text),
@@ -785,7 +814,7 @@ t_eks_node_groups = sa.Table(
     sa.Column("labels", sa.Text),
     sa.Column("taints", sa.Text),
     sa.Column("disk_size", sa.Integer),
-    sa.Column("capacity_type", sa.Text, server_default=sa.text("'ON_DEMAND'")),
+    sa.Column("capacity_type", EnumText, server_default=sa.text("'ON_DEMAND'")),
     sa.Column("launch_template", sa.Text),
     sa.Column("update_config", sa.Text),
     sa.Column("health", sa.Text),
@@ -793,7 +822,7 @@ t_eks_node_groups = sa.Table(
     sa.Column("modified_at", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -802,13 +831,13 @@ t_elastic_ips = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("allocation_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("allocation_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("public_ip", sa.Text, nullable=False),
     sa.Column("domain", sa.Text, nullable=False),
-    sa.Column("instance_id", sa.Text),
+    sa.Column("instance_id", KeyText),
     sa.Column("network_interface_id", sa.Text),
     sa.Column("network_interface_owner_id", sa.Text),
     sa.Column("private_ip_address", sa.Text),
@@ -816,7 +845,7 @@ t_elastic_ips = sa.Table(
     sa.Column("is_associated", sa.Integer, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -825,20 +854,20 @@ t_elasticache_clusters = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("cache_cluster_id", sa.Text, nullable=False),
-    sa.Column("cache_cluster_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("engine", sa.Text, nullable=False),
+    sa.Column("cache_cluster_id", KeyText, nullable=False),
+    sa.Column("cache_cluster_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("engine", KeyText, nullable=False),
     sa.Column("engine_version", sa.Text, nullable=False),
     sa.Column("cache_node_type", sa.Text, nullable=False),
     sa.Column("num_cache_nodes", sa.Integer, nullable=False),
     sa.Column("preferred_availability_zone", sa.Text),
     sa.Column("preferred_availability_zones", sa.Text),
-    sa.Column("cache_cluster_status", sa.Text, nullable=False),
+    sa.Column("cache_cluster_status", KeyText, nullable=False),
     sa.Column("cache_subnet_group_name", sa.Text),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("security_groups", sa.Text),
     sa.Column("at_rest_encryption_enabled", sa.Integer, server_default=sa.text("0")),
     sa.Column("transit_encryption_enabled", sa.Integer, server_default=sa.text("0")),
@@ -852,7 +881,7 @@ t_elasticache_clusters = sa.Table(
     sa.Column("cache_cluster_create_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -861,9 +890,9 @@ t_iam_credential_report = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("user_name", sa.Text, nullable=False),
+    sa.Column("user_name", KeyText, nullable=False),
     sa.Column("arn", sa.Text),
     sa.Column("user_creation_time", sa.Text),
     sa.Column("password_enabled", sa.Integer),
@@ -880,7 +909,7 @@ t_iam_credential_report = sa.Table(
     sa.Column("access_key_2_last_rotated", sa.Text),
     sa.Column("access_key_2_last_used", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -889,10 +918,10 @@ t_iam_policies = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("policy_arn", sa.Text, nullable=False),
-    sa.Column("policy_name", sa.Text, nullable=False),
+    sa.Column("policy_arn", KeyText, nullable=False),
+    sa.Column("policy_name", KeyText, nullable=False),
     sa.Column("policy_id", sa.Text, nullable=False),
     sa.Column("path", sa.Text, nullable=False),
     sa.Column("default_version_id", sa.Text, nullable=False),
@@ -908,7 +937,7 @@ t_iam_policies = sa.Table(
     sa.Column("attached_groups", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -917,7 +946,7 @@ t_iam_roles = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("role_name", sa.Text, nullable=False),
     sa.Column("role_id", sa.Text, nullable=False),
@@ -928,7 +957,7 @@ t_iam_roles = sa.Table(
     sa.Column("max_session_duration", sa.Integer, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -937,7 +966,7 @@ t_iam_users = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("user_name", sa.Text, nullable=False),
     sa.Column("user_id", sa.Text, nullable=False),
@@ -950,7 +979,7 @@ t_iam_users = sa.Table(
     sa.Column("groups", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -959,14 +988,14 @@ t_internet_gateways = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("internet_gateway_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("internet_gateway_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("vpc_attachments", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -975,15 +1004,15 @@ t_kms_keys = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("key_id", sa.Text, nullable=False),
-    sa.Column("key_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("key_id", KeyText, nullable=False),
+    sa.Column("key_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("aws_account_id", sa.Text, nullable=False),
-    sa.Column("key_state", sa.Text, nullable=False),
+    sa.Column("key_state", KeyText, nullable=False),
     sa.Column("creation_date", sa.Text, nullable=False),
-    sa.Column("key_manager", sa.Text, nullable=False),
+    sa.Column("key_manager", KeyText, nullable=False),
     sa.Column("key_usage", sa.Text, nullable=False),
     sa.Column("key_spec", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
@@ -994,7 +1023,7 @@ t_kms_keys = sa.Table(
     sa.Column("aliases", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1003,16 +1032,16 @@ t_lambda_exposure = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("region", sa.Text, nullable=False),
     sa.Column("function_name", sa.Text, nullable=False),
     sa.Column("function_arn", sa.Text, nullable=False),
     sa.Column("url_config", sa.Text),
-    sa.Column("url_auth_type", sa.Text),
+    sa.Column("url_auth_type", KeyText),
     sa.Column("resource_policy", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1021,12 +1050,12 @@ t_lambda_functions = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("function_name", sa.Text, nullable=False),
+    sa.Column("function_name", KeyText, nullable=False),
     sa.Column("function_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("runtime", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("runtime", KeyText, nullable=False),
     sa.Column("handler", sa.Text, nullable=False),
     sa.Column("code_size", sa.Integer, nullable=False),
     sa.Column("memory_size", sa.Integer, nullable=False),
@@ -1041,7 +1070,7 @@ t_lambda_functions = sa.Table(
     sa.Column("triggers", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1050,13 +1079,13 @@ t_load_balancers = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("load_balancer_name", sa.Text, nullable=False),
-    sa.Column("load_balancer_arn", sa.Text, nullable=False),
-    sa.Column("load_balancer_type", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("load_balancer_arn", KeyText, nullable=False),
+    sa.Column("load_balancer_type", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("vpc_id", KeyText),
     sa.Column("scheme", sa.Text, nullable=False),
     sa.Column("state", sa.Text, nullable=False),
     sa.Column("dns_name", sa.Text, nullable=False),
@@ -1068,7 +1097,7 @@ t_load_balancers = sa.Table(
     sa.Column("target_groups", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1077,13 +1106,13 @@ t_msk_clusters = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("cluster_arn", sa.Text, nullable=False),
-    sa.Column("cluster_name", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("cluster_arn", KeyText, nullable=False),
+    sa.Column("cluster_name", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("kafka_version", sa.Text, nullable=False),
-    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("state", KeyText, nullable=False),
     sa.Column("creation_time", sa.Text),
     sa.Column("broker_node_group_info", sa.Text),
     sa.Column("number_of_broker_nodes", sa.Integer, nullable=False),
@@ -1102,7 +1131,7 @@ t_msk_clusters = sa.Table(
     sa.Column("bootstrap_broker_string_tls", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1111,11 +1140,11 @@ t_nat_gateways = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("nat_gateway_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("nat_gateway_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
     sa.Column("subnet_id", sa.Text, nullable=False),
     sa.Column("state", sa.Text, nullable=False),
     sa.Column("connectivity_type", sa.Text, nullable=False),
@@ -1125,7 +1154,7 @@ t_nat_gateways = sa.Table(
     sa.Column("nat_gateway_addresses", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1134,14 +1163,14 @@ t_network_interfaces = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("network_interface_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("network_interface_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("interface_type", sa.Text, nullable=False),
     sa.Column("status", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text, nullable=False),
-    sa.Column("subnet_id", sa.Text, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
+    sa.Column("subnet_id", KeyText, nullable=False),
     sa.Column("availability_zone", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("private_ip_address", sa.Text),
@@ -1153,7 +1182,7 @@ t_network_interfaces = sa.Table(
     sa.Column("attachment", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1162,12 +1191,12 @@ t_opensearch_domains = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("domain_id", sa.Text, nullable=False),
-    sa.Column("domain_name", sa.Text, nullable=False),
-    sa.Column("domain_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("domain_id", KeyText, nullable=False),
+    sa.Column("domain_name", KeyText, nullable=False),
+    sa.Column("domain_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("engine_type", sa.Text, nullable=False),
     sa.Column("engine_version", sa.Text, nullable=False),
     sa.Column("instance_type", sa.Text, nullable=False),
@@ -1186,7 +1215,7 @@ t_opensearch_domains = sa.Table(
     sa.Column("volume_size", sa.Integer),
     sa.Column("iops", sa.Integer),
     sa.Column("throughput", sa.Integer),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("subnet_ids", sa.Text),
     sa.Column("security_group_ids", sa.Text),
     sa.Column("endpoint", sa.Text),
@@ -1213,7 +1242,7 @@ t_opensearch_domains = sa.Table(
     sa.Column("domain_processing_status", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1222,18 +1251,18 @@ t_organization_accounts = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("account_id", sa.Text, nullable=False),
+    sa.Column("account_id", KeyText, nullable=False),
     sa.Column("account_arn", sa.Text, nullable=False),
     sa.Column("account_name", sa.Text, nullable=False),
     sa.Column("email", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("joined_method", sa.Text, nullable=False),
     sa.Column("joined_timestamp", sa.Text),
-    sa.Column("parent_ou_id", sa.Text),
+    sa.Column("parent_ou_id", KeyText),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1242,14 +1271,14 @@ t_organizational_units = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("ou_id", sa.Text, nullable=False),
+    sa.Column("ou_id", KeyText, nullable=False),
     sa.Column("ou_arn", sa.Text, nullable=False),
     sa.Column("ou_name", sa.Text, nullable=False),
-    sa.Column("parent_id", sa.Text),
+    sa.Column("parent_id", KeyText),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1258,16 +1287,16 @@ t_organizations = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("organization_id", sa.Text, nullable=False),
+    sa.Column("organization_id", KeyText, nullable=False),
     sa.Column("organization_arn", sa.Text, nullable=False),
     sa.Column("master_account_id", sa.Text, nullable=False),
     sa.Column("master_account_email", sa.Text, nullable=False),
     sa.Column("feature_set", sa.Text, nullable=False),
     sa.Column("available_policy_types", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1276,24 +1305,24 @@ t_prowler_findings = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("check_id", sa.Text, nullable=False),
     sa.Column("check_title", sa.Text, nullable=False),
-    sa.Column("severity", sa.Text, nullable=False),
-    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("severity", KeyText, nullable=False),
+    sa.Column("status", KeyText, nullable=False),
     sa.Column("region", sa.Text),
     sa.Column("resource_id", sa.Text),
     sa.Column("resource_arn", sa.Text),
     sa.Column("resource_tags", sa.Text),
     sa.Column("status_extended", sa.Text),
-    sa.Column("service_name", sa.Text, nullable=False),
+    sa.Column("service_name", KeyText, nullable=False),
     sa.Column("check_type", sa.Text, nullable=False),
     sa.Column("risk", sa.Text),
     sa.Column("remediation", sa.Text),
     sa.Column("compliance_frameworks", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1302,12 +1331,12 @@ t_rds_instances = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("db_instance_identifier", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("db_instance_identifier", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("db_instance_arn", sa.Text, nullable=False),
-    sa.Column("engine", sa.Text, nullable=False),
+    sa.Column("engine", KeyText, nullable=False),
     sa.Column("engine_version", sa.Text, nullable=False),
     sa.Column("db_instance_class", sa.Text, nullable=False),
     sa.Column("allocated_storage", sa.Integer, nullable=False),
@@ -1319,7 +1348,7 @@ t_rds_instances = sa.Table(
     sa.Column("publicly_accessible", sa.Integer, nullable=False),
     sa.Column("encrypted", sa.Integer, nullable=False),
     sa.Column("kms_key_id", sa.Text),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("subnet_group", sa.Text),
     sa.Column("vpc_security_groups", sa.Text),
     sa.Column("backup_retention_period", sa.Integer, nullable=False),
@@ -1334,7 +1363,7 @@ t_rds_instances = sa.Table(
     sa.Column("deletion_protection", sa.Integer, server_default=sa.text("0")),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1343,16 +1372,16 @@ t_region_security_services = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("guardduty_enabled", sa.Integer),
     sa.Column("guardduty_detector", sa.Text),
     sa.Column("security_hub_enabled", sa.Integer),
     sa.Column("ebs_encryption_by_default", sa.Integer),
     sa.Column("access_analyzers", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1361,7 +1390,7 @@ t_route53_hosted_zones = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("hosted_zone_id", sa.Text, nullable=False),
     sa.Column("name", sa.Text, nullable=False),
@@ -1370,7 +1399,7 @@ t_route53_hosted_zones = sa.Table(
     sa.Column("vpc_associations", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1379,16 +1408,16 @@ t_route53_record_sets = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("hosted_zone_id", sa.Text, nullable=False),
+    sa.Column("hosted_zone_id", KeyText, nullable=False),
     sa.Column("name", sa.Text, nullable=False),
     sa.Column("record_type", sa.Text, nullable=False),
     sa.Column("ttl", sa.Integer),
     sa.Column("resource_records", sa.Text),
     sa.Column("alias_target", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1397,18 +1426,18 @@ t_route_tables = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("route_table_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text, nullable=False),
+    sa.Column("route_table_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
     sa.Column("is_main", sa.Integer, nullable=False),
     sa.Column("routes", sa.Text),
     sa.Column("subnet_associations", sa.Text),
     sa.Column("gateway_associations", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1417,9 +1446,9 @@ t_s3_buckets = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("bucket_name", sa.Text, nullable=False),
+    sa.Column("bucket_name", KeyText, nullable=False),
     sa.Column("creation_date", sa.Text, nullable=False),
     sa.Column("region", sa.Text),
     sa.Column("versioning_status", sa.Text),
@@ -1431,7 +1460,7 @@ t_s3_buckets = sa.Table(
     sa.Column("object_count", sa.Integer),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1440,36 +1469,36 @@ t_s3_public_access = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("bucket_name", sa.Text, nullable=False),
+    sa.Column("bucket_name", KeyText, nullable=False),
     sa.Column("public_access_block", sa.Text),
     sa.Column("policy_is_public", sa.Integer),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
 t_scan_metadata = sa.Table(
     "scan_metadata",
     metadata,
-    sa.Column("scan_id", sa.Text, primary_key=True, nullable=True),
+    sa.Column("scan_id", KeyText, primary_key=True, nullable=True),
     sa.Column("account_name", sa.Text, nullable=False),
-    sa.Column("account_number", sa.Text, nullable=False),
-    sa.Column("scan_timestamp", sa.Text, nullable=False),
+    sa.Column("account_number", KeyText, nullable=False),
+    sa.Column("scan_timestamp", KeyText, nullable=False),
     sa.Column("prowler_level", sa.Text),
     sa.Column("regions_scanned", sa.Text, nullable=False),
     sa.Column("scan_status", sa.Text, nullable=False),
     sa.Column("error_message", sa.Text),
     sa.Column("scan_duration_seconds", sa.REAL),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
 )
 
 t_schema_version = sa.Table(
     "schema_version",
     metadata,
     sa.Column("version", sa.Integer, primary_key=True, nullable=True),
-    sa.Column("applied_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column("applied_at"),
 )
 
 t_security_groups = sa.Table(
@@ -1477,18 +1506,18 @@ t_security_groups = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("group_id", sa.Text, nullable=False),
+    sa.Column("group_id", KeyText, nullable=False),
     sa.Column("group_name", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("region", sa.Text, nullable=False),
     sa.Column("description", sa.Text, nullable=False),
     sa.Column("ingress_rules", sa.Text),
     sa.Column("egress_rules", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1497,16 +1526,16 @@ t_sso_assignments = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("instance_arn", sa.Text, nullable=False),
-    sa.Column("permission_set_arn", sa.Text, nullable=False),
+    sa.Column("permission_set_arn", KeyText, nullable=False),
     sa.Column("principal_type", sa.Text, nullable=False),
-    sa.Column("principal_id", sa.Text, nullable=False),
+    sa.Column("principal_id", KeyText, nullable=False),
     sa.Column("target_type", sa.Text, nullable=False),
-    sa.Column("target_id", sa.Text, nullable=False),
+    sa.Column("target_id", KeyText, nullable=False),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1515,11 +1544,11 @@ t_sso_permission_sets = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("permission_set_arn", sa.Text, nullable=False),
-    sa.Column("permission_set_name", sa.Text, nullable=False),
-    sa.Column("instance_arn", sa.Text, nullable=False),
+    sa.Column("permission_set_arn", KeyText, nullable=False),
+    sa.Column("permission_set_name", KeyText, nullable=False),
+    sa.Column("instance_arn", KeyText, nullable=False),
     sa.Column("description", sa.Text),
     sa.Column("session_duration", sa.Text),
     sa.Column("relay_state", sa.Text),
@@ -1530,7 +1559,7 @@ t_sso_permission_sets = sa.Table(
     sa.Column("permissions_boundary", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1539,11 +1568,11 @@ t_subnets = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
     sa.Column("subnet_id", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("cidr_block", sa.Text, nullable=False),
     sa.Column("availability_zone", sa.Text, nullable=False),
     sa.Column("available_ip_count", sa.Integer, nullable=False),
@@ -1551,7 +1580,7 @@ t_subnets = sa.Table(
     sa.Column("state", sa.Text, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1560,14 +1589,14 @@ t_transit_gateways = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("transit_gateway_id", sa.Text, nullable=False),
-    sa.Column("transit_gateway_arn", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("transit_gateway_id", KeyText, nullable=False),
+    sa.Column("transit_gateway_arn", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("owner_id", sa.Text, nullable=False),
     sa.Column("description", sa.Text),
-    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("state", KeyText, nullable=False),
     sa.Column("amazon_side_asn", sa.Integer),
     sa.Column("default_route_table_id", sa.Text),
     sa.Column("default_route_table_association", sa.Text),
@@ -1580,7 +1609,7 @@ t_transit_gateways = sa.Table(
     sa.Column("creation_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1589,12 +1618,12 @@ t_vpc_flow_logs = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("flow_log_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("resource_id", sa.Text, nullable=False),
-    sa.Column("resource_type", sa.Text, nullable=False),
+    sa.Column("flow_log_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("resource_id", KeyText, nullable=False),
+    sa.Column("resource_type", KeyText, nullable=False),
     sa.Column("traffic_type", sa.Text, nullable=False),
     sa.Column("log_destination_type", sa.Text, nullable=False),
     sa.Column("log_destination", sa.Text, nullable=False),
@@ -1603,7 +1632,7 @@ t_vpc_flow_logs = sa.Table(
     sa.Column("created_time", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1612,10 +1641,10 @@ t_vpcs = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("vpc_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
+    sa.Column("vpc_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
     sa.Column("cidr_block", sa.Text, nullable=False),
     sa.Column("state", sa.Text, nullable=False),
     sa.Column("is_default", sa.Integer, nullable=False),
@@ -1623,7 +1652,7 @@ t_vpcs = sa.Table(
     sa.Column("instance_tenancy", sa.Text, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1632,11 +1661,11 @@ t_vpn_connections = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("vpn_connection_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("state", sa.Text, nullable=False),
+    sa.Column("vpn_connection_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("state", KeyText, nullable=False),
     sa.Column("vpn_connection_type", sa.Text, nullable=False),
     sa.Column("customer_gateway_id", sa.Text, nullable=False),
     sa.Column("vpn_gateway_id", sa.Text),
@@ -1648,7 +1677,7 @@ t_vpn_connections = sa.Table(
     sa.Column("category", sa.Text),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 
@@ -1657,15 +1686,15 @@ t_workspaces = sa.Table(
     metadata,
     sa.Column("id", sa.Integer, primary_key=True, nullable=True),
     sa.Column(
-        "scan_id", sa.Text, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
     ),
-    sa.Column("workspace_id", sa.Text, nullable=False),
-    sa.Column("region", sa.Text, nullable=False),
-    sa.Column("directory_id", sa.Text, nullable=False),
+    sa.Column("workspace_id", KeyText, nullable=False),
+    sa.Column("region", KeyText, nullable=False),
+    sa.Column("directory_id", KeyText, nullable=False),
     sa.Column("user_name", sa.Text, nullable=False),
     sa.Column("bundle_id", sa.Text, nullable=False),
     sa.Column("subnet_id", sa.Text, nullable=False),
-    sa.Column("vpc_id", sa.Text),
+    sa.Column("vpc_id", KeyText),
     sa.Column("ip_address", sa.Text),
     sa.Column("state", sa.Text, nullable=False),
     sa.Column("compute_type", sa.Text, nullable=False),
@@ -1675,7 +1704,7 @@ t_workspaces = sa.Table(
     sa.Column("running_mode", sa.Text, nullable=False),
     sa.Column("tags", sa.Text),
     sa.Column("raw_data", sa.Text),
-    sa.Column("created_at", sa.Text, server_default=sa.text("CURRENT_TIMESTAMP")),
+    _timestamp_column(),
     sqlite_autoincrement=True,
 )
 

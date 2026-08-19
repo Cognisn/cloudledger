@@ -19,6 +19,9 @@ All notable changes to this project are documented in this file. The format foll
 - MCP query layer rewritten onto SQLAlchemy Core with a query-output equivalence harness proving unchanged behaviour; the transitional sqlite connection shim is removed, making the entire query layer dialect-portable.
 - Assessment engine now runs on SQLAlchemy connections, completing dialect portability of the data layer.
 
+### Fixed
+- MySQL and MSSQL schema creation: bounded dialect-specific column types wherever those dialects forbid defaults or keys on unbounded text; timestamp bookkeeping columns are typed DATETIME on MySQL.
+
 ## [0.1.0] - 2026-08-19
 
 ### Added
