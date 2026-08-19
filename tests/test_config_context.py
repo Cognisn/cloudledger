@@ -6,12 +6,15 @@ Uses Australian English in all documentation and comments.
 
 import os
 
+import pytest
+
 from cloudledger.config import context as ctx_mod
 from cloudledger.config.context import (
     APP_ID,
     build_database_url,
     create_app_context,
     default_database_path,
+    mask_target,
     resolve_database_target,
 )
 
@@ -143,6 +146,33 @@ def test_resolve_target_sqlite_default(monkeypatch, tmp_path):
     assert resolve_database_target(None, _FakeSettings({}), _FakeSecrets({})) == (
         str(tmp_path / APP_ID / "cloudledger.db")
     )
+
+
+def test_build_url_missing_secret_raises():
+    settings = _FakeSettings(
+        {
+            "database.backend": "postgres",
+            "database.host": "db.example.com",
+            "database.port": 5432,
+            "database.database": "ledger",
+            "database.username": "cl",
+            "database.password": "secret://cloudledger.db.password",
+        }
+    )
+    with pytest.raises(ValueError, match="cloudledger.db.password"):
+        build_database_url(settings, _FakeSecrets({}))
+
+
+def test_mask_target_hides_password_in_url():
+    url = "postgresql+psycopg://cl:p%40ss+w0rd@db.example.com:5432/ledger"
+    masked = mask_target(url)
+    assert "p%40ss" not in masked
+    assert "***" in masked
+    assert masked.startswith("postgresql+psycopg://cl:***@db.example.com:5432/ledger")
+
+
+def test_mask_target_returns_plain_path_unchanged():
+    assert mask_target("/tmp/x.db") == "/tmp/x.db"
 
 
 def test_create_app_context_configures_logging_via_env(monkeypatch, tmp_path):

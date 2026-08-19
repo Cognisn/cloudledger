@@ -19,7 +19,7 @@ from rich.table import Table
 from ..database.schema import DatabaseSchema
 from ..database.operations import DatabaseOperations
 from ..database.models import ScanMetadata
-from ..config.context import create_app_context, resolve_database_target
+from ..config.context import create_app_context, mask_target, resolve_database_target
 from .credential_manager import CredentialManager, AccountConfig
 from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
@@ -91,7 +91,7 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
         db_schema = DatabaseSchema(database)
         db_schema.initialise_database()
         db_ops = DatabaseOperations(database)
-        console.print(f"[green]✓[/green] Database initialised: {database}")
+        console.print(f"[green]✓[/green] Database initialised: {mask_target(database)}")
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to initialise database: {e}")
         logger.error(f"Database initialisation failed: {e}", exc_info=True)
@@ -434,8 +434,11 @@ def delete_scan(database: str, scan_id: Optional[str]):
     """
     with create_app_context(console_output="none") as ctx:
         database = resolve_database_target(database, ctx.settings, ctx.secrets)
-        if not Path(database).exists():
-            console.print(f"[red]✗[/red] Database not found: {database}")
+        # Existence can only be checked for a local SQLite file; a server
+        # backend URL proceeds directly and surfaces connection failures
+        # naturally from the engine.
+        if "://" not in database and not Path(database).exists():
+            console.print(f"[red]✗[/red] Database not found: {mask_target(database)}")
             sys.exit(1)
 
         # Initialise database

@@ -11,6 +11,7 @@ from .context import (
     build_database_url,
     create_app_context,
     default_database_path,
+    mask_target,
     resolve_database_target,
 )
 
@@ -21,5 +22,6 @@ __all__ = [
     "build_database_url",
     "create_app_context",
     "default_database_path",
+    "mask_target",
     "resolve_database_target",
 ]

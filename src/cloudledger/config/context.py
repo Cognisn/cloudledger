@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import quote_plus
 
+import sqlalchemy as sa
 from konfig import AppContext
 from konfig.paths import data_dir
 
@@ -75,7 +76,10 @@ def build_database_url(settings, secrets) -> str:
     password_setting = _require_setting(settings, "database.password")
 
     if password_setting.startswith("secret://"):
-        password = secrets.get(password_setting[len("secret://") :])
+        secret_name = password_setting[len("secret://") :]
+        password = secrets.get(secret_name)
+        if password is None:
+            raise ValueError(f"Database password secret '{secret_name}' is not set")
     else:
         password = password_setting
     encoded_password = quote_plus(password)
@@ -110,6 +114,20 @@ def resolve_database_target(cli_value: Optional[str], settings, secrets) -> str:
         if configured:
             return configured
     return str(default_database_path())
+
+
+def mask_target(target: str) -> str:
+    """Return a display-safe form of a resolved database target.
+
+    A SQLAlchemy URL's password component, if present, is replaced with
+    ``***`` so the target is safe to log or print. A plain filesystem path,
+    or any string SQLAlchemy cannot parse as a URL, is returned unchanged.
+    """
+    try:
+        url = sa.engine.make_url(target)
+    except Exception:
+        return target
+    return url.render_as_string(hide_password=True)
 
 
 def create_app_context(
