@@ -16,6 +16,7 @@ from ..utils.timeutils import to_utc_iso
 from .engine import make_engine
 from .tables import (
     t_scan_metadata,
+    t_scan_tags,
     t_ec2_instances,
     t_vpcs,
     t_subnets,
@@ -176,6 +177,18 @@ class DatabaseOperations:
             "scan_status": metadata.scan_status,
             "error_message": metadata.error_message,
             "scan_duration_seconds": metadata.scan_duration_seconds,
+            "org_member": (
+                None
+                if metadata.org_member is None
+                else (1 if metadata.org_member else 0)
+            ),
+            "is_management_account": (
+                None
+                if metadata.is_management_account is None
+                else (1 if metadata.is_management_account else 0)
+            ),
+            "management_account_id": metadata.management_account_id,
+            "management_account_name": metadata.management_account_name,
         }
         with self._engine.begin() as conn:
             conn.execute(t_scan_metadata.insert(), row)
@@ -2612,3 +2625,158 @@ class DatabaseOperations:
         with self._engine.begin() as conn:
             conn.execute(t_s3_public_access.insert(), rows)
         logger.debug(f"Inserted {len(records)} S3 public access records")
+
+    # Tag operations
+
+    def _assert_scan_exists(self, conn, scan_id: str) -> None:
+        """Raise ValueError if the given scan id has no metadata row."""
+        stmt = sa.select(t_scan_metadata.c.scan_id).where(
+            t_scan_metadata.c.scan_id == scan_id
+        )
+        if conn.execute(stmt).first() is None:
+            raise ValueError(f"Scan not found: {scan_id}")
+
+    def add_tags(self, scan_id: str, tags: List[str]) -> List[str]:
+        """
+        Add tags to a scan.
+
+        Strips whitespace, drops empty tags, and dedupes case-insensitively
+        against both existing tags on the scan and other tags in the same
+        batch. Tags are inserted with the casing supplied.
+
+        Args:
+            scan_id: Scan identifier
+            tags: Tags to add
+
+        Returns:
+            The tags actually inserted (case-preserved)
+
+        Raises:
+            ValueError: If the scan does not exist
+        """
+        with self._engine.begin() as conn:
+            self._assert_scan_exists(conn, scan_id)
+
+            existing_lower = {
+                row.tag.lower()
+                for row in conn.execute(
+                    sa.select(t_scan_tags.c.tag).where(t_scan_tags.c.scan_id == scan_id)
+                )
+            }
+
+            to_add = []
+            seen_lower = set()
+            for tag in tags:
+                stripped = tag.strip()
+                if not stripped:
+                    continue
+                lowered = stripped.lower()
+                if lowered in existing_lower or lowered in seen_lower:
+                    continue
+                seen_lower.add(lowered)
+                to_add.append(stripped)
+
+            if to_add:
+                conn.execute(
+                    t_scan_tags.insert(),
+                    [{"scan_id": scan_id, "tag": tag} for tag in to_add],
+                )
+        return to_add
+
+    def remove_tags(self, scan_id: str, tags: List[str]) -> int:
+        """
+        Remove tags from a scan, matching case-insensitively.
+
+        Args:
+            scan_id: Scan identifier
+            tags: Tags to remove
+
+        Returns:
+            The number of tag rows removed
+        """
+        lowered_tags = [tag.strip().lower() for tag in tags]
+        stmt = sa.delete(t_scan_tags).where(
+            t_scan_tags.c.scan_id == scan_id,
+            sa.func.lower(t_scan_tags.c.tag).in_(lowered_tags),
+        )
+        with self._engine.begin() as conn:
+            result = conn.execute(stmt)
+        return result.rowcount
+
+    def get_tags_for_scan(self, scan_id: str) -> List[str]:
+        """
+        Get the tags for a scan, case-preserved and sorted case-insensitively.
+
+        Args:
+            scan_id: Scan identifier
+
+        Returns:
+            Tags sorted case-insensitively
+        """
+        stmt = sa.select(t_scan_tags.c.tag).where(t_scan_tags.c.scan_id == scan_id)
+        with self._engine.connect() as conn:
+            tags = [row.tag for row in conn.execute(stmt)]
+        return sorted(tags, key=str.lower)
+
+    def list_tags(self) -> List[Dict[str, Any]]:
+        """
+        List all distinct tags across all scans, with scan counts.
+
+        Tags are grouped case-insensitively; the display casing used is the
+        alphabetically first casing stored for that tag, for determinism.
+
+        Returns:
+            Tags sorted case-insensitively, each with a scan count
+        """
+        display_tag = sa.func.min(t_scan_tags.c.tag).label("tag")
+        scan_count = sa.func.count(sa.distinct(t_scan_tags.c.scan_id)).label(
+            "scan_count"
+        )
+        stmt = sa.select(display_tag, scan_count).group_by(
+            sa.func.lower(t_scan_tags.c.tag)
+        )
+        with self._engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+        return sorted(
+            [{"tag": row.tag, "scan_count": row.scan_count} for row in rows],
+            key=lambda entry: entry["tag"].lower(),
+        )
+
+    def find_scans_by_tag(self, tag: str) -> List[Dict[str, Any]]:
+        """
+        Find scans matching a tag, case-insensitively, newest first.
+
+        Args:
+            tag: Tag to search for
+
+        Returns:
+            Matching scans, each with the full list of tags on that scan
+        """
+        stmt = (
+            sa.select(
+                t_scan_metadata.c.scan_id,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_scan_metadata.c.scan_timestamp,
+                t_scan_metadata.c.scan_status,
+            )
+            .select_from(t_scan_metadata.join(t_scan_tags))
+            .where(sa.func.lower(t_scan_tags.c.tag) == tag.strip().lower())
+            .order_by(t_scan_metadata.c.scan_timestamp.desc())
+        )
+        with self._engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+            scans = [dict(row._mapping) for row in rows]
+
+            scan_ids = [scan["scan_id"] for scan in scans]
+            tags_by_scan: Dict[str, List[str]] = {scan_id: [] for scan_id in scan_ids}
+            if scan_ids:
+                tags_stmt = sa.select(
+                    t_scan_tags.c.scan_id, t_scan_tags.c.tag
+                ).where(t_scan_tags.c.scan_id.in_(scan_ids))
+                for row in conn.execute(tags_stmt):
+                    tags_by_scan[row.scan_id].append(row.tag)
+
+            for scan in scans:
+                scan["tags"] = sorted(tags_by_scan[scan["scan_id"]], key=str.lower)
+        return scans

@@ -25,6 +25,7 @@ from .csv_input import CSVAccountReader, CSVInputError
 from .aws_collector import AWSCollector
 from .prowler_integration import ProwlerRunner
 from .setup_cmd import setup_command
+from .tag_cli import tag_group
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -60,7 +61,19 @@ def cli():
     type=str,
     help="Comma-separated list of regions to scan (default: all regions)",
 )
-def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[str]):
+@click.option(
+    "--tag",
+    "tags",
+    multiple=True,
+    help="Tag to apply to each scanned account (repeatable)",
+)
+def scan(
+    database: str,
+    csv: Optional[str],
+    log_level: str,
+    regions: Optional[str],
+    tags: tuple,
+):
     """
     Run AWS infrastructure and security scan.
 
@@ -80,10 +93,12 @@ def scan(database: str, csv: Optional[str], log_level: str, regions: Optional[st
     """
     with create_app_context(console_output="none", log_level=log_level) as ctx:
         database = resolve_database_target(database, ctx.settings, ctx.secrets)
-        _run_scan(database, csv, regions)
+        _run_scan(database, csv, regions, tags)
 
 
-def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None:
+def _run_scan(
+    database: str, csv: Optional[str], regions: Optional[str], tags: tuple = ()
+) -> None:
     console.print("\n[bold blue]CloudLedger[/bold blue]", style="bold")
     console.print("=" * 60)
 
@@ -106,15 +121,19 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
             f"[green]✓[/green] Scanning specific regions: {', '.join(region_list)}"
         )
 
-    # Get account configurations
-    accounts: List[AccountConfig] = []
+    # Get account configurations, paired with whether a management-account
+    # follow-up scan was requested at entry time (interactive mode only)
+    account_entries: List[tuple] = []
 
     if csv:
-        # CSV mode
+        # CSV mode - never prompts, so no follow-up scans are queued
         try:
             reader = CSVAccountReader(csv)
-            accounts = reader.read_accounts()
-            console.print(f"[green]✓[/green] Loaded {len(accounts)} accounts from CSV")
+            csv_accounts = reader.read_accounts()
+            account_entries = [(account, False) for account in csv_accounts]
+            console.print(
+                f"[green]✓[/green] Loaded {len(csv_accounts)} accounts from CSV"
+            )
         except CSVInputError as e:
             console.print(f"[red]✗[/red] CSV error: {e}")
             logger.error(f"CSV parsing failed: {e}")
@@ -128,8 +147,13 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
 
         while True:
             try:
-                account_config = CredentialManager.prompt_for_account_config()
-                accounts.append(account_config)
+                account_config = CredentialManager.prompt_for_account_config(
+                    include_org_questions=True
+                )
+                follow_up_requested = _decide_management_follow_up(
+                    account_config, db_ops
+                )
+                account_entries.append((account_config, follow_up_requested))
 
                 another = input("\nScan another account? (y/n): ").strip().lower()
                 if another != "y":
@@ -141,24 +165,53 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
                 console.print(f"[red]Error:[/red] {e}")
                 continue
 
-    if not accounts:
+    if not account_entries:
         console.print("[yellow]No accounts to scan. Exiting.[/yellow]")
         sys.exit(0)
 
-    # Scan each account
-    console.print(f"\n[bold]Starting scan of {len(accounts)} account(s)[/bold]\n")
+    # Scan each account, queueing any requested management-account follow-up
+    console.print(
+        f"\n[bold]Starting scan of {len(account_entries)} account(s)[/bold]\n"
+    )
 
-    for idx, account in enumerate(accounts, 1):
+    idx = 0
+    while idx < len(account_entries):
+        account, follow_up_requested = account_entries[idx]
+        idx += 1
         console.print(
-            f"\n[bold cyan]Account {idx}/{len(accounts)}: {account.account_name}[/bold cyan]"
+            f"\n[bold cyan]Account {idx}/{len(account_entries)}: "
+            f"{account.account_name}[/bold cyan]"
         )
         console.print(f"Account Number: {account.account_number}")
 
         try:
-            _scan_account(account, db_ops, region_list)
+            _scan_account(account, db_ops, region_list, cli_tags=list(tags))
             console.print(
                 f"[green]✓[/green] Scan completed for {account.account_name}\n"
             )
+
+            if follow_up_requested:
+                remaining_numbers = {
+                    remaining_account.account_number
+                    for remaining_account, _ in account_entries[idx:]
+                }
+                if account.management_account_id not in remaining_numbers:
+                    console.print(
+                        f"\n[bold]Management account follow-up:[/bold] "
+                        f"{account.management_account_id} "
+                        f"({account.management_account_name})"
+                    )
+                    mgmt_credentials = CredentialManager.prompt_for_credentials()
+                    mgmt_prowler_level = CredentialManager.prompt_for_prowler_level()
+                    mgmt_account = AccountConfig(
+                        account_name=account.management_account_name,
+                        account_number=account.management_account_id,
+                        credentials=mgmt_credentials,
+                        prowler_level=mgmt_prowler_level,
+                        org_member=True,
+                        is_management_account=True,
+                    )
+                    account_entries.append((mgmt_account, False))
         except Exception as e:
             console.print(f"[red]✗[/red] Scan failed for {account.account_name}: {e}\n")
             logger.error(
@@ -169,8 +222,83 @@ def _run_scan(database: str, csv: Optional[str], regions: Optional[str]) -> None
     console.print("\n[bold green]All scans completed![/bold green]")
 
 
+def _decide_management_follow_up(
+    account: AccountConfig, db_ops: DatabaseOperations
+) -> bool:
+    """
+    Decide, at entry time, whether the account's recorded management account
+    should be scanned (or rescanned) after this account's scan completes.
+
+    Args:
+        account: Account configuration just collected from the user
+        db_ops: Database operations instance, used to look up the ledger
+
+    Returns:
+        True if a management-account follow-up scan was requested
+    """
+    if (
+        not account.org_member
+        or account.is_management_account
+        or not account.management_account_id
+    ):
+        return False
+
+    existing = db_ops.get_latest_scan_for_account(account.management_account_id)
+
+    if existing is None:
+        console.print(
+            f"No scan of management account {account.management_account_id} "
+            f"({account.management_account_name}) exists in the ledger."
+        )
+        prompt = "Scan it after this account completes? [y/N]: "
+    else:
+        console.print(
+            f"Management account {account.management_account_id} last scanned "
+            f"{existing['scan_timestamp']}."
+        )
+        prompt = "Rescan it after this account completes? [y/N]: "
+
+    return input(prompt).strip().lower() == "y"
+
+
+def _build_scan_metadata(
+    account: AccountConfig, scan_id: str, start_time: datetime
+) -> ScanMetadata:
+    """
+    Build the ScanMetadata record for a single account scan.
+
+    Carries the four AWS Organisation / control-tower fields across from the
+    account configuration. `regions_scanned` is left empty here; callers set
+    it once the regions to scan are known.
+
+    Args:
+        account: Account configuration, including any organisation details
+        scan_id: Unique identifier for this scan
+        start_time: When the scan was initiated
+
+    Returns:
+        Scan metadata ready for insertion into the ledger
+    """
+    return ScanMetadata(
+        scan_id=scan_id,
+        account_name=account.account_name,
+        account_number=account.account_number,
+        scan_timestamp=start_time,
+        prowler_level=account.prowler_level,
+        regions_scanned=[],
+        scan_status="in_progress",
+        org_member=account.org_member,
+        is_management_account=account.is_management_account,
+        management_account_id=account.management_account_id,
+        management_account_name=account.management_account_name,
+    )
+
+
 def _scan_account(
-    account: AccountConfig, db_ops: DatabaseOperations, regions: Optional[List[str]]
+    account: AccountConfig,
+    db_ops: DatabaseOperations,
+    regions: Optional[List[str]],
+    cli_tags: Optional[List[str]] = None,
 ) -> None:
     """
     Scan a single AWS account.
@@ -179,6 +307,8 @@ def _scan_account(
         account: Account configuration
         db_ops: Database operations instance
         regions: Optional list of specific regions to scan
+        cli_tags: Tags supplied via the `scan --tag` option, applied
+            alongside any tags entered interactively for this account
     """
     scan_id = str(uuid.uuid4())
     start_time = datetime.now(UTC)
@@ -199,17 +329,22 @@ def _scan_account(
         )
 
     # Create scan metadata
-    metadata = ScanMetadata(
-        scan_id=scan_id,
-        account_name=account.account_name,
-        account_number=account.account_number,
-        scan_timestamp=start_time,
-        prowler_level=account.prowler_level,
-        regions_scanned=regions or [],
-        scan_status="in_progress",
-    )
+    metadata = _build_scan_metadata(account, scan_id, start_time)
+    metadata.regions_scanned = regions or []
 
     db_ops.insert_scan_metadata(metadata)
+
+    merged_tags: List[str] = []
+    seen_lower = set()
+    for tag in list(cli_tags or []) + list(account.tags or []):
+        lowered = tag.strip().lower()
+        if not lowered or lowered in seen_lower:
+            continue
+        seen_lower.add(lowered)
+        merged_tags.append(tag)
+    if merged_tags:
+        db_ops.add_tags(scan_id, merged_tags)
+
     logger.info(f"Started scan {scan_id} for account {account.account_name}")
 
     try:
@@ -579,6 +714,7 @@ def delete_scan(database: str, scan_id: Optional[str]):
 
 
 cli.add_command(setup_command, name="setup")
+cli.add_command(tag_group, name="tag")
 
 
 if __name__ == "__main__":

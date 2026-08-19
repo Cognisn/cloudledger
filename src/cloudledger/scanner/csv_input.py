@@ -7,7 +7,7 @@ Uses Australian English in all documentation and comments.
 
 import csv
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Optional
 import logging
 
 from .credential_manager import AccountConfig, AWSCredentials
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class CSVInputError(Exception):
     """Exception raised for CSV input errors."""
+
     pass
 
 
@@ -24,16 +25,24 @@ class CSVAccountReader:
     """Reads and validates account configurations from CSV files."""
 
     REQUIRED_COLUMNS = [
-        'account_name',
-        'account_number',
-        'access_key_id',
-        'secret_access_key',
-        'session_token'
+        "account_name",
+        "account_number",
+        "access_key_id",
+        "secret_access_key",
+        "session_token",
     ]
 
     OPTIONAL_COLUMNS = [
-        'prowler_level'
+        "prowler_level",
+        "tags",
+        "org_member",
+        "is_management_account",
+        "management_account_id",
+        "management_account_name",
     ]
+
+    TRUE_VALUES = {"yes", "true", "1"}
+    FALSE_VALUES = {"no", "false", "0"}
 
     def __init__(self, csv_path: str):
         """
@@ -66,7 +75,7 @@ class CSVAccountReader:
         accounts = []
 
         try:
-            with open(self.csv_path, 'r', encoding='utf-8') as csvfile:
+            with open(self.csv_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
 
                 # Validate columns
@@ -76,7 +85,9 @@ class CSVAccountReader:
                 self._validate_columns(reader.fieldnames)
 
                 # Read each row
-                for row_num, row in enumerate(reader, start=2):  # Start at 2 (after header)
+                for row_num, row in enumerate(
+                    reader, start=2
+                ):  # Start at 2 (after header)
                     try:
                         account = self._parse_row(row, row_num)
                         accounts.append(account)
@@ -91,7 +102,9 @@ class CSVAccountReader:
                 raise
             raise CSVInputError(f"Error reading CSV file: {e}")
 
-        logger.info(f"Successfully read {len(accounts)} account configurations from CSV")
+        logger.info(
+            f"Successfully read {len(accounts)} account configurations from CSV"
+        )
         return accounts
 
     def _validate_columns(self, fieldnames: List[str]) -> None:
@@ -126,12 +139,12 @@ class CSVAccountReader:
             ValueError: If row data is invalid
         """
         # Extract and validate account name
-        account_name = row['account_name'].strip()
+        account_name = row["account_name"].strip()
         if not account_name:
             raise ValueError("account_name cannot be empty")
 
         # Extract and validate account number
-        account_number = row['account_number'].strip()
+        account_number = row["account_number"].strip()
         if not account_number:
             raise ValueError("account_number cannot be empty")
 
@@ -141,42 +154,92 @@ class CSVAccountReader:
             )
 
         # Extract and validate credentials
-        access_key_id = row['access_key_id'].strip()
+        access_key_id = row["access_key_id"].strip()
         if not access_key_id:
             raise ValueError("access_key_id cannot be empty")
 
-        secret_access_key = row['secret_access_key'].strip()
+        secret_access_key = row["secret_access_key"].strip()
         if not secret_access_key:
             raise ValueError("secret_access_key cannot be empty")
 
-        session_token = row['session_token'].strip()
+        session_token = row["session_token"].strip()
         if not session_token:
-            raise ValueError("session_token cannot be empty (required for temporary credentials)")
+            raise ValueError(
+                "session_token cannot be empty (required for temporary credentials)"
+            )
 
         credentials = AWSCredentials(
             access_key_id=access_key_id,
             secret_access_key=secret_access_key,
-            session_token=session_token
+            session_token=session_token,
         )
 
         # Extract optional Prowler level
-        prowler_level = row.get('prowler_level', '').strip().lower()
-        if prowler_level not in ['1', '2', '3', 'skip', '']:
+        prowler_level = row.get("prowler_level", "").strip().lower()
+        if prowler_level not in ["1", "2", "3", "skip", ""]:
             raise ValueError(
                 f"prowler_level must be '1', '2', '3', or 'skip', got: {prowler_level}"
             )
 
         # Normalise prowler_level
-        if prowler_level in ['1', '2', '3']:
+        if prowler_level in ["1", "2", "3"]:
             prowler_level_final = prowler_level
         else:
             prowler_level_final = None
+
+        # Extract optional tags: semicolon-separated, stripped, empties dropped
+        tags_raw = row.get("tags", "").strip()
+        tags = [tag.strip() for tag in tags_raw.split(";") if tag.strip()]
+
+        # Extract optional AWS Organisation / control-tower fields
+        org_member = self._parse_optional_bool(row, "org_member")
+        is_management_account = self._parse_optional_bool(row, "is_management_account")
+        management_account_id = row.get("management_account_id", "").strip() or None
+        management_account_name = row.get("management_account_name", "").strip() or None
 
         return AccountConfig(
             account_name=account_name,
             account_number=account_number,
             credentials=credentials,
-            prowler_level=prowler_level_final
+            prowler_level=prowler_level_final,
+            tags=tags,
+            org_member=org_member,
+            is_management_account=is_management_account,
+            management_account_id=management_account_id,
+            management_account_name=management_account_name,
+        )
+
+    def _parse_optional_bool(
+        self, row: Dict[str, str], column_name: str
+    ) -> Optional[bool]:
+        """
+        Parse an optional boolean column.
+
+        Accepts yes/no/true/false/1/0, case-insensitive. An empty or missing
+        value returns None (not provided).
+
+        Args:
+            row: Dictionary of column values
+            column_name: Name of the column to parse
+
+        Returns:
+            Parsed boolean, or None if the column was blank
+
+        Raises:
+            ValueError: If the value isn't a recognised boolean
+        """
+        raw_value = row.get(column_name, "").strip()
+        if not raw_value:
+            return None
+
+        lowered = raw_value.lower()
+        if lowered in self.TRUE_VALUES:
+            return True
+        if lowered in self.FALSE_VALUES:
+            return False
+
+        raise ValueError(
+            f"{column_name} must be one of yes/no/true/false/1/0, got: {raw_value}"
         )
 
     @staticmethod
@@ -189,30 +252,31 @@ class CSVAccountReader:
         """
         example_data = [
             {
-                'account_name': 'Production Account',
-                'account_number': '123456789012',
-                'access_key_id': 'ASIA...',
-                'secret_access_key': 'abc123...',
-                'session_token': 'IQoJb3J...',
-                'prowler_level': '2'
+                "account_name": "Production Account",
+                "account_number": "123456789012",
+                "access_key_id": "ASIA...",
+                "secret_access_key": "abc123...",
+                "session_token": "IQoJb3J...",
+                "prowler_level": "2",
             },
             {
-                'account_name': 'Development Account',
-                'account_number': '987654321098',
-                'access_key_id': 'ASIA...',
-                'secret_access_key': 'xyz789...',
-                'session_token': 'IQoJb3J...',
-                'prowler_level': 'skip'
-            }
+                "account_name": "Development Account",
+                "account_number": "987654321098",
+                "access_key_id": "ASIA...",
+                "secret_access_key": "xyz789...",
+                "session_token": "IQoJb3J...",
+                "prowler_level": "skip",
+            },
         ]
 
         output_file = Path(output_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+        with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(
                 csvfile,
-                fieldnames=CSVAccountReader.REQUIRED_COLUMNS + CSVAccountReader.OPTIONAL_COLUMNS
+                fieldnames=CSVAccountReader.REQUIRED_COLUMNS
+                + CSVAccountReader.OPTIONAL_COLUMNS,
             )
             writer.writeheader()
             writer.writerows(example_data)

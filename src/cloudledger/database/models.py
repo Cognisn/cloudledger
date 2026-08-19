@@ -24,6 +24,10 @@ class ScanMetadata(BaseModel):
     scan_status: str = Field(default="in_progress", description="Status: in_progress, completed, failed")
     error_message: Optional[str] = Field(default=None, description="Error message if scan failed")
     scan_duration_seconds: Optional[float] = Field(default=None, description="Total scan duration")
+    org_member: Optional[bool] = Field(default=None, description="Whether the scanned account belongs to an AWS Organization")
+    is_management_account: Optional[bool] = Field(default=None, description="Whether the scanned account is the organisation's management account")
+    management_account_id: Optional[str] = Field(default=None, description="12-digit account ID of the organisation's management account")
+    management_account_name: Optional[str] = Field(default=None, description="Friendly name of the organisation's management account")
 
 
 class EC2Instance(BaseModel):

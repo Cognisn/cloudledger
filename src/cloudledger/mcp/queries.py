@@ -54,6 +54,7 @@ from ..database.tables import (
     t_route_tables,
     t_s3_buckets,
     t_scan_metadata,
+    t_scan_tags,
     t_security_groups,
     t_sso_assignments,
     t_sso_permission_sets,
@@ -222,6 +223,8 @@ class QueryHandler:
             "get_security_assessment_data": self._get_security_assessment_data,
             "analyze_service_exposure": self._analyze_service_exposure,
             "get_security_check_catalogue": self._get_security_check_catalogue,
+            "search_scans_by_tag": self._search_scans_by_tag,
+            "list_scan_tags": self._list_scan_tags,
         }
 
         handler = handlers.get(tool_name)
@@ -251,6 +254,19 @@ class QueryHandler:
             stmt = stmt.where(t_scan_metadata.c.account_number == account_number)
         with self.db_ops.engine.connect() as conn:
             scans = [dict(row._mapping) for row in conn.execute(stmt)]
+
+            scan_ids = [scan["scan_id"] for scan in scans]
+            tags_by_scan: Dict[str, list] = {scan_id: [] for scan_id in scan_ids}
+            if scan_ids:
+                tags_stmt = sa.select(t_scan_tags.c.scan_id, t_scan_tags.c.tag).where(
+                    t_scan_tags.c.scan_id.in_(scan_ids)
+                )
+                for row in conn.execute(tags_stmt):
+                    tags_by_scan[row.scan_id].append(row.tag)
+
+        for scan in scans:
+            scan["tags"] = sorted(tags_by_scan[scan["scan_id"]], key=str.lower)
+
         return {"scans": scans, "count": len(scans)}
 
     def _get_scan_summary(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -275,7 +291,7 @@ class QueryHandler:
         }
 
         with self.db_ops.engine.connect() as conn:
-            # Get scan metadata
+            # Get scan metadata.
             scan_info = conn.execute(
                 sa.select(t_scan_metadata).where(t_scan_metadata.c.scan_id == scan_id)
             ).fetchone()
@@ -292,10 +308,30 @@ class QueryHandler:
                 )
                 resource_counts[table_name] = conn.execute(count_stmt).scalar()
 
+        scan_info_dict = dict(scan_info._mapping)
+        scan_info_dict["tags"] = self.db_ops.get_tags_for_scan(scan_id)
+
         return {
-            "scan_info": dict(scan_info._mapping),
+            "scan_info": scan_info_dict,
             "resource_counts": resource_counts,
         }
+
+    def _search_scans_by_tag(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Find scans matching a tag, case-insensitively, newest first."""
+        tag = params.get("tag")
+
+        if not tag:
+            return {"error": "tag parameter required"}
+
+        limit, _ = self._apply_pagination(params)
+        scans = self.db_ops.find_scans_by_tag(tag)[:limit]
+
+        return {"scans": scans, "count": len(scans)}
+
+    def _list_scan_tags(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """List all distinct tags across all scans, with scan counts."""
+        tags = self.db_ops.list_tags()
+        return {"tags": tags, "count": len(tags)}
 
     def _find_public_s3_buckets(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Find S3 buckets that may be publicly accessible."""

@@ -9,7 +9,8 @@
         "scan_duration_seconds": 95.0,
         "scan_id": "scan-fixture-002",
         "scan_status": "completed",
-        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+        "scan_timestamp": "2026-08-02T00:00:00+00:00",
+        "tags": []
       },
       {
         "account_name": "Fixture Account",
@@ -18,7 +19,11 @@
         "scan_duration_seconds": 120.5,
         "scan_id": "scan-fixture-001",
         "scan_status": "completed",
-        "scan_timestamp": "2026-08-01T00:00:00+00:00"
+        "scan_timestamp": "2026-08-01T00:00:00+00:00",
+        "tags": [
+          "Client-Fixture",
+          "fixture-tag"
+        ]
       }
     ]
   },
@@ -40,12 +45,20 @@
       "account_number": "123456789012",
       "created_at": "<volatile>",
       "error_message": null,
+      "is_management_account": null,
+      "management_account_id": null,
+      "management_account_name": null,
+      "org_member": null,
       "prowler_level": "2",
       "regions_scanned": "[\"ap-southeast-2\"]",
       "scan_duration_seconds": 120.5,
       "scan_id": "scan-fixture-001",
       "scan_status": "completed",
-      "scan_timestamp": "2026-08-01T00:00:00+00:00"
+      "scan_timestamp": "2026-08-01T00:00:00+00:00",
+      "tags": [
+        "Client-Fixture",
+        "fixture-tag"
+      ]
     }
   },
   "002:find_public_s3_buckets": {
@@ -2448,7 +2461,36 @@
     ],
     "count": 29
   },
-  "052:analyze_backup_coverage": {
+  "052:search_scans_by_tag": {
+    "count": 1,
+    "scans": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "scan_id": "scan-fixture-001",
+        "scan_status": "completed",
+        "scan_timestamp": "2026-08-01T00:00:00+00:00",
+        "tags": [
+          "Client-Fixture",
+          "fixture-tag"
+        ]
+      }
+    ]
+  },
+  "053:list_scan_tags": {
+    "count": 2,
+    "tags": [
+      {
+        "scan_count": 1,
+        "tag": "Client-Fixture"
+      },
+      {
+        "scan_count": 1,
+        "tag": "fixture-tag"
+      }
+    ]
+  },
+  "054:analyze_backup_coverage": {
     "recommendations": [
       "Enable automated backups for all production RDS instances",
       "Set backup retention period to at least 7 days",
@@ -2464,13 +2506,13 @@
     },
     "unprotected_resources": []
   },
-  "053:analyze_cloudtrail_coverage": {
+  "055:analyze_cloudtrail_coverage": {
     "error": "no such column: log_file_validation_enabled"
   },
-  "054:analyze_container_vulnerabilities": {
+  "056:analyze_container_vulnerabilities": {
     "error": "no such column: img.image_tag"
   },
-  "055:analyze_encryption_coverage": {
+  "057:analyze_encryption_coverage": {
     "by_resource_type": {
       "ebs_snapshots": {
         "encrypted": 2,
@@ -2504,7 +2546,7 @@
       ]
     }
   },
-  "056:analyze_iam_permissions": {
+  "058:analyze_iam_permissions": {
     "findings": {
       "users_without_mfa": [
         {
@@ -2524,7 +2566,7 @@
       "total_issues": 1
     }
   },
-  "057:analyze_logging_coverage": {
+  "059:analyze_logging_coverage": {
     "cloudwatch_log_groups": [],
     "config_recorders": [],
     "config_rules": [],
@@ -2541,10 +2583,10 @@
       "total_stored_gb": 0.0
     }
   },
-  "058:analyze_managed_services": {
+  "060:analyze_managed_services": {
     "error": "no such column: billing_mode"
   },
-  "059:analyze_network_connectivity": {
+  "061:analyze_network_connectivity": {
     "direct_connect_connections": [],
     "summary": {
       "active_direct_connect_connections": 0,
@@ -2557,7 +2599,7 @@
     "transit_gateways": [],
     "vpn_connections": []
   },
-  "060:analyze_service_exposure": {
+  "062:analyze_service_exposure": {
     "scan_id": "scan-fixture-002",
     "services": {
       "databases": {
@@ -2602,7 +2644,7 @@
       }
     }
   },
-  "061:analyze_tag_compliance": {
+  "063:analyze_tag_compliance": {
     "non_compliant_by_type": {
       "EC2 Instance": 3,
       "Load Balancer": 1,
@@ -2712,13 +2754,13 @@
       "total_resources": 6
     }
   },
-  "062:analyze_vpc_cidrs": {
+  "064:analyze_vpc_cidrs": {
     "error": "no such column: is_public"
   },
-  "063:compare_scans": {
+  "065:compare_scans": {
     "error": "Both scan_id_1 and scan_id_2 parameters required"
   },
-  "064:find_public_ec2_instances": {
+  "066:find_public_ec2_instances": {
     "count": 2,
     "instances": [
       {
@@ -2762,7 +2804,7 @@
       "total_count": 2
     }
   },
-  "065:find_public_s3_buckets": {
+  "067:find_public_s3_buckets": {
     "buckets": [
       {
         "bucket_name": "fixture-bucket-public",
@@ -2780,7 +2822,7 @@
     ],
     "count": 1
   },
-  "066:find_publicly_accessible_databases": {
+  "068:find_publicly_accessible_databases": {
     "public_databases": [],
     "summary": {
       "recommendation": "No publicly accessible databases found",
@@ -2788,7 +2830,7 @@
       "total_public_databases": 0
     }
   },
-  "067:find_security_group_rules": {
+  "069:find_security_group_rules": {
     "count": 2,
     "security_groups": [
       {
@@ -2852,7 +2894,7 @@
       }
     ]
   },
-  "068:find_security_group_violations": {
+  "070:find_security_group_violations": {
     "recommendations": [
       "Remove 0.0.0.0/0 access from all sensitive ports",
       "Use specific IP ranges or security group references instead",
@@ -2901,7 +2943,7 @@
       ]
     }
   },
-  "069:find_unused_resources": {
+  "071:find_unused_resources": {
     "summary": {
       "categories": {
         "old_snapshots": 1
@@ -2927,7 +2969,7 @@
       ]
     }
   },
-  "070:find_vpc_endpoint_opportunities": {
+  "072:find_vpc_endpoint_opportunities": {
     "endpoint_opportunities": [
       {
         "account_name": "Fixture Account",
@@ -2982,13 +3024,13 @@
       "vpcs_with_opportunities": 2
     }
   },
-  "071:get_auto_scaling_groups": {
+  "073:get_auto_scaling_groups": {
     "error": "scan_id parameter required"
   },
-  "072:get_bedrock_resources": {
+  "074:get_bedrock_resources": {
     "error": "no such column: model_lifecycle_status"
   },
-  "073:get_cost_by_service": {
+  "075:get_cost_by_service": {
     "currency": "USD",
     "service_count": 2,
     "services": [
@@ -3011,7 +3053,7 @@
     ],
     "total_cost": 195.35
   },
-  "074:get_cost_comparison": {
+  "076:get_cost_comparison": {
     "account_count": 1,
     "accounts": [
       {
@@ -3028,7 +3070,7 @@
     "currency": "USD",
     "total_cost_all_accounts": 195.35
   },
-  "075:get_cost_trends": {
+  "077:get_cost_trends": {
     "month_count": 2,
     "trends": [
       {
@@ -3063,7 +3105,7 @@
       }
     ]
   },
-  "076:get_directory_services": {
+  "078:get_directory_services": {
     "directories": [],
     "summary": {
       "directories_by_size": {},
@@ -3073,7 +3115,7 @@
       "total_directories": 0
     }
   },
-  "077:get_ec2_changes": {
+  "079:get_ec2_changes": {
     "change_count": 0,
     "changes": [],
     "instance_history": {
@@ -3130,7 +3172,7 @@
       }
     }
   },
-  "078:get_ec2_summary_by_account": {
+  "080:get_ec2_summary_by_account": {
     "accounts": {
       "Fixture Account": {
         "account_number": "123456789012",
@@ -3144,7 +3186,7 @@
       }
     }
   },
-  "079:get_iam_users": {
+  "081:get_iam_users": {
     "count": 2,
     "users": [
       {
@@ -3193,10 +3235,10 @@
       }
     ]
   },
-  "080:get_internet_gateways": {
+  "082:get_internet_gateways": {
     "error": "scan_id parameter required"
   },
-  "081:get_lambda_summary": {
+  "083:get_lambda_summary": {
     "count": 2,
     "functions": [
       {
@@ -3257,16 +3299,16 @@
     "non_vpc_count": 1,
     "vpc_integrated_count": 1
   },
-  "082:get_load_balancers": {
+  "084:get_load_balancers": {
     "error": "scan_id parameter required"
   },
-  "083:get_nat_gateways": {
+  "085:get_nat_gateways": {
     "error": "scan_id parameter required"
   },
-  "084:get_network_interfaces_with_public_ips": {
+  "086:get_network_interfaces_with_public_ips": {
     "error": "scan_id parameter required"
   },
-  "085:get_organizations_cost_breakdown": {
+  "087:get_organizations_cost_breakdown": {
     "cost_summary": {
       "currency": "USD",
       "master_account_direct_costs": 195.35,
@@ -3294,7 +3336,7 @@
       "organization_id": "o-fixture001"
     }
   },
-  "086:get_organizations_structure": {
+  "088:get_organizations_structure": {
     "accounts": [
       {
         "account_arn": "arn:aws:organizations::123456789012:account/o-fixture001/123456789012",
@@ -3338,7 +3380,7 @@
       "total_ous": 0
     }
   },
-  "087:get_prowler_findings": {
+  "089:get_prowler_findings": {
     "count": 3,
     "findings": [
       {
@@ -3460,7 +3502,7 @@
       "total_findings": 3
     }
   },
-  "088:get_route53_changes": {
+  "090:get_route53_changes": {
     "change_count": 0,
     "changes": [],
     "zone_history": {
@@ -3479,10 +3521,10 @@
       }
     }
   },
-  "089:get_route53_records": {
+  "091:get_route53_records": {
     "error": "hosted_zone_id parameter required"
   },
-  "090:get_route53_zones": {
+  "092:get_route53_zones": {
     "accounts": {
       "Fixture Account": {
         "account_number": "123456789012",
@@ -3501,10 +3543,10 @@
       }
     }
   },
-  "091:get_route_tables": {
+  "093:get_route_tables": {
     "error": "scan_id parameter required"
   },
-  "092:get_s3_lifecycle_policies": {
+  "094:get_s3_lifecycle_policies": {
     "buckets": [
       {
         "bucket_name": "fixture-bucket-public",
@@ -3544,10 +3586,10 @@
     ],
     "count": 1
   },
-  "093:get_scan_summary": {
+  "095:get_scan_summary": {
     "error": "scan_id parameter required"
   },
-  "094:get_security_assessment_data": {
+  "096:get_security_assessment_data": {
     "categories": {
       "data_protection": [
         {
@@ -3879,7 +3921,7 @@
     "scan_id": "scan-fixture-002",
     "scoring_note": "Severities are advisory facts. Scoring, weighting and report structure are the responsibility of the MCP client."
   },
-  "095:get_security_check_catalogue": {
+  "097:get_security_check_catalogue": {
     "checks": [
       {
         "category": "identity_access",
@@ -4211,7 +4253,7 @@
     ],
     "count": 29
   },
-  "096:get_sso_permissions": {
+  "098:get_sso_permissions": {
     "assignments": [],
     "permission_sets": [],
     "summary": {
@@ -4221,7 +4263,7 @@
       "total_permission_sets": 0
     }
   },
-  "097:get_total_cost": {
+  "099:get_total_cost": {
     "account_count": 1,
     "accounts": [
       {
@@ -4245,19 +4287,32 @@
     "currency": "USD",
     "total_cost_all_accounts": 195.35
   },
-  "098:get_vpc_architecture": {
+  "100:get_vpc_architecture": {
     "error": "vpc_id parameter required"
   },
-  "099:get_vpc_flow_log_coverage": {
+  "101:get_vpc_flow_log_coverage": {
     "error": "scan_id parameter required"
   },
-  "100:get_vpc_topology_detailed": {
+  "102:get_vpc_topology_detailed": {
     "error": "vpc_id parameter required"
   },
-  "101:get_workspaces_summary": {
+  "103:get_workspaces_summary": {
     "summary": {}
   },
-  "102:list_scans": {
+  "104:list_scan_tags": {
+    "count": 2,
+    "tags": [
+      {
+        "scan_count": 1,
+        "tag": "Client-Fixture"
+      },
+      {
+        "scan_count": 1,
+        "tag": "fixture-tag"
+      }
+    ]
+  },
+  "105:list_scans": {
     "count": 2,
     "scans": [
       {
@@ -4267,7 +4322,8 @@
         "scan_duration_seconds": 95.0,
         "scan_id": "scan-fixture-002",
         "scan_status": "completed",
-        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+        "scan_timestamp": "2026-08-02T00:00:00+00:00",
+        "tags": []
       },
       {
         "account_name": "Fixture Account",
@@ -4276,11 +4332,18 @@
         "scan_duration_seconds": 120.5,
         "scan_id": "scan-fixture-001",
         "scan_status": "completed",
-        "scan_timestamp": "2026-08-01T00:00:00+00:00"
+        "scan_timestamp": "2026-08-01T00:00:00+00:00",
+        "tags": [
+          "Client-Fixture",
+          "fixture-tag"
+        ]
       }
     ]
   },
-  "103:search_by_ip": {
+  "106:search_by_ip": {
     "error": "Either ip_address or cidr_range parameter required"
+  },
+  "107:search_scans_by_tag": {
+    "error": "tag parameter required"
   }
 }

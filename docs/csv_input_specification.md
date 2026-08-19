@@ -30,6 +30,11 @@ The CSV file must include the following columns (order doesn't matter):
 | Column Name | Type | Description | Valid Values |
 |------------|------|-------------|--------------|
 | `prowler_level` | String | Prowler scan level | "1", "2", "3", "skip", or empty |
+| `tags` | String | Tags to apply to the scan, semicolon-separated | "client-acme;q3-review", or empty |
+| `org_member` | String | Whether the account is a member of an AWS Organisation | "yes", "no", "true", "false", "1", "0" (case-insensitive), or empty |
+| `is_management_account` | String | Whether the account is the control-tower (management) account | "yes", "no", "true", "false", "1", "0" (case-insensitive), or empty |
+| `management_account_id` | String | 12-digit account ID of the managing account (member accounts only) | "123456789012", or empty |
+| `management_account_name` | String | Friendly name of the managing account (member accounts only) | "Management Account", or empty |
 
 ## Prowler Scan Levels
 

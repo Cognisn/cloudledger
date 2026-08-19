@@ -8283,6 +8283,34 @@
           "type": "REAL"
         },
         {
+          "default": null,
+          "name": "org_member",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "is_management_account",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "management_account_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "management_account_name",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
           "default": "CURRENT_TIMESTAMP",
           "name": "created_at",
           "notnull": 0,
@@ -8297,6 +8325,53 @@
         ],
         "idx_scan_timestamp": [
           "scan_timestamp"
+        ]
+      }
+    },
+    "scan_tags": {
+      "columns": [
+        {
+          "default": null,
+          "name": "id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "scan_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": null,
+          "name": "tag",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "default": "CURRENT_TIMESTAMP",
+          "name": "created_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TIMESTAMP"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from": "scan_id",
+          "table": "scan_metadata",
+          "to": "scan_id"
+        }
+      ],
+      "indexes": {
+        "idx_scan_tags_scan_id": [
+          "scan_id"
+        ],
+        "idx_scan_tags_tag": [
+          "tag"
         ]
       }
     },

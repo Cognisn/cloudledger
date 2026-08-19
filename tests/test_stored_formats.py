@@ -31,19 +31,23 @@ def _fetchone(path, sql):
     return row
 
 
+def _scan_metadata(**overrides):
+    defaults = dict(
+        scan_id="s1",
+        account_name="a",
+        account_number="123456789012",
+        scan_timestamp=datetime.now(UTC),
+        prowler_level="1",
+        regions_scanned=["ap-southeast-2"],
+        scan_status="in_progress",
+    )
+    defaults.update(overrides)
+    return ScanMetadata(**defaults)
+
+
 def test_vpc_stored_formats(db):
     ops = DatabaseOperations(db)
-    ops.insert_scan_metadata(
-        ScanMetadata(
-            scan_id="s1",
-            account_name="a",
-            account_number="123456789012",
-            scan_timestamp=datetime.now(UTC),
-            prowler_level="1",
-            regions_scanned=["ap-southeast-2"],
-            scan_status="in_progress",
-        )
-    )
+    ops.insert_scan_metadata(_scan_metadata(scan_id="s1"))
     ops.insert_vpcs(
         [
             VPC(
@@ -64,18 +68,6 @@ def test_vpc_stored_formats(db):
     assert row["is_default"] == 1  # boolean stored as integer
     assert json.loads(row["tags"]) == {"Name": "x"}  # JSON stored as text
     assert isinstance(row["tags"], str)
-
-
-def _scan_metadata(scan_id, scan_timestamp=None):
-    return ScanMetadata(
-        scan_id=scan_id,
-        account_name="a",
-        account_number="123456789012",
-        scan_timestamp=scan_timestamp or datetime.now(UTC),
-        prowler_level="1",
-        regions_scanned=["ap-southeast-2"],
-        scan_status="in_progress",
-    )
 
 
 def test_created_at_stamped_in_utc(db):
@@ -99,3 +91,28 @@ def test_scan_timestamp_stored_as_utc_iso(db):
         db, "SELECT scan_timestamp FROM scan_metadata WHERE scan_id = 's-tz'"
     )
     assert row["scan_timestamp"] == "2026-08-19T00:00:00+00:00"
+
+
+def test_scan_metadata_org_fields_stored_as_integers(db):
+    ops = DatabaseOperations(db)
+    ops.insert_scan_metadata(
+        _scan_metadata(
+            scan_id="s-org",
+            org_member=True,
+            is_management_account=False,
+            management_account_id="999999999999",
+            management_account_name="Mgmt",
+        )
+    )
+    row = _fetchone(db, "SELECT * FROM scan_metadata WHERE scan_id = 's-org'")
+    assert row["org_member"] == 1
+    assert row["is_management_account"] == 0
+    assert row["management_account_id"] == "999999999999"
+
+
+def test_scan_metadata_org_fields_default_null(db):
+    ops = DatabaseOperations(db)
+    ops.insert_scan_metadata(_scan_metadata(scan_id="s-plain"))
+    row = _fetchone(db, "SELECT * FROM scan_metadata WHERE scan_id = 's-plain'")
+    assert row["org_member"] is None
+    assert row["is_management_account"] is None

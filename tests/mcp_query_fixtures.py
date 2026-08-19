@@ -698,6 +698,9 @@ def seed_database(db_path: str) -> None:
         ]
     )
 
+    # -- scan_tags ------------------------------------------------------
+    db_ops.add_tags(SCAN_ID, ["fixture-tag", "Client-Fixture"])
+
 
 # Curated calls: sensible arguments (taken from get_tools() in mcp/tools.py)
 # for every tool the seed data can plausibly satisfy, in the order they
@@ -755,6 +758,8 @@ _CURATED_CALLS: list[tuple[str, dict]] = [
     ("get_security_assessment_data", {"scan_id": SCAN_ID}),
     ("analyze_service_exposure", {"scan_id": SCAN_ID}),
     ("get_security_check_catalogue", {}),
+    ("search_scans_by_tag", {"tag": "fixture-tag"}),
+    ("list_scan_tags", {}),
 ]
 
 # CALL_MATRIX: curated entries first (in the order declared above), then

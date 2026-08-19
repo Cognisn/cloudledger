@@ -883,11 +883,37 @@ def get_tools() -> List[Dict[str, Any]]:
             ),
             "parameters": {"type": "object", "properties": {}},
         },
+        {
+            "name": "search_scans_by_tag",
+            "description": "Find scans matching a tag, case-insensitively, newest first",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tag": {
+                        "type": "string",
+                        "description": "Tag to search for",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of scans to return (default: 100, max: 1000)",
+                        "default": 100,
+                    },
+                },
+                "required": ["tag"],
+            },
+        },
+        {
+            "name": "list_scan_tags",
+            "description": "List all distinct tags across all scans, with the number of scans carrying each tag",
+            "parameters": {"type": "object", "properties": {}},
+        },
     ]
 
     for tool in tools:
         if "All timestamps are UTC" not in tool["description"]:
-            tool["description"] = tool["description"].rstrip() + " All timestamps are UTC (ISO 8601)."
+            tool["description"] = (
+                tool["description"].rstrip() + " All timestamps are UTC (ISO 8601)."
+            )
 
     return tools
 

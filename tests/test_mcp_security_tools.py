@@ -83,3 +83,33 @@ def test_unknown_scan_returns_error_shape(tmp_path):
         "get_security_assessment_data", {"scan_id": "no-such-scan"}
     )
     assert "error" in result
+
+
+def test_search_and_list_scan_tags(tmp_path):
+    db_path = make_db(tmp_path)
+    db_ops = DatabaseOperations(db_path)
+    db_ops.add_tags(SCAN_ID, ["fixture-tag", "Client-Fixture"])
+    handler = QueryHandler(db_ops)
+
+    search_result = handler.handle_query("search_scans_by_tag", {"tag": "fixture-tag"})
+    assert search_result["count"] == 1
+    scan = search_result["scans"][0]
+    assert scan["scan_id"] == SCAN_ID
+    assert scan["tags"] == ["Client-Fixture", "fixture-tag"]
+
+    missing_tag = handler.handle_query("search_scans_by_tag", {})
+    assert missing_tag == {"error": "tag parameter required"}
+
+    list_result = handler.handle_query("list_scan_tags", {})
+    tags_by_name = {entry["tag"]: entry["scan_count"] for entry in list_result["tags"]}
+    assert tags_by_name == {"Client-Fixture": 1, "fixture-tag": 1}
+
+
+def test_list_scans_includes_tags(tmp_path):
+    db_path = make_db(tmp_path)
+    db_ops = DatabaseOperations(db_path)
+    db_ops.add_tags(SCAN_ID, ["fixture-tag"])
+
+    result = QueryHandler(db_ops).handle_query("list_scans", {})
+    scan = next(s for s in result["scans"] if s["scan_id"] == SCAN_ID)
+    assert scan["tags"] == ["fixture-tag"]
