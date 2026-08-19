@@ -5,7 +5,6 @@ This module provides functions for inserting and querying scan data.
 Uses Australian English in all documentation and comments.
 """
 
-import sqlite3
 import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -152,11 +151,10 @@ class DatabaseOperations:
         self.db_path = db_path
         self._engine = make_engine(db_path)
 
-    def _get_connection(self) -> sqlite3.Connection:
-        """Get database connection with row factory."""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @property
+    def engine(self):
+        """The SQLAlchemy engine backing this operations instance."""
+        return self._engine
 
     def insert_scan_metadata(self, metadata: ScanMetadata) -> None:
         """

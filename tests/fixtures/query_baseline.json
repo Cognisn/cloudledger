@@ -1,0 +1,4238 @@
+{
+  "000:list_scans": {
+    "count": 2,
+    "scans": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "prowler_level": "2",
+        "scan_duration_seconds": 95.0,
+        "scan_id": "scan-fixture-002",
+        "scan_status": "completed",
+        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "prowler_level": "2",
+        "scan_duration_seconds": 120.5,
+        "scan_id": "scan-fixture-001",
+        "scan_status": "completed",
+        "scan_timestamp": "2026-08-01T00:00:00+00:00"
+      }
+    ]
+  },
+  "001:get_scan_summary": {
+    "resource_counts": {
+      "ec2_instances": 2,
+      "iam_roles": 1,
+      "iam_users": 2,
+      "prowler_findings": 3,
+      "route53_hosted_zones": 1,
+      "route53_record_sets": 2,
+      "s3_buckets": 2,
+      "security_groups": 2,
+      "subnets": 2,
+      "vpcs": 2
+    },
+    "scan_info": {
+      "account_name": "Fixture Account",
+      "account_number": "123456789012",
+      "created_at": "<volatile>",
+      "error_message": null,
+      "prowler_level": "2",
+      "regions_scanned": "[\"ap-southeast-2\"]",
+      "scan_duration_seconds": 120.5,
+      "scan_id": "scan-fixture-001",
+      "scan_status": "completed",
+      "scan_timestamp": "2026-08-01T00:00:00+00:00"
+    }
+  },
+  "002:find_public_s3_buckets": {
+    "buckets": [
+      {
+        "bucket_name": "fixture-bucket-public",
+        "creation_date": "2026-08-01T00:00:00+00:00",
+        "public_access_block": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        },
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {}
+      }
+    ],
+    "count": 1
+  },
+  "003:find_public_ec2_instances": {
+    "count": 1,
+    "instances": [
+      {
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "private_ip": "10.0.1.10",
+        "public_ip": "203.0.113.10",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "running",
+        "subnet_id": "subnet-fix-1",
+        "tags": {
+          "Name": "fixture-ec2-1"
+        },
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "pagination": {
+      "has_more": false,
+      "limit": 100,
+      "offset": 0,
+      "returned_count": 0,
+      "total_count": 1
+    }
+  },
+  "004:find_security_group_rules": {
+    "count": 1,
+    "security_groups": [
+      {
+        "created_at": "<volatile>",
+        "description": "Fixture security group with open SSH ingress",
+        "egress_rules": [
+          {
+            "IpProtocol": "-1",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ]
+          }
+        ],
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "id": 1,
+        "ingress_rules": [
+          {
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ],
+            "ToPort": 22
+          }
+        ],
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ]
+  },
+  "005:search_by_ip": {
+    "ec2_instances": [
+      {
+        "availability_zone": "ap-southeast-2a",
+        "created_at": "<volatile>",
+        "iam_instance_profile": null,
+        "id": 1,
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "launch_time": "2026-08-01T00:00:00+00:00",
+        "monitoring_state": "disabled",
+        "platform": null,
+        "private_ip": "10.0.1.10",
+        "public_ip": "203.0.113.10",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": "[\"sg-fix-1\"]",
+        "state": "running",
+        "subnet_id": "subnet-fix-1",
+        "tags": "{\"Name\": \"fixture-ec2-1\"}",
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "subnets": [],
+    "vpcs": []
+  },
+  "006:get_vpc_architecture": {
+    "instances": [
+      {
+        "availability_zone": "ap-southeast-2a",
+        "created_at": "<volatile>",
+        "iam_instance_profile": null,
+        "id": 1,
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "launch_time": "2026-08-01T00:00:00+00:00",
+        "monitoring_state": "disabled",
+        "platform": null,
+        "private_ip": "10.0.1.10",
+        "public_ip": "203.0.113.10",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "running",
+        "subnet_id": "subnet-fix-1",
+        "tags": {
+          "Name": "fixture-ec2-1"
+        },
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "security_groups": [
+      {
+        "created_at": "<volatile>",
+        "description": "Fixture security group with open SSH ingress",
+        "egress_rules": [
+          {
+            "IpProtocol": "-1",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ]
+          }
+        ],
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "id": 1,
+        "ingress_rules": [
+          {
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ],
+            "ToPort": 22
+          }
+        ],
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "subnets": [
+      {
+        "availability_zone": "ap-southeast-2a",
+        "available_ip_count": 250,
+        "cidr_block": "10.0.1.0/24",
+        "created_at": "<volatile>",
+        "id": 1,
+        "map_public_ip": 1,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "state": "available",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "vpc": {
+      "cidr_block": "10.0.0.0/16",
+      "created_at": "<volatile>",
+      "dhcp_options_id": null,
+      "id": 1,
+      "instance_tenancy": "default",
+      "is_default": 0,
+      "raw_data": "{}",
+      "region": "ap-southeast-2",
+      "scan_id": "scan-fixture-001",
+      "state": "available",
+      "tags": {
+        "Name": "fixture-vpc-1"
+      },
+      "vpc_id": "vpc-fix-1"
+    }
+  },
+  "007:get_iam_users": {
+    "count": 1,
+    "users": [
+      {
+        "access_keys": [
+          {
+            "AccessKeyId": "AKIAFIXTURE001",
+            "CreateDate": "2026-08-01T00:00:00+00:00",
+            "Status": "Active"
+          }
+        ],
+        "arn": "arn:aws:iam::123456789012:user/fixture-user-no-mfa",
+        "attached_policies": [
+          "AdministratorAccess"
+        ],
+        "create_date": "2026-08-01T00:00:00+00:00",
+        "created_at": "<volatile>",
+        "groups": [],
+        "id": 1,
+        "mfa_enabled": 0,
+        "password_last_used": null,
+        "raw_data": "{}",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "user_id": "AIDAFIXTURE001",
+        "user_name": "fixture-user-no-mfa"
+      }
+    ]
+  },
+  "008:get_prowler_findings": {
+    "count": 1,
+    "findings": [
+      {
+        "check_id": "fixture_check_high",
+        "check_title": "Fixture high severity check",
+        "check_type": "fixture_type",
+        "compliance_frameworks": [
+          "CIS_2.0"
+        ],
+        "created_at": "<volatile>",
+        "id": 1,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "remediation": null,
+        "resource_arn": "arn:aws:ec2:ap-southeast-2:123456789012:instance/i-fixture-001",
+        "resource_id": "i-fixture-001",
+        "resource_tags": {},
+        "risk": null,
+        "scan_id": "scan-fixture-001",
+        "service_name": "ec2",
+        "severity": "high",
+        "status": "FAIL",
+        "status_extended": null
+      }
+    ],
+    "pagination": {
+      "has_more": false,
+      "limit": 100,
+      "offset": 0,
+      "returned_count": 0,
+      "total_count": 1
+    },
+    "summary": {
+      "actionable_insights": [
+        "\u26a0\ufe0f  1 HIGH severity finding should be addressed soon",
+        "\u2713 Security posture: 0.0% of checks passing (0/1)",
+        "\ud83d\udcca Top concern: ec2 service has 1 failing check"
+      ],
+      "compliance_frameworks": [
+        {
+          "fail_count": 1,
+          "framework": "CIS_2.0"
+        }
+      ],
+      "severity_breakdown": {
+        "critical": 0,
+        "high": 1,
+        "informational": 0,
+        "low": 0,
+        "medium": 0
+      },
+      "status_breakdown": {
+        "FAIL": 1
+      },
+      "top_failing_check_types": [
+        {
+          "check_type": "fixture_type",
+          "fail_count": 1
+        }
+      ],
+      "top_failing_services": [
+        {
+          "fail_count": 1,
+          "service": "ec2"
+        }
+      ],
+      "total_findings": 1
+    }
+  },
+  "009:compare_scans": {
+    "comparison": {
+      "auto_scaling_groups": {
+        "difference": 0,
+        "scan_1_count": 0,
+        "scan_2_count": 0
+      },
+      "ec2_instances": {
+        "difference": -1,
+        "scan_1_count": 2,
+        "scan_2_count": 1
+      },
+      "iam_roles": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "iam_users": {
+        "difference": -2,
+        "scan_1_count": 2,
+        "scan_2_count": 0
+      },
+      "internet_gateways": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "load_balancers": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "nat_gateways": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "network_interfaces": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "route_tables": {
+        "difference": -1,
+        "scan_1_count": 1,
+        "scan_2_count": 0
+      },
+      "s3_buckets": {
+        "difference": -2,
+        "scan_1_count": 2,
+        "scan_2_count": 0
+      },
+      "security_groups": {
+        "difference": -2,
+        "scan_1_count": 2,
+        "scan_2_count": 0
+      },
+      "subnets": {
+        "difference": -2,
+        "scan_1_count": 2,
+        "scan_2_count": 0
+      },
+      "vpcs": {
+        "difference": -1,
+        "scan_1_count": 2,
+        "scan_2_count": 1
+      }
+    },
+    "scan_id_1": "scan-fixture-001",
+    "scan_id_2": "scan-fixture-002"
+  },
+  "010:get_load_balancers": {
+    "count": 1,
+    "load_balancers": [
+      {
+        "availability_zones": [
+          "ap-southeast-2a",
+          "ap-southeast-2b"
+        ],
+        "created_at": "<volatile>",
+        "created_time": "2026-08-01T00:00:00+00:00",
+        "dns_name": "fixture-alb-123.ap-southeast-2.elb.amazonaws.com",
+        "id": 1,
+        "listeners": [
+          {
+            "Port": 443,
+            "Protocol": "HTTPS"
+          }
+        ],
+        "load_balancer_arn": "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:loadbalancer/app/fixture-alb/0123456789abcdef",
+        "load_balancer_name": "fixture-alb",
+        "load_balancer_type": "application",
+        "raw_data": {},
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "scheme": "internet-facing",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "active",
+        "subnets": [
+          "subnet-fix-1"
+        ],
+        "tags": {},
+        "target_groups": [],
+        "vpc_id": "vpc-fix-1"
+      }
+    ]
+  },
+  "011:get_nat_gateways": {
+    "count": 1,
+    "nat_gateways": [
+      {
+        "connectivity_type": "public",
+        "created_at": "<volatile>",
+        "created_time": "2026-08-01T00:00:00+00:00",
+        "id": 1,
+        "nat_gateway_addresses": [],
+        "nat_gateway_id": "nat-fixture-001",
+        "private_ip": "10.0.1.99",
+        "public_ip": "203.0.113.99",
+        "raw_data": {},
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "state": "available",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ]
+  },
+  "012:get_route_tables": {
+    "count": 1,
+    "route_tables": [
+      {
+        "created_at": "<volatile>",
+        "gateway_associations": [],
+        "id": 1,
+        "is_main": 1,
+        "raw_data": {},
+        "region": "ap-southeast-2",
+        "route_table_id": "rtb-fixture-001",
+        "routes": [
+          {
+            "DestinationCidrBlock": "0.0.0.0/0",
+            "GatewayId": "igw-fixture-001"
+          }
+        ],
+        "scan_id": "scan-fixture-001",
+        "subnet_associations": [
+          "subnet-fix-1"
+        ],
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ]
+  },
+  "013:get_internet_gateways": {
+    "count": 1,
+    "internet_gateways": [
+      {
+        "created_at": "<volatile>",
+        "id": 1,
+        "internet_gateway_id": "igw-fixture-001",
+        "raw_data": {},
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_attachments": [
+          {
+            "State": "available",
+            "VpcId": "vpc-fix-1"
+          }
+        ]
+      }
+    ]
+  },
+  "014:get_auto_scaling_groups": {
+    "auto_scaling_groups": [],
+    "count": 0
+  },
+  "015:get_network_interfaces_with_public_ips": {
+    "count": 1,
+    "network_interfaces": [
+      {
+        "attachment": null,
+        "availability_zone": "ap-southeast-2a",
+        "created_at": "<volatile>",
+        "description": null,
+        "id": 1,
+        "interface_type": "interface",
+        "mac_address": null,
+        "network_interface_id": "eni-fixture-001",
+        "private_ip_address": "10.0.1.20",
+        "private_ip_addresses": [],
+        "public_ip": "203.0.113.30",
+        "raw_data": {},
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "source_dest_check": 1,
+        "status": "in-use",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ]
+  },
+  "016:get_ec2_summary_by_account": {
+    "accounts": {
+      "Fixture Account": {
+        "account_number": "123456789012",
+        "instance_types": {
+          "t3.micro": {
+            "running": 1
+          }
+        },
+        "scan_id": "scan-fixture-002",
+        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+      }
+    }
+  },
+  "017:get_ec2_changes": {
+    "change_count": 0,
+    "changes": [],
+    "instance_history": {
+      "i-fixture-001": {
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.0.1.10",
+            "public_ip": "203.0.113.10",
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": "subnet-fix-1",
+            "vpc_id": "vpc-fix-1"
+          }
+        ]
+      },
+      "i-fixture-002": {
+        "instance_id": "i-fixture-002",
+        "instance_type": "t3.small",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.1.1.10",
+            "public_ip": null,
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": "subnet-fix-2",
+            "vpc_id": "vpc-fix-2"
+          }
+        ]
+      },
+      "i-fixture-101": {
+        "instance_id": "i-fixture-101",
+        "instance_type": "t3.micro",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.2.1.10",
+            "public_ip": "203.0.113.20",
+            "scan_id": "scan-fixture-002",
+            "scan_timestamp": "2026-08-02T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": null,
+            "vpc_id": "vpc-fix-3"
+          }
+        ]
+      }
+    }
+  },
+  "018:get_vpc_topology_detailed": {
+    "flow_logs": [],
+    "instances": [
+      {
+        "availability_zone": "ap-southeast-2a",
+        "created_at": "<volatile>",
+        "iam_instance_profile": null,
+        "id": 1,
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "launch_time": "2026-08-01T00:00:00+00:00",
+        "monitoring_state": "disabled",
+        "platform": null,
+        "private_ip": "10.0.1.10",
+        "public_ip": "203.0.113.10",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "running",
+        "subnet_id": "subnet-fix-1",
+        "tags": {
+          "Name": "fixture-ec2-1"
+        },
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "internet_gateways": [
+      {
+        "created_at": "<volatile>",
+        "id": 1,
+        "internet_gateway_id": "igw-fixture-001",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_attachments": [
+          {
+            "State": "available",
+            "VpcId": "vpc-fix-1"
+          }
+        ]
+      }
+    ],
+    "load_balancers": [
+      {
+        "availability_zones": [
+          "ap-southeast-2a",
+          "ap-southeast-2b"
+        ],
+        "created_at": "<volatile>",
+        "created_time": "2026-08-01T00:00:00+00:00",
+        "dns_name": "fixture-alb-123.ap-southeast-2.elb.amazonaws.com",
+        "id": 1,
+        "listeners": [
+          {
+            "Port": 443,
+            "Protocol": "HTTPS"
+          }
+        ],
+        "load_balancer_arn": "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:loadbalancer/app/fixture-alb/0123456789abcdef",
+        "load_balancer_name": "fixture-alb",
+        "load_balancer_type": "application",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "scheme": "internet-facing",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "active",
+        "subnets": [
+          "subnet-fix-1"
+        ],
+        "tags": {},
+        "target_groups": [],
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "nat_gateways": [
+      {
+        "connectivity_type": "public",
+        "created_at": "<volatile>",
+        "created_time": "2026-08-01T00:00:00+00:00",
+        "id": 1,
+        "nat_gateway_addresses": [],
+        "nat_gateway_id": "nat-fixture-001",
+        "private_ip": "10.0.1.99",
+        "public_ip": "203.0.113.99",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "state": "available",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "network_interfaces": [
+      {
+        "attachment": null,
+        "availability_zone": "ap-southeast-2a",
+        "created_at": "<volatile>",
+        "description": null,
+        "id": 1,
+        "interface_type": "interface",
+        "mac_address": null,
+        "network_interface_id": "eni-fixture-001",
+        "private_ip_address": "10.0.1.20",
+        "private_ip_addresses": [],
+        "public_ip": "203.0.113.30",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "source_dest_check": 1,
+        "status": "in-use",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "route_tables": [
+      {
+        "created_at": "<volatile>",
+        "gateway_associations": [],
+        "id": 1,
+        "is_main": 1,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "route_table_id": "rtb-fixture-001",
+        "routes": [
+          {
+            "DestinationCidrBlock": "0.0.0.0/0",
+            "GatewayId": "igw-fixture-001"
+          }
+        ],
+        "scan_id": "scan-fixture-001",
+        "subnet_associations": [
+          "subnet-fix-1"
+        ],
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "security_groups": [
+      {
+        "created_at": "<volatile>",
+        "description": "Fixture security group with open SSH ingress",
+        "egress_rules": [
+          {
+            "IpProtocol": "-1",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ]
+          }
+        ],
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "id": 1,
+        "ingress_rules": [
+          {
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ],
+            "ToPort": 22
+          }
+        ],
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "subnets": [
+      {
+        "availability_zone": "ap-southeast-2a",
+        "available_ip_count": 250,
+        "cidr_block": "10.0.1.0/24",
+        "created_at": "<volatile>",
+        "id": 1,
+        "map_public_ip": 1,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "state": "available",
+        "subnet_id": "subnet-fix-1",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "vpc": {
+      "cidr_block": "10.0.0.0/16",
+      "created_at": "<volatile>",
+      "dhcp_options_id": null,
+      "id": 1,
+      "instance_tenancy": "default",
+      "is_default": 0,
+      "raw_data": "{}",
+      "region": "ap-southeast-2",
+      "scan_id": "scan-fixture-001",
+      "state": "available",
+      "tags": {
+        "Name": "fixture-vpc-1"
+      },
+      "vpc_id": "vpc-fix-1"
+    }
+  },
+  "019:get_workspaces_summary": {
+    "summary": {}
+  },
+  "020:get_s3_lifecycle_policies": {
+    "buckets": [
+      {
+        "bucket_name": "fixture-bucket-public",
+        "created_at": "<volatile>",
+        "creation_date": "2026-08-01T00:00:00+00:00",
+        "encryption_config": null,
+        "id": 1,
+        "lifecycle_rules": [
+          {
+            "Expiration": {
+              "Days": 90
+            },
+            "ID": "fixture-rule",
+            "Status": "Enabled"
+          }
+        ],
+        "lifecycle_summary": [
+          {
+            "expiration": {
+              "Days": 90
+            },
+            "id": "fixture-rule",
+            "status": "Enabled",
+            "transitions": []
+          }
+        ],
+        "logging_enabled": 0,
+        "object_count": 5,
+        "public_access_block": "{\"BlockPublicAcls\": false, \"IgnorePublicAcls\": false, \"BlockPublicPolicy\": false, \"RestrictPublicBuckets\": false}",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "size_bytes": 1024,
+        "tags": {},
+        "versioning_status": "Enabled"
+      }
+    ],
+    "count": 1
+  },
+  "021:get_lambda_summary": {
+    "count": 2,
+    "functions": [
+      {
+        "architectures": [],
+        "code_size": 1024,
+        "created_at": "<volatile>",
+        "environment_variables": {},
+        "function_arn": "arn:aws:lambda:ap-southeast-2:123456789012:function:fixture-lambda-1",
+        "function_name": "fixture-lambda-1",
+        "handler": "app.handler",
+        "id": 1,
+        "last_modified": "2026-08-01T00:00:00+00:00",
+        "layers": [],
+        "memory_size": 128,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "role_arn": "arn:aws:iam::123456789012:role/fixture-role",
+        "runtime": "python3.12",
+        "scan_id": "scan-fixture-001",
+        "state": "Active",
+        "tags": {},
+        "timeout": 30,
+        "triggers": [],
+        "vpc_config": {
+          "SecurityGroupIds": [
+            "sg-fix-1"
+          ],
+          "SubnetIds": [
+            "subnet-fix-1"
+          ],
+          "VpcId": "vpc-fix-1"
+        }
+      },
+      {
+        "architectures": [],
+        "code_size": 2048,
+        "created_at": "<volatile>",
+        "environment_variables": {},
+        "function_arn": "arn:aws:lambda:ap-southeast-2:123456789012:function:fixture-lambda-2",
+        "function_name": "fixture-lambda-2",
+        "handler": "app.handler",
+        "id": 2,
+        "last_modified": "2026-08-01T00:00:00+00:00",
+        "layers": [],
+        "memory_size": 256,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "role_arn": "arn:aws:iam::123456789012:role/fixture-role",
+        "runtime": "python3.12",
+        "scan_id": "scan-fixture-001",
+        "state": "Active",
+        "tags": {},
+        "timeout": 15,
+        "triggers": [],
+        "vpc_config": null
+      }
+    ],
+    "non_vpc_count": 1,
+    "vpc_integrated_count": 1
+  },
+  "022:get_route53_zones": {
+    "accounts": {
+      "Fixture Account": {
+        "account_number": "123456789012",
+        "hosted_zones": [
+          {
+            "hosted_zone_id": "Z-FIXTURE001",
+            "is_private": false,
+            "name": "fixture.example.com.",
+            "resource_record_set_count": 2,
+            "tags": {}
+          }
+        ],
+        "private_zones": 0,
+        "public_zones": 1,
+        "zone_count": 1
+      }
+    }
+  },
+  "023:get_route53_records": {
+    "count": 2,
+    "hosted_zone_id": "Z-FIXTURE001",
+    "records": [
+      {
+        "alias_target": null,
+        "created_at": "<volatile>",
+        "hosted_zone_id": "Z-FIXTURE001",
+        "id": 1,
+        "name": "www.fixture.example.com.",
+        "raw_data": "{}",
+        "record_type": "A",
+        "resource_records": [
+          "203.0.113.10"
+        ],
+        "scan_id": "scan-fixture-001",
+        "ttl": 300
+      },
+      {
+        "alias_target": null,
+        "created_at": "<volatile>",
+        "hosted_zone_id": "Z-FIXTURE001",
+        "id": 2,
+        "name": "fixture.example.com.",
+        "raw_data": "{}",
+        "record_type": "NS",
+        "resource_records": [
+          "ns-1.awsdns.com."
+        ],
+        "scan_id": "scan-fixture-001",
+        "ttl": 172800
+      }
+    ]
+  },
+  "024:get_route53_changes": {
+    "change_count": 0,
+    "changes": [],
+    "zone_history": {
+      "Z-FIXTURE001": {
+        "hosted_zone_id": "Z-FIXTURE001",
+        "name": "fixture.example.com.",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "is_private": false,
+            "record_count": 2,
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00"
+          }
+        ]
+      }
+    }
+  },
+  "025:get_vpc_flow_log_coverage": {
+    "coverage_percentage": 0.0,
+    "total_vpcs": 2,
+    "vpcs_with_flow_logs": 0,
+    "vpcs_with_logs": [],
+    "vpcs_without_flow_logs": 2,
+    "vpcs_without_logs": [
+      {
+        "cidr_block": "10.0.0.0/16",
+        "flow_logs": [],
+        "has_flow_logs": false,
+        "region": "ap-southeast-2",
+        "tags": {
+          "Name": "fixture-vpc-1"
+        },
+        "vpc_id": "vpc-fix-1"
+      },
+      {
+        "cidr_block": "10.1.0.0/16",
+        "flow_logs": [],
+        "has_flow_logs": false,
+        "region": "ap-southeast-2",
+        "tags": {
+          "Name": "fixture-vpc-2"
+        },
+        "vpc_id": "vpc-fix-2"
+      }
+    ]
+  },
+  "026:get_total_cost": {
+    "account_count": 1,
+    "accounts": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "currency": "USD",
+        "earliest_period": "2026-07-01T00:00:00+00:00",
+        "is_master_payer_account": true,
+        "latest_period": "2026-08-31T23:59:59+00:00",
+        "note": "Master payer account in AWS Organizations - costs shown here are direct costs for this account only. Member account costs are shown separately.",
+        "service_count": 2,
+        "total_cost": 195.35
+      }
+    ],
+    "aws_organizations_info": {
+      "has_organizations": true,
+      "master_payer_accounts": 1,
+      "note": "This AWS environment uses AWS Organizations with consolidated billing. The master payer account costs shown are direct costs only, not including member account costs which are listed separately.",
+      "total_member_account_costs": 0.0
+    },
+    "currency": "USD",
+    "total_cost_all_accounts": 195.35
+  },
+  "027:get_cost_by_service": {
+    "currency": "USD",
+    "service_count": 2,
+    "services": [
+      {
+        "account_count": 1,
+        "currency": "USD",
+        "earliest_period": "2026-07-01T00:00:00+00:00",
+        "latest_period": "2026-07-31T23:59:59+00:00",
+        "service_name": "Amazon Elastic Compute Cloud - Compute",
+        "total_cost": 150.25
+      },
+      {
+        "account_count": 1,
+        "currency": "USD",
+        "earliest_period": "2026-08-01T00:00:00+00:00",
+        "latest_period": "2026-08-31T23:59:59+00:00",
+        "service_name": "Amazon Simple Storage Service",
+        "total_cost": 45.1
+      }
+    ],
+    "total_cost": 195.35
+  },
+  "028:get_cost_trends": {
+    "month_count": 2,
+    "trends": [
+      {
+        "accounts": {
+          "123456789012": {
+            "account_name": "Fixture Account",
+            "account_number": "123456789012",
+            "account_total": 45.1,
+            "services": {
+              "Amazon Simple Storage Service": 45.1
+            }
+          }
+        },
+        "currency": "USD",
+        "month": "2026-08",
+        "total_monthly_cost": 45.1
+      },
+      {
+        "accounts": {
+          "123456789012": {
+            "account_name": "Fixture Account",
+            "account_number": "123456789012",
+            "account_total": 150.25,
+            "services": {
+              "Amazon Elastic Compute Cloud - Compute": 150.25
+            }
+          }
+        },
+        "currency": "USD",
+        "month": "2026-07",
+        "total_monthly_cost": 150.25
+      }
+    ]
+  },
+  "029:get_cost_comparison": {
+    "account_count": 1,
+    "accounts": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "currency": "USD",
+        "services": {
+          "Amazon Elastic Compute Cloud - Compute": 150.25,
+          "Amazon Simple Storage Service": 45.1
+        },
+        "total_cost": 195.35
+      }
+    ],
+    "currency": "USD",
+    "total_cost_all_accounts": 195.35
+  },
+  "030:analyze_vpc_cidrs": {
+    "error": "no such column: is_public"
+  },
+  "031:find_unused_resources": {
+    "summary": {
+      "categories": {},
+      "potential_monthly_savings": 0.0,
+      "total_unused": 0
+    },
+    "unused_resources": {}
+  },
+  "032:analyze_encryption_coverage": {
+    "by_resource_type": {
+      "s3_buckets": {
+        "encrypted": 1,
+        "encryption_percentage": 50.0,
+        "total": 2,
+        "unencrypted": 1
+      }
+    },
+    "summary": {
+      "encrypted_resources": 1,
+      "encryption_percentage": 50.0,
+      "total_resources": 2,
+      "unencrypted_resources": 1
+    },
+    "unencrypted_resources": {
+      "s3_buckets": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "bucket_name": "fixture-bucket-public",
+          "region": "ap-southeast-2",
+          "severity": "HIGH",
+          "tags": {}
+        }
+      ]
+    }
+  },
+  "033:find_publicly_accessible_databases": {
+    "public_databases": [],
+    "summary": {
+      "recommendation": "No publicly accessible databases found",
+      "severity": "OK",
+      "total_public_databases": 0
+    }
+  },
+  "034:analyze_iam_permissions": {
+    "findings": {
+      "users_without_mfa": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "issue": "MFA not enabled",
+          "severity": "HIGH",
+          "tags": {},
+          "user_name": "fixture-user-no-mfa"
+        }
+      ]
+    },
+    "summary": {
+      "critical_issues": 0,
+      "high_issues": 1,
+      "medium_issues": 0,
+      "total_issues": 1
+    }
+  },
+  "035:analyze_backup_coverage": {
+    "recommendations": [
+      "Enable automated backups for all production RDS instances",
+      "Set backup retention period to at least 7 days",
+      "Consider Multi-AZ deployment for critical databases",
+      "Enable encryption for sensitive data",
+      "Test backup restoration procedures regularly"
+    ],
+    "summary": {
+      "critical_issues": 0,
+      "protection_percentage": 100.0,
+      "rds_without_backups": 0,
+      "total_rds_instances": 0
+    },
+    "unprotected_resources": []
+  },
+  "036:find_security_group_violations": {
+    "recommendations": [
+      "Remove 0.0.0.0/0 access from all sensitive ports",
+      "Use specific IP ranges or security group references instead",
+      "Implement a bastion host or VPN for SSH/RDP access",
+      "Place databases in private subnets with no direct internet access",
+      "Review and document all security group rules regularly",
+      "Use AWS Systems Manager Session Manager for EC2 access instead of SSH"
+    ],
+    "security_groups_with_violations": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "region": "ap-southeast-2",
+        "violations": [
+          {
+            "cidr": "0.0.0.0/0",
+            "from_port": 22,
+            "port": 22,
+            "port_name": "SSH",
+            "protocol": "tcp",
+            "severity": "CRITICAL",
+            "to_port": 22
+          }
+        ],
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "summary": {
+      "critical_violations": 1,
+      "high_violations": 0,
+      "medium_violations": 0,
+      "security_groups_affected": 1,
+      "total_violations": 1
+    },
+    "violations_by_port": {
+      "22 (SSH)": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "region": "ap-southeast-2",
+          "security_group": "fixture-sg-open (sg-fix-1)",
+          "vpc_id": "vpc-fix-1"
+        }
+      ]
+    }
+  },
+  "037:analyze_tag_compliance": {
+    "non_compliant_by_type": {
+      "EC2 Instance": 2,
+      "Load Balancer": 1,
+      "S3 Bucket": 1
+    },
+    "non_compliant_resources": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [
+          "Name"
+        ],
+        "identifier": "i-fixture-001",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "EC2 Instance",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [
+          "Name"
+        ],
+        "identifier": "i-fixture-002",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "EC2 Instance",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [],
+        "identifier": "fixture-bucket-public",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "S3 Bucket",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [],
+        "identifier": "fixture-alb",
+        "location": "[\"ap-southeast-2a\", \"ap-southeast-2b\"]",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "Load Balancer",
+        "severity": "MEDIUM"
+      }
+    ],
+    "recommendations": [
+      "Ensure all resources have required tags: Environment, Owner, CostCentre, Project",
+      "Implement tag policies using AWS Organizations",
+      "Use AWS Config rules to enforce tagging compliance",
+      "Create automated remediation workflows for untagged resources",
+      "Document tagging standards in organisation wiki",
+      "Include tagging in infrastructure-as-code templates"
+    ],
+    "summary": {
+      "compliance_percentage": 20.0,
+      "compliant_resources": 1,
+      "non_compliant_resources": 4,
+      "required_tags": [
+        "Environment",
+        "Owner",
+        "CostCentre",
+        "Project"
+      ],
+      "total_resources": 5
+    }
+  },
+  "038:analyze_container_vulnerabilities": {
+    "error": "no such column: img.image_tag"
+  },
+  "039:find_vpc_endpoint_opportunities": {
+    "endpoint_opportunities": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "ec2_instances": 1,
+        "ecs_services": 0,
+        "eks_clusters": 0,
+        "estimated_monthly_savings": 9.0,
+        "opportunities": {
+          "ecr": false,
+          "ecs": false,
+          "s3": true
+        },
+        "recommendations": [
+          "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
+        ],
+        "region": "ap-southeast-2",
+        "s3_buckets": 2,
+        "vpc_id": "vpc-fix-1"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "ec2_instances": 1,
+        "ecs_services": 0,
+        "eks_clusters": 0,
+        "estimated_monthly_savings": 9.0,
+        "opportunities": {
+          "ecr": false,
+          "ecs": false,
+          "s3": true
+        },
+        "recommendations": [
+          "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
+        ],
+        "region": "ap-southeast-2",
+        "s3_buckets": 2,
+        "vpc_id": "vpc-fix-2"
+      }
+    ],
+    "recommendations": [
+      "Create S3 Gateway Endpoints for all VPCs (free and eliminates NAT charges)",
+      "Create DynamoDB Gateway Endpoints where applicable (free)",
+      "Consider Interface Endpoints for high-traffic services (ECR, ECS, etc.)",
+      "Monitor VPC Flow Logs to identify high data transfer to AWS services",
+      "Use VPC Endpoint policies to control access",
+      "Implement VPC endpoints in infrastructure-as-code templates"
+    ],
+    "summary": {
+      "potential_monthly_savings": 18.0,
+      "total_vpcs": 2,
+      "vpcs_with_opportunities": 2
+    }
+  },
+  "040:get_organizations_structure": {
+    "accounts": [
+      {
+        "account_arn": "arn:aws:organizations::123456789012:account/o-fixture001/123456789012",
+        "account_email": "fixture-master@example.com",
+        "account_id": "123456789012",
+        "account_name": "Fixture Master Account",
+        "joined_method": "INVITED",
+        "joined_timestamp": null,
+        "status": "ACTIVE"
+      },
+      {
+        "account_arn": "arn:aws:organizations::123456789012:account/o-fixture001/210987654321",
+        "account_email": "fixture-member@example.com",
+        "account_id": "210987654321",
+        "account_name": "Fixture Member Account",
+        "joined_method": "CREATED",
+        "joined_timestamp": null,
+        "status": "ACTIVE"
+      }
+    ],
+    "organizational_units": [],
+    "organizations": [
+      {
+        "available_policy_types": [
+          {
+            "Status": "ENABLED",
+            "Type": "SERVICE_CONTROL_POLICY"
+          }
+        ],
+        "feature_set": "ALL",
+        "master_account_email": "fixture-master@example.com",
+        "master_account_id": "123456789012",
+        "organization_arn": "arn:aws:organizations::123456789012:organization/o-fixture001",
+        "organization_id": "o-fixture001",
+        "scan_id": "scan-fixture-001"
+      }
+    ],
+    "summary": {
+      "feature_set": "ALL",
+      "total_accounts": 2,
+      "total_ous": 0
+    }
+  },
+  "041:get_sso_permissions": {
+    "assignments": [],
+    "permission_sets": [],
+    "summary": {
+      "accounts_with_assignments": [],
+      "total_accounts_with_assignments": 0,
+      "total_assignments": 0,
+      "total_permission_sets": 0
+    }
+  },
+  "042:analyze_cloudtrail_coverage": {
+    "error": "no such column: log_file_validation_enabled"
+  },
+  "043:analyze_logging_coverage": {
+    "cloudwatch_log_groups": [],
+    "config_recorders": [],
+    "config_rules": [],
+    "summary": {
+      "compliant_rules": 0,
+      "config_recorders_recording": 0,
+      "log_groups_with_kms": 0,
+      "log_groups_with_retention": 0,
+      "non_compliant_rules": 0,
+      "total_config_recorders": 0,
+      "total_config_rules": 0,
+      "total_log_groups": 0,
+      "total_stored_bytes": 0,
+      "total_stored_gb": 0.0
+    }
+  },
+  "044:get_bedrock_resources": {
+    "error": "no such column: model_lifecycle_status"
+  },
+  "045:analyze_network_connectivity": {
+    "direct_connect_connections": [],
+    "summary": {
+      "active_direct_connect_connections": 0,
+      "active_vpn_connections": 0,
+      "connectivity_types": [],
+      "total_direct_connect_connections": 0,
+      "total_transit_gateways": 0,
+      "total_vpn_connections": 0
+    },
+    "transit_gateways": [],
+    "vpn_connections": []
+  },
+  "046:get_directory_services": {
+    "directories": [],
+    "summary": {
+      "directories_by_size": {},
+      "directories_by_type": {},
+      "regions": [],
+      "sso_enabled_count": 0,
+      "total_directories": 0
+    }
+  },
+  "047:analyze_managed_services": {
+    "error": "no such column: billing_mode"
+  },
+  "048:get_organizations_cost_breakdown": {
+    "cost_summary": {
+      "currency": "USD",
+      "master_account_direct_costs": 195.35,
+      "total_all_accounts": 195.35,
+      "total_member_accounts": 0.0
+    },
+    "interpretation": {
+      "highest_cost_member_account": "N/A",
+      "member_account_count": 0,
+      "note": "In AWS Organizations with consolidated billing:\n- The master account pays for all member account usage\n- Cost data shown here reflects actual usage per account\n- Master account costs are its DIRECT costs only\n- Member account costs are their individual usage\n- When asking \"which account costs most?\", exclude the master account or look at member_accounts list to see actual usage by account"
+    },
+    "master_account_costs": {
+      "account_name": "Fixture Account",
+      "account_number": "123456789012",
+      "currency": "USD",
+      "note": "This is the master/payer account. Costs shown are DIRECT costs for resources in this account only, NOT consolidated costs from member accounts.",
+      "service_count": 2,
+      "total_cost": 195.35
+    },
+    "member_accounts": [],
+    "organization_info": {
+      "feature_set": "ALL",
+      "master_account_email": "fixture-master@example.com",
+      "master_account_id": "123456789012",
+      "organization_id": "o-fixture001"
+    }
+  },
+  "049:get_security_assessment_data": {
+    "categories": {
+      "data_protection": [
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_ebs_volumes",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no EBS volumes in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable EBS encryption; migrate data to encrypted volumes",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_ebs_snapshots",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no EBS snapshots in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Copy snapshots with encryption enabled and remove the plaintext originals",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_rds_instances",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no RDS instances in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Restore to an encrypted instance from a snapshot; encryption cannot be enabled in place",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.s3_public_buckets",
+          "default_severity": "critical",
+          "findings": [],
+          "not_applicable_reason": "no S3 buckets in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Apply a Public Access Block and remove public bucket policies unless deliberately published",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.s3_buckets_without_pab",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": "no S3 buckets in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable all four Public Access Block settings on every bucket",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.kms_rotation_disabled",
+          "default_severity": "low",
+          "findings": [],
+          "not_applicable_reason": "no KMS keys in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable annual automatic rotation on customer-managed keys",
+          "status": "not_applicable"
+        }
+      ],
+      "identity_access": [
+        {
+          "category": "identity_access",
+          "check_id": "identity.admin_wildcard_policies",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no IAM policies in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Replace wildcard policies with least-privilege statements",
+          "status": "not_applicable"
+        },
+        {
+          "category": "identity_access",
+          "check_id": "identity.administrator_access_attached",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": "no IAM policies in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Limit AdministratorAccess to break-glass roles; use scoped policies day to day",
+          "status": "not_applicable"
+        }
+      ],
+      "logging_monitoring": [
+        {
+          "category": "logging_monitoring",
+          "check_id": "logging.config_recorder_missing",
+          "default_severity": "medium",
+          "findings": [
+            {
+              "evidence": {
+                "config_recorders": 0
+              },
+              "region": null,
+              "resource_id": "account",
+              "resource_type": "config"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Enable AWS Config recording for configuration history and drift detection",
+          "status": "findings"
+        }
+      ],
+      "network_exposure": [
+        {
+          "category": "network_exposure",
+          "check_id": "network.sg_world_open_sensitive_ports",
+          "default_severity": "critical",
+          "findings": [
+            {
+              "evidence": {
+                "group_name": "fixture-sg-open",
+                "rules": [
+                  {
+                    "cidr": "0.0.0.0/0",
+                    "from_port": 22,
+                    "protocol": "tcp",
+                    "sensitive_ports": [
+                      {
+                        "port": 22,
+                        "service": "SSH"
+                      }
+                    ],
+                    "to_port": 22
+                  }
+                ],
+                "vpc_id": "vpc-fix-1"
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "sg-fix-1",
+              "resource_type": "security_group"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Restrict sensitive ports to known CIDRs, a VPN or SSM Session Manager",
+          "status": "findings"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.sg_world_open_all_traffic",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Replace all-traffic rules with specific protocol and port rules",
+          "status": "clean"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.default_sg_with_rules",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Remove all rules from default security groups; use purpose-built groups",
+          "status": "clean"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.subnets_auto_assign_public_ip",
+          "default_severity": "low",
+          "findings": [
+            {
+              "evidence": {
+                "cidr_block": "10.0.1.0/24",
+                "map_public_ip_on_launch": true,
+                "vpc_id": "vpc-fix-1"
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "subnet-fix-1",
+              "resource_type": "subnet"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Disable automatic public IP assignment; assign public IPs deliberately",
+          "status": "findings"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.vpcs_without_flow_logs",
+          "default_severity": "medium",
+          "findings": [
+            {
+              "evidence": {
+                "cidr_block": "10.0.0.0/16",
+                "flow_logs": false
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "vpc-fix-1",
+              "resource_type": "vpc"
+            },
+            {
+              "evidence": {
+                "cidr_block": "10.1.0.0/16",
+                "flow_logs": false
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "vpc-fix-2",
+              "resource_type": "vpc"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Enable VPC Flow Logs for traffic visibility and incident response",
+          "status": "findings"
+        }
+      ],
+      "service_exposure": [
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.ec2_public_instances",
+          "default_severity": "high",
+          "findings": [
+            {
+              "evidence": {
+                "open_security_groups": [
+                  {
+                    "group_id": "sg-fix-1",
+                    "rules": [
+                      {
+                        "cidr": "0.0.0.0/0",
+                        "from_port": 22,
+                        "protocol": "tcp",
+                        "sensitive_ports": [
+                          {
+                            "port": 22,
+                            "service": "SSH"
+                          }
+                        ],
+                        "to_port": 22
+                      }
+                    ]
+                  }
+                ],
+                "public_ip": "203.0.113.10",
+                "state": "running"
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "i-fixture-001",
+              "resource_type": "ec2_instance"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+          "status": "findings"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.lambda_public_functions",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no Lambda functions in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+          "status": "not_applicable"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.database_exposure",
+          "default_severity": "critical",
+          "findings": [],
+          "not_applicable_reason": "no RDS, OpenSearch or ElastiCache resources in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+          "status": "not_applicable"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.public_entry_points",
+          "default_severity": "informational",
+          "findings": [
+            {
+              "evidence": {
+                "dns_name": "fixture-alb-123.ap-southeast-2.elb.amazonaws.com",
+                "entry_point_type": "load_balancer",
+                "listeners": [
+                  {
+                    "Port": 443,
+                    "Protocol": "HTTPS"
+                  }
+                ],
+                "load_balancer_type": "application"
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "fixture-alb",
+              "resource_type": "load_balancer"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+          "status": "findings"
+        }
+      ]
+    },
+    "not_evaluated": [
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_mfa_disabled",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Enable a hardware or virtual MFA device on the root user immediately",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_access_keys_present",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report and account summary unavailable",
+        "recommendation": "Delete root access keys; use IAM roles or users for programmatic access",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.password_policy_missing_or_weak",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Configure an account password policy with minimum length 14, complexity and reuse prevention",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.console_users_without_mfa",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Enable MFA for every user with console access",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.stale_access_keys",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Rotate access keys at least every 90 days, or replace with short-lived credentials",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.inactive_users",
+        "default_severity": "low",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Disable or remove credentials for users no longer in active use",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.account_pab_missing",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Enable the account-level Public Access Block in S3 settings",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.ebs_default_encryption_off",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region_security_services not collected",
+        "recommendation": "Enable EBS encryption by default in every active region",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.no_multi_region_cloudtrail",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "CloudTrail trails not collected",
+        "recommendation": "Create a multi-region trail with log file validation enabled",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.guardduty_not_enabled",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region security services not collected",
+        "recommendation": "Enable GuardDuty in every active region, ideally via the organisation",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.security_hub_not_enabled",
+        "default_severity": "low",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region security services not collected",
+        "recommendation": "Enable Security Hub for consolidated findings and standards checks",
+        "status": "not_evaluated"
+      }
+    ],
+    "prowler": {
+      "available": true,
+      "detail_tool": "get_prowler_findings",
+      "failed_by_severity": {
+        "high": 1,
+        "medium": 1
+      }
+    },
+    "scan_id": "scan-fixture-001",
+    "scoring_note": "Severities are advisory facts. Scoring, weighting and report structure are the responsibility of the MCP client."
+  },
+  "050:analyze_service_exposure": {
+    "scan_id": "scan-fixture-001",
+    "services": {
+      "databases": {
+        "category": "service_exposure",
+        "check_id": "exposure.database_exposure",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": "no RDS, OpenSearch or ElastiCache resources in this account (scanned, none found)",
+        "not_evaluated_reason": null,
+        "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+        "status": "not_applicable"
+      },
+      "ec2": {
+        "category": "service_exposure",
+        "check_id": "exposure.ec2_public_instances",
+        "default_severity": "high",
+        "findings": [
+          {
+            "evidence": {
+              "open_security_groups": [
+                {
+                  "group_id": "sg-fix-1",
+                  "rules": [
+                    {
+                      "cidr": "0.0.0.0/0",
+                      "from_port": 22,
+                      "protocol": "tcp",
+                      "sensitive_ports": [
+                        {
+                          "port": 22,
+                          "service": "SSH"
+                        }
+                      ],
+                      "to_port": 22
+                    }
+                  ]
+                }
+              ],
+              "public_ip": "203.0.113.10",
+              "state": "running"
+            },
+            "region": "ap-southeast-2",
+            "resource_id": "i-fixture-001",
+            "resource_type": "ec2_instance"
+          }
+        ],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": null,
+        "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+        "status": "findings"
+      },
+      "entry_points": {
+        "category": "service_exposure",
+        "check_id": "exposure.public_entry_points",
+        "default_severity": "informational",
+        "findings": [
+          {
+            "evidence": {
+              "dns_name": "fixture-alb-123.ap-southeast-2.elb.amazonaws.com",
+              "entry_point_type": "load_balancer",
+              "listeners": [
+                {
+                  "Port": 443,
+                  "Protocol": "HTTPS"
+                }
+              ],
+              "load_balancer_type": "application"
+            },
+            "region": "ap-southeast-2",
+            "resource_id": "fixture-alb",
+            "resource_type": "load_balancer"
+          }
+        ],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": null,
+        "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+        "status": "findings"
+      },
+      "lambda": {
+        "category": "service_exposure",
+        "check_id": "exposure.lambda_public_functions",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": "no Lambda functions in this account (scanned, none found)",
+        "not_evaluated_reason": null,
+        "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+        "status": "not_applicable"
+      }
+    }
+  },
+  "051:get_security_check_catalogue": {
+    "checks": [
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_mfa_disabled",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "critical",
+        "detects": "The account root user has no MFA device enabled",
+        "recommendation": "Enable a hardware or virtual MFA device on the root user immediately",
+        "title": "Root account MFA disabled"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_access_keys_present",
+        "data_dependencies": [
+          "iam_credential_report",
+          "account_security_posture"
+        ],
+        "default_severity": "critical",
+        "detects": "The root user has active long-lived access keys",
+        "recommendation": "Delete root access keys; use IAM roles or users for programmatic access",
+        "title": "Root account access keys present"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.password_policy_missing_or_weak",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "high",
+        "detects": "No IAM account password policy, or minimum length below 14",
+        "recommendation": "Configure an account password policy with minimum length 14, complexity and reuse prevention",
+        "title": "Password policy missing or weak"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.console_users_without_mfa",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "high",
+        "detects": "IAM users with console passwords but no active MFA device",
+        "recommendation": "Enable MFA for every user with console access",
+        "title": "Console users without MFA"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.stale_access_keys",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "medium",
+        "detects": "Active access keys not rotated in over 90 days",
+        "recommendation": "Rotate access keys at least every 90 days, or replace with short-lived credentials",
+        "title": "Access keys not rotated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.inactive_users",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "low",
+        "detects": "Users with no password or access key activity in over 90 days",
+        "recommendation": "Disable or remove credentials for users no longer in active use",
+        "title": "Inactive IAM users"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.admin_wildcard_policies",
+        "data_dependencies": [
+          "iam_policies"
+        ],
+        "default_severity": "high",
+        "detects": "Customer-managed policies with Effect Allow, Action * and Resource *",
+        "recommendation": "Replace wildcard policies with least-privilege statements",
+        "title": "Policies allowing all actions on all resources"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.administrator_access_attached",
+        "data_dependencies": [
+          "iam_policies"
+        ],
+        "default_severity": "medium",
+        "detects": "The AWS managed AdministratorAccess policy is attached to users, roles or groups",
+        "recommendation": "Limit AdministratorAccess to break-glass roles; use scoped policies day to day",
+        "title": "AdministratorAccess policy attached"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.sg_world_open_sensitive_ports",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "critical",
+        "detects": "Ingress rules from 0.0.0.0/0 or ::/0 reaching SSH, RDP, database or search ports",
+        "recommendation": "Restrict sensitive ports to known CIDRs, a VPN or SSM Session Manager",
+        "title": "Security groups open to the internet on sensitive ports"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.sg_world_open_all_traffic",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "high",
+        "detects": "Ingress rules allowing all protocols from 0.0.0.0/0 or ::/0",
+        "recommendation": "Replace all-traffic rules with specific protocol and port rules",
+        "title": "Security groups open to the internet for all traffic"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.default_sg_with_rules",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "medium",
+        "detects": "Default security groups with any ingress rules configured",
+        "recommendation": "Remove all rules from default security groups; use purpose-built groups",
+        "title": "Default security groups containing rules"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.subnets_auto_assign_public_ip",
+        "data_dependencies": [
+          "subnets"
+        ],
+        "default_severity": "low",
+        "detects": "Subnets with MapPublicIpOnLaunch enabled",
+        "recommendation": "Disable automatic public IP assignment; assign public IPs deliberately",
+        "title": "Subnets auto-assigning public IPs"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.vpcs_without_flow_logs",
+        "data_dependencies": [
+          "vpcs",
+          "vpc_flow_logs"
+        ],
+        "default_severity": "medium",
+        "detects": "VPCs with no VPC Flow Log attached",
+        "recommendation": "Enable VPC Flow Logs for traffic visibility and incident response",
+        "title": "VPCs without flow logs"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_ebs_volumes",
+        "data_dependencies": [
+          "ebs_volumes"
+        ],
+        "default_severity": "high",
+        "detects": "EBS volumes without encryption at rest",
+        "recommendation": "Enable EBS encryption; migrate data to encrypted volumes",
+        "title": "Unencrypted EBS volumes"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_ebs_snapshots",
+        "data_dependencies": [
+          "ebs_snapshots"
+        ],
+        "default_severity": "high",
+        "detects": "EBS snapshots without encryption at rest",
+        "recommendation": "Copy snapshots with encryption enabled and remove the plaintext originals",
+        "title": "Unencrypted EBS snapshots"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_rds_instances",
+        "data_dependencies": [
+          "rds_instances"
+        ],
+        "default_severity": "high",
+        "detects": "RDS instances without storage encryption",
+        "recommendation": "Restore to an encrypted instance from a snapshot; encryption cannot be enabled in place",
+        "title": "Unencrypted RDS instances"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.s3_public_buckets",
+        "data_dependencies": [
+          "s3_public_access"
+        ],
+        "default_severity": "critical",
+        "detects": "Buckets whose policy status reports IsPublic",
+        "recommendation": "Apply a Public Access Block and remove public bucket policies unless deliberately published",
+        "title": "Publicly accessible S3 buckets"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.s3_buckets_without_pab",
+        "data_dependencies": [
+          "s3_public_access"
+        ],
+        "default_severity": "medium",
+        "detects": "Buckets with no bucket-level Public Access Block configuration",
+        "recommendation": "Enable all four Public Access Block settings on every bucket",
+        "title": "S3 buckets without a Public Access Block"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.account_pab_missing",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "high",
+        "detects": "No account-wide S3 Public Access Block configuration",
+        "recommendation": "Enable the account-level Public Access Block in S3 settings",
+        "title": "Account-level S3 Public Access Block missing"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.kms_rotation_disabled",
+        "data_dependencies": [
+          "kms_keys"
+        ],
+        "default_severity": "low",
+        "detects": "Enabled customer-managed KMS keys with rotation disabled",
+        "recommendation": "Enable annual automatic rotation on customer-managed keys",
+        "title": "Customer KMS keys without rotation"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.ebs_default_encryption_off",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "medium",
+        "detects": "Regions where new EBS volumes are not encrypted by default",
+        "recommendation": "Enable EBS encryption by default in every active region",
+        "title": "EBS encryption by default disabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.no_multi_region_cloudtrail",
+        "data_dependencies": [
+          "cloudtrail_trails"
+        ],
+        "default_severity": "high",
+        "detects": "No logging multi-region CloudTrail trail exists",
+        "recommendation": "Create a multi-region trail with log file validation enabled",
+        "title": "No multi-region CloudTrail"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.guardduty_not_enabled",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "medium",
+        "detects": "Regions where GuardDuty has no enabled detector",
+        "recommendation": "Enable GuardDuty in every active region, ideally via the organisation",
+        "title": "GuardDuty not enabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.security_hub_not_enabled",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "low",
+        "detects": "Regions where Security Hub is not enabled",
+        "recommendation": "Enable Security Hub for consolidated findings and standards checks",
+        "title": "Security Hub not enabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.config_recorder_missing",
+        "data_dependencies": [
+          "config_recorders"
+        ],
+        "default_severity": "medium",
+        "detects": "No recording AWS Config recorder in the account",
+        "recommendation": "Enable AWS Config recording for configuration history and drift detection",
+        "title": "AWS Config recorder missing or stopped"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.ec2_public_instances",
+        "data_dependencies": [
+          "ec2_instances",
+          "security_groups"
+        ],
+        "default_severity": "high",
+        "detects": "Running instances with public IPs whose attached security groups admit internet traffic",
+        "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+        "title": "EC2 instances reachable from the internet"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.lambda_public_functions",
+        "data_dependencies": [
+          "lambda_exposure"
+        ],
+        "default_severity": "high",
+        "detects": "Function URLs with auth type NONE, or resource policies granting a * principal without conditions",
+        "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+        "title": "Publicly invokable Lambda functions"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.database_exposure",
+        "data_dependencies": [
+          "rds_instances",
+          "opensearch_domains",
+          "elasticache_clusters",
+          "security_groups"
+        ],
+        "default_severity": "critical",
+        "detects": "Publicly accessible RDS instances (worse when their port is world-open), OpenSearch domains outside a VPC, and ElastiCache clusters behind world-open security groups",
+        "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+        "title": "Databases and data stores exposed to the internet"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.public_entry_points",
+        "data_dependencies": [
+          "load_balancers",
+          "api_gateway_stages",
+          "cloudfront_distributions"
+        ],
+        "default_severity": "informational",
+        "detects": "The account's internet-facing surface: internet-facing load balancers, API Gateway stages and enabled CloudFront distributions",
+        "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+        "title": "Public entry point inventory"
+      }
+    ],
+    "count": 29
+  },
+  "052:analyze_backup_coverage": {
+    "recommendations": [
+      "Enable automated backups for all production RDS instances",
+      "Set backup retention period to at least 7 days",
+      "Consider Multi-AZ deployment for critical databases",
+      "Enable encryption for sensitive data",
+      "Test backup restoration procedures regularly"
+    ],
+    "summary": {
+      "critical_issues": 0,
+      "protection_percentage": 100.0,
+      "rds_without_backups": 0,
+      "total_rds_instances": 0
+    },
+    "unprotected_resources": []
+  },
+  "053:analyze_cloudtrail_coverage": {
+    "error": "no such column: log_file_validation_enabled"
+  },
+  "054:analyze_container_vulnerabilities": {
+    "error": "no such column: img.image_tag"
+  },
+  "055:analyze_encryption_coverage": {
+    "by_resource_type": {
+      "s3_buckets": {
+        "encrypted": 1,
+        "encryption_percentage": 50.0,
+        "total": 2,
+        "unencrypted": 1
+      }
+    },
+    "summary": {
+      "encrypted_resources": 1,
+      "encryption_percentage": 50.0,
+      "total_resources": 2,
+      "unencrypted_resources": 1
+    },
+    "unencrypted_resources": {
+      "s3_buckets": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "bucket_name": "fixture-bucket-public",
+          "region": "ap-southeast-2",
+          "severity": "HIGH",
+          "tags": {}
+        }
+      ]
+    }
+  },
+  "056:analyze_iam_permissions": {
+    "findings": {
+      "users_without_mfa": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "issue": "MFA not enabled",
+          "severity": "HIGH",
+          "tags": {},
+          "user_name": "fixture-user-no-mfa"
+        }
+      ]
+    },
+    "summary": {
+      "critical_issues": 0,
+      "high_issues": 1,
+      "medium_issues": 0,
+      "total_issues": 1
+    }
+  },
+  "057:analyze_logging_coverage": {
+    "cloudwatch_log_groups": [],
+    "config_recorders": [],
+    "config_rules": [],
+    "summary": {
+      "compliant_rules": 0,
+      "config_recorders_recording": 0,
+      "log_groups_with_kms": 0,
+      "log_groups_with_retention": 0,
+      "non_compliant_rules": 0,
+      "total_config_recorders": 0,
+      "total_config_rules": 0,
+      "total_log_groups": 0,
+      "total_stored_bytes": 0,
+      "total_stored_gb": 0.0
+    }
+  },
+  "058:analyze_managed_services": {
+    "error": "no such column: billing_mode"
+  },
+  "059:analyze_network_connectivity": {
+    "direct_connect_connections": [],
+    "summary": {
+      "active_direct_connect_connections": 0,
+      "active_vpn_connections": 0,
+      "connectivity_types": [],
+      "total_direct_connect_connections": 0,
+      "total_transit_gateways": 0,
+      "total_vpn_connections": 0
+    },
+    "transit_gateways": [],
+    "vpn_connections": []
+  },
+  "060:analyze_service_exposure": {
+    "scan_id": "scan-fixture-002",
+    "services": {
+      "databases": {
+        "category": "service_exposure",
+        "check_id": "exposure.database_exposure",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": "no RDS, OpenSearch or ElastiCache resources in this account (scanned, none found)",
+        "not_evaluated_reason": null,
+        "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+        "status": "not_applicable"
+      },
+      "ec2": {
+        "category": "service_exposure",
+        "check_id": "exposure.ec2_public_instances",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": null,
+        "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+        "status": "clean"
+      },
+      "entry_points": {
+        "category": "service_exposure",
+        "check_id": "exposure.public_entry_points",
+        "default_severity": "informational",
+        "findings": [],
+        "not_applicable_reason": "no load balancers, API Gateway stages or CloudFront distributions in this account (scanned, none found)",
+        "not_evaluated_reason": null,
+        "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+        "status": "not_applicable"
+      },
+      "lambda": {
+        "category": "service_exposure",
+        "check_id": "exposure.lambda_public_functions",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": "no Lambda functions in this account (scanned, none found)",
+        "not_evaluated_reason": null,
+        "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+        "status": "not_applicable"
+      }
+    }
+  },
+  "061:analyze_tag_compliance": {
+    "non_compliant_by_type": {
+      "EC2 Instance": 3,
+      "Load Balancer": 1,
+      "S3 Bucket": 1
+    },
+    "non_compliant_resources": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [
+          "Name"
+        ],
+        "identifier": "i-fixture-001",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "EC2 Instance",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [
+          "Name"
+        ],
+        "identifier": "i-fixture-002",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "EC2 Instance",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [
+          "Name"
+        ],
+        "identifier": "i-fixture-101",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "EC2 Instance",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [],
+        "identifier": "fixture-bucket-public",
+        "location": "ap-southeast-2",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "S3 Bucket",
+        "severity": "MEDIUM"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "existing_tags": [],
+        "identifier": "fixture-alb",
+        "location": "[\"ap-southeast-2a\", \"ap-southeast-2b\"]",
+        "missing_tags": [
+          "Environment",
+          "Owner",
+          "CostCentre",
+          "Project"
+        ],
+        "resource_type": "Load Balancer",
+        "severity": "MEDIUM"
+      }
+    ],
+    "recommendations": [
+      "Ensure all resources have required tags: Environment, Owner, CostCentre, Project",
+      "Implement tag policies using AWS Organizations",
+      "Use AWS Config rules to enforce tagging compliance",
+      "Create automated remediation workflows for untagged resources",
+      "Document tagging standards in organisation wiki",
+      "Include tagging in infrastructure-as-code templates"
+    ],
+    "summary": {
+      "compliance_percentage": 16.666666666666664,
+      "compliant_resources": 1,
+      "non_compliant_resources": 5,
+      "required_tags": [
+        "Environment",
+        "Owner",
+        "CostCentre",
+        "Project"
+      ],
+      "total_resources": 6
+    }
+  },
+  "062:analyze_vpc_cidrs": {
+    "error": "no such column: is_public"
+  },
+  "063:compare_scans": {
+    "error": "Both scan_id_1 and scan_id_2 parameters required"
+  },
+  "064:find_public_ec2_instances": {
+    "count": 2,
+    "instances": [
+      {
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "private_ip": "10.0.1.10",
+        "public_ip": "203.0.113.10",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "security_groups": [
+          "sg-fix-1"
+        ],
+        "state": "running",
+        "subnet_id": "subnet-fix-1",
+        "tags": {
+          "Name": "fixture-ec2-1"
+        },
+        "vpc_id": "vpc-fix-1"
+      },
+      {
+        "instance_id": "i-fixture-101",
+        "instance_type": "t3.micro",
+        "private_ip": "10.2.1.10",
+        "public_ip": "203.0.113.20",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-002",
+        "security_groups": [],
+        "state": "running",
+        "subnet_id": null,
+        "tags": {
+          "Name": "fixture-ec2-101"
+        },
+        "vpc_id": "vpc-fix-3"
+      }
+    ],
+    "pagination": {
+      "has_more": false,
+      "limit": 100,
+      "offset": 0,
+      "returned_count": 0,
+      "total_count": 2
+    }
+  },
+  "065:find_public_s3_buckets": {
+    "buckets": [
+      {
+        "bucket_name": "fixture-bucket-public",
+        "creation_date": "2026-08-01T00:00:00+00:00",
+        "public_access_block": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        },
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {}
+      }
+    ],
+    "count": 1
+  },
+  "066:find_publicly_accessible_databases": {
+    "public_databases": [],
+    "summary": {
+      "recommendation": "No publicly accessible databases found",
+      "severity": "OK",
+      "total_public_databases": 0
+    }
+  },
+  "067:find_security_group_rules": {
+    "count": 2,
+    "security_groups": [
+      {
+        "created_at": "<volatile>",
+        "description": "Fixture security group with open SSH ingress",
+        "egress_rules": [
+          {
+            "IpProtocol": "-1",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ]
+          }
+        ],
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "id": 1,
+        "ingress_rules": [
+          {
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "IpRanges": [
+              {
+                "CidrIp": "0.0.0.0/0"
+              }
+            ],
+            "ToPort": 22
+          }
+        ],
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_id": "vpc-fix-1"
+      },
+      {
+        "created_at": "<volatile>",
+        "description": "Fixture security group restricted to the VPC CIDR",
+        "egress_rules": [],
+        "group_id": "sg-fix-2",
+        "group_name": "fixture-sg-closed",
+        "id": 2,
+        "ingress_rules": [
+          {
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "IpRanges": [
+              {
+                "CidrIp": "10.0.0.0/16"
+              }
+            ],
+            "ToPort": 443
+          }
+        ],
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "vpc_id": "vpc-fix-2"
+      }
+    ]
+  },
+  "068:find_security_group_violations": {
+    "recommendations": [
+      "Remove 0.0.0.0/0 access from all sensitive ports",
+      "Use specific IP ranges or security group references instead",
+      "Implement a bastion host or VPN for SSH/RDP access",
+      "Place databases in private subnets with no direct internet access",
+      "Review and document all security group rules regularly",
+      "Use AWS Systems Manager Session Manager for EC2 access instead of SSH"
+    ],
+    "security_groups_with_violations": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "group_id": "sg-fix-1",
+        "group_name": "fixture-sg-open",
+        "region": "ap-southeast-2",
+        "violations": [
+          {
+            "cidr": "0.0.0.0/0",
+            "from_port": 22,
+            "port": 22,
+            "port_name": "SSH",
+            "protocol": "tcp",
+            "severity": "CRITICAL",
+            "to_port": 22
+          }
+        ],
+        "vpc_id": "vpc-fix-1"
+      }
+    ],
+    "summary": {
+      "critical_violations": 1,
+      "high_violations": 0,
+      "medium_violations": 0,
+      "security_groups_affected": 1,
+      "total_violations": 1
+    },
+    "violations_by_port": {
+      "22 (SSH)": [
+        {
+          "account_name": "Fixture Account",
+          "account_number": "123456789012",
+          "region": "ap-southeast-2",
+          "security_group": "fixture-sg-open (sg-fix-1)",
+          "vpc_id": "vpc-fix-1"
+        }
+      ]
+    }
+  },
+  "069:find_unused_resources": {
+    "summary": {
+      "categories": {},
+      "potential_monthly_savings": 0.0,
+      "total_unused": 0
+    },
+    "unused_resources": {}
+  },
+  "070:find_vpc_endpoint_opportunities": {
+    "endpoint_opportunities": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "ec2_instances": 1,
+        "ecs_services": 0,
+        "eks_clusters": 0,
+        "estimated_monthly_savings": 9.0,
+        "opportunities": {
+          "ecr": false,
+          "ecs": false,
+          "s3": true
+        },
+        "recommendations": [
+          "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
+        ],
+        "region": "ap-southeast-2",
+        "s3_buckets": 2,
+        "vpc_id": "vpc-fix-1"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "ec2_instances": 1,
+        "ecs_services": 0,
+        "eks_clusters": 0,
+        "estimated_monthly_savings": 9.0,
+        "opportunities": {
+          "ecr": false,
+          "ecs": false,
+          "s3": true
+        },
+        "recommendations": [
+          "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
+        ],
+        "region": "ap-southeast-2",
+        "s3_buckets": 2,
+        "vpc_id": "vpc-fix-2"
+      }
+    ],
+    "recommendations": [
+      "Create S3 Gateway Endpoints for all VPCs (free and eliminates NAT charges)",
+      "Create DynamoDB Gateway Endpoints where applicable (free)",
+      "Consider Interface Endpoints for high-traffic services (ECR, ECS, etc.)",
+      "Monitor VPC Flow Logs to identify high data transfer to AWS services",
+      "Use VPC Endpoint policies to control access",
+      "Implement VPC endpoints in infrastructure-as-code templates"
+    ],
+    "summary": {
+      "potential_monthly_savings": 18.0,
+      "total_vpcs": 3,
+      "vpcs_with_opportunities": 2
+    }
+  },
+  "071:get_auto_scaling_groups": {
+    "error": "scan_id parameter required"
+  },
+  "072:get_bedrock_resources": {
+    "error": "no such column: model_lifecycle_status"
+  },
+  "073:get_cost_by_service": {
+    "currency": "USD",
+    "service_count": 2,
+    "services": [
+      {
+        "account_count": 1,
+        "currency": "USD",
+        "earliest_period": "2026-07-01T00:00:00+00:00",
+        "latest_period": "2026-07-31T23:59:59+00:00",
+        "service_name": "Amazon Elastic Compute Cloud - Compute",
+        "total_cost": 150.25
+      },
+      {
+        "account_count": 1,
+        "currency": "USD",
+        "earliest_period": "2026-08-01T00:00:00+00:00",
+        "latest_period": "2026-08-31T23:59:59+00:00",
+        "service_name": "Amazon Simple Storage Service",
+        "total_cost": 45.1
+      }
+    ],
+    "total_cost": 195.35
+  },
+  "074:get_cost_comparison": {
+    "account_count": 1,
+    "accounts": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "currency": "USD",
+        "services": {
+          "Amazon Elastic Compute Cloud - Compute": 150.25,
+          "Amazon Simple Storage Service": 45.1
+        },
+        "total_cost": 195.35
+      }
+    ],
+    "currency": "USD",
+    "total_cost_all_accounts": 195.35
+  },
+  "075:get_cost_trends": {
+    "month_count": 2,
+    "trends": [
+      {
+        "accounts": {
+          "123456789012": {
+            "account_name": "Fixture Account",
+            "account_number": "123456789012",
+            "account_total": 45.1,
+            "services": {
+              "Amazon Simple Storage Service": 45.1
+            }
+          }
+        },
+        "currency": "USD",
+        "month": "2026-08",
+        "total_monthly_cost": 45.1
+      },
+      {
+        "accounts": {
+          "123456789012": {
+            "account_name": "Fixture Account",
+            "account_number": "123456789012",
+            "account_total": 150.25,
+            "services": {
+              "Amazon Elastic Compute Cloud - Compute": 150.25
+            }
+          }
+        },
+        "currency": "USD",
+        "month": "2026-07",
+        "total_monthly_cost": 150.25
+      }
+    ]
+  },
+  "076:get_directory_services": {
+    "directories": [],
+    "summary": {
+      "directories_by_size": {},
+      "directories_by_type": {},
+      "regions": [],
+      "sso_enabled_count": 0,
+      "total_directories": 0
+    }
+  },
+  "077:get_ec2_changes": {
+    "change_count": 0,
+    "changes": [],
+    "instance_history": {
+      "i-fixture-001": {
+        "instance_id": "i-fixture-001",
+        "instance_type": "t3.micro",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.0.1.10",
+            "public_ip": "203.0.113.10",
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": "subnet-fix-1",
+            "vpc_id": "vpc-fix-1"
+          }
+        ]
+      },
+      "i-fixture-002": {
+        "instance_id": "i-fixture-002",
+        "instance_type": "t3.small",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.1.1.10",
+            "public_ip": null,
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": "subnet-fix-2",
+            "vpc_id": "vpc-fix-2"
+          }
+        ]
+      },
+      "i-fixture-101": {
+        "instance_id": "i-fixture-101",
+        "instance_type": "t3.micro",
+        "region": "ap-southeast-2",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "private_ip": "10.2.1.10",
+            "public_ip": "203.0.113.20",
+            "scan_id": "scan-fixture-002",
+            "scan_timestamp": "2026-08-02T00:00:00+00:00",
+            "state": "running",
+            "subnet_id": null,
+            "vpc_id": "vpc-fix-3"
+          }
+        ]
+      }
+    }
+  },
+  "078:get_ec2_summary_by_account": {
+    "accounts": {
+      "Fixture Account": {
+        "account_number": "123456789012",
+        "instance_types": {
+          "t3.micro": {
+            "running": 1
+          }
+        },
+        "scan_id": "scan-fixture-002",
+        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+      }
+    }
+  },
+  "079:get_iam_users": {
+    "count": 2,
+    "users": [
+      {
+        "access_keys": [
+          {
+            "AccessKeyId": "AKIAFIXTURE001",
+            "CreateDate": "2026-08-01T00:00:00+00:00",
+            "Status": "Active"
+          }
+        ],
+        "arn": "arn:aws:iam::123456789012:user/fixture-user-no-mfa",
+        "attached_policies": [
+          "AdministratorAccess"
+        ],
+        "create_date": "2026-08-01T00:00:00+00:00",
+        "created_at": "<volatile>",
+        "groups": [],
+        "id": 1,
+        "mfa_enabled": 0,
+        "password_last_used": null,
+        "raw_data": "{}",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "user_id": "AIDAFIXTURE001",
+        "user_name": "fixture-user-no-mfa"
+      },
+      {
+        "access_keys": [],
+        "arn": "arn:aws:iam::123456789012:user/fixture-user-mfa",
+        "attached_policies": [
+          "ReadOnlyAccess"
+        ],
+        "create_date": "2026-08-01T00:00:00+00:00",
+        "created_at": "<volatile>",
+        "groups": [
+          "fixture-group"
+        ],
+        "id": 2,
+        "mfa_enabled": 1,
+        "password_last_used": null,
+        "raw_data": "{}",
+        "scan_id": "scan-fixture-001",
+        "tags": {},
+        "user_id": "AIDAFIXTURE002",
+        "user_name": "fixture-user-mfa"
+      }
+    ]
+  },
+  "080:get_internet_gateways": {
+    "error": "scan_id parameter required"
+  },
+  "081:get_lambda_summary": {
+    "count": 2,
+    "functions": [
+      {
+        "architectures": [],
+        "code_size": 1024,
+        "created_at": "<volatile>",
+        "environment_variables": {},
+        "function_arn": "arn:aws:lambda:ap-southeast-2:123456789012:function:fixture-lambda-1",
+        "function_name": "fixture-lambda-1",
+        "handler": "app.handler",
+        "id": 1,
+        "last_modified": "2026-08-01T00:00:00+00:00",
+        "layers": [],
+        "memory_size": 128,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "role_arn": "arn:aws:iam::123456789012:role/fixture-role",
+        "runtime": "python3.12",
+        "scan_id": "scan-fixture-001",
+        "state": "Active",
+        "tags": {},
+        "timeout": 30,
+        "triggers": [],
+        "vpc_config": {
+          "SecurityGroupIds": [
+            "sg-fix-1"
+          ],
+          "SubnetIds": [
+            "subnet-fix-1"
+          ],
+          "VpcId": "vpc-fix-1"
+        }
+      },
+      {
+        "architectures": [],
+        "code_size": 2048,
+        "created_at": "<volatile>",
+        "environment_variables": {},
+        "function_arn": "arn:aws:lambda:ap-southeast-2:123456789012:function:fixture-lambda-2",
+        "function_name": "fixture-lambda-2",
+        "handler": "app.handler",
+        "id": 2,
+        "last_modified": "2026-08-01T00:00:00+00:00",
+        "layers": [],
+        "memory_size": 256,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "role_arn": "arn:aws:iam::123456789012:role/fixture-role",
+        "runtime": "python3.12",
+        "scan_id": "scan-fixture-001",
+        "state": "Active",
+        "tags": {},
+        "timeout": 15,
+        "triggers": [],
+        "vpc_config": null
+      }
+    ],
+    "non_vpc_count": 1,
+    "vpc_integrated_count": 1
+  },
+  "082:get_load_balancers": {
+    "error": "scan_id parameter required"
+  },
+  "083:get_nat_gateways": {
+    "error": "scan_id parameter required"
+  },
+  "084:get_network_interfaces_with_public_ips": {
+    "error": "scan_id parameter required"
+  },
+  "085:get_organizations_cost_breakdown": {
+    "cost_summary": {
+      "currency": "USD",
+      "master_account_direct_costs": 195.35,
+      "total_all_accounts": 195.35,
+      "total_member_accounts": 0.0
+    },
+    "interpretation": {
+      "highest_cost_member_account": "N/A",
+      "member_account_count": 0,
+      "note": "In AWS Organizations with consolidated billing:\n- The master account pays for all member account usage\n- Cost data shown here reflects actual usage per account\n- Master account costs are its DIRECT costs only\n- Member account costs are their individual usage\n- When asking \"which account costs most?\", exclude the master account or look at member_accounts list to see actual usage by account"
+    },
+    "master_account_costs": {
+      "account_name": "Fixture Account",
+      "account_number": "123456789012",
+      "currency": "USD",
+      "note": "This is the master/payer account. Costs shown are DIRECT costs for resources in this account only, NOT consolidated costs from member accounts.",
+      "service_count": 2,
+      "total_cost": 195.35
+    },
+    "member_accounts": [],
+    "organization_info": {
+      "feature_set": "ALL",
+      "master_account_email": "fixture-master@example.com",
+      "master_account_id": "123456789012",
+      "organization_id": "o-fixture001"
+    }
+  },
+  "086:get_organizations_structure": {
+    "accounts": [
+      {
+        "account_arn": "arn:aws:organizations::123456789012:account/o-fixture001/123456789012",
+        "account_email": "fixture-master@example.com",
+        "account_id": "123456789012",
+        "account_name": "Fixture Master Account",
+        "joined_method": "INVITED",
+        "joined_timestamp": null,
+        "status": "ACTIVE"
+      },
+      {
+        "account_arn": "arn:aws:organizations::123456789012:account/o-fixture001/210987654321",
+        "account_email": "fixture-member@example.com",
+        "account_id": "210987654321",
+        "account_name": "Fixture Member Account",
+        "joined_method": "CREATED",
+        "joined_timestamp": null,
+        "status": "ACTIVE"
+      }
+    ],
+    "organizational_units": [],
+    "organizations": [
+      {
+        "available_policy_types": [
+          {
+            "Status": "ENABLED",
+            "Type": "SERVICE_CONTROL_POLICY"
+          }
+        ],
+        "feature_set": "ALL",
+        "master_account_email": "fixture-master@example.com",
+        "master_account_id": "123456789012",
+        "organization_arn": "arn:aws:organizations::123456789012:organization/o-fixture001",
+        "organization_id": "o-fixture001",
+        "scan_id": "scan-fixture-001"
+      }
+    ],
+    "summary": {
+      "feature_set": "ALL",
+      "total_accounts": 2,
+      "total_ous": 0
+    }
+  },
+  "087:get_prowler_findings": {
+    "count": 3,
+    "findings": [
+      {
+        "check_id": "fixture_check_high",
+        "check_title": "Fixture high severity check",
+        "check_type": "fixture_type",
+        "compliance_frameworks": [
+          "CIS_2.0"
+        ],
+        "created_at": "<volatile>",
+        "id": 1,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "remediation": null,
+        "resource_arn": "arn:aws:ec2:ap-southeast-2:123456789012:instance/i-fixture-001",
+        "resource_id": "i-fixture-001",
+        "resource_tags": {},
+        "risk": null,
+        "scan_id": "scan-fixture-001",
+        "service_name": "ec2",
+        "severity": "high",
+        "status": "FAIL",
+        "status_extended": null
+      },
+      {
+        "check_id": "fixture_check_medium",
+        "check_title": "Fixture medium severity check",
+        "check_type": "fixture_type",
+        "compliance_frameworks": [
+          "CIS_2.0",
+          "PCI-DSS"
+        ],
+        "created_at": "<volatile>",
+        "id": 2,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "remediation": null,
+        "resource_arn": "arn:aws:s3:::fixture-bucket-public",
+        "resource_id": "fixture-bucket-public",
+        "resource_tags": {},
+        "risk": null,
+        "scan_id": "scan-fixture-001",
+        "service_name": "s3",
+        "severity": "medium",
+        "status": "FAIL",
+        "status_extended": null
+      },
+      {
+        "check_id": "fixture_check_low",
+        "check_title": "Fixture low severity check",
+        "check_type": "fixture_type",
+        "compliance_frameworks": [],
+        "created_at": "<volatile>",
+        "id": 3,
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "remediation": null,
+        "resource_arn": "arn:aws:iam::123456789012:user/fixture-user-mfa",
+        "resource_id": "fixture-user-mfa",
+        "resource_tags": {},
+        "risk": null,
+        "scan_id": "scan-fixture-001",
+        "service_name": "iam",
+        "severity": "low",
+        "status": "PASS",
+        "status_extended": null
+      }
+    ],
+    "pagination": {
+      "has_more": false,
+      "limit": 100,
+      "offset": 0,
+      "returned_count": 0,
+      "total_count": 3
+    },
+    "summary": {
+      "actionable_insights": [
+        "\u26a0\ufe0f  1 HIGH severity finding should be addressed soon",
+        "\u2713 Security posture: 33.3% of checks passing (1/3)",
+        "\ud83d\udcca Top concern: s3 service has 1 failing check"
+      ],
+      "compliance_frameworks": [
+        {
+          "fail_count": 2,
+          "framework": "CIS_2.0"
+        },
+        {
+          "fail_count": 1,
+          "framework": "PCI-DSS"
+        }
+      ],
+      "severity_breakdown": {
+        "critical": 0,
+        "high": 1,
+        "informational": 0,
+        "low": 1,
+        "medium": 1
+      },
+      "status_breakdown": {
+        "FAIL": 2,
+        "PASS": 1
+      },
+      "top_failing_check_types": [
+        {
+          "check_type": "fixture_type",
+          "fail_count": 2
+        }
+      ],
+      "top_failing_services": [
+        {
+          "fail_count": 1,
+          "service": "s3"
+        },
+        {
+          "fail_count": 1,
+          "service": "ec2"
+        }
+      ],
+      "total_findings": 3
+    }
+  },
+  "088:get_route53_changes": {
+    "change_count": 0,
+    "changes": [],
+    "zone_history": {
+      "Z-FIXTURE001": {
+        "hosted_zone_id": "Z-FIXTURE001",
+        "name": "fixture.example.com.",
+        "scans": [
+          {
+            "account_name": "Fixture Account",
+            "is_private": false,
+            "record_count": 2,
+            "scan_id": "scan-fixture-001",
+            "scan_timestamp": "2026-08-01T00:00:00+00:00"
+          }
+        ]
+      }
+    }
+  },
+  "089:get_route53_records": {
+    "error": "hosted_zone_id parameter required"
+  },
+  "090:get_route53_zones": {
+    "accounts": {
+      "Fixture Account": {
+        "account_number": "123456789012",
+        "hosted_zones": [
+          {
+            "hosted_zone_id": "Z-FIXTURE001",
+            "is_private": false,
+            "name": "fixture.example.com.",
+            "resource_record_set_count": 2,
+            "tags": {}
+          }
+        ],
+        "private_zones": 0,
+        "public_zones": 1,
+        "zone_count": 1
+      }
+    }
+  },
+  "091:get_route_tables": {
+    "error": "scan_id parameter required"
+  },
+  "092:get_s3_lifecycle_policies": {
+    "buckets": [
+      {
+        "bucket_name": "fixture-bucket-public",
+        "created_at": "<volatile>",
+        "creation_date": "2026-08-01T00:00:00+00:00",
+        "encryption_config": null,
+        "id": 1,
+        "lifecycle_rules": [
+          {
+            "Expiration": {
+              "Days": 90
+            },
+            "ID": "fixture-rule",
+            "Status": "Enabled"
+          }
+        ],
+        "lifecycle_summary": [
+          {
+            "expiration": {
+              "Days": 90
+            },
+            "id": "fixture-rule",
+            "status": "Enabled",
+            "transitions": []
+          }
+        ],
+        "logging_enabled": 0,
+        "object_count": 5,
+        "public_access_block": "{\"BlockPublicAcls\": false, \"IgnorePublicAcls\": false, \"BlockPublicPolicy\": false, \"RestrictPublicBuckets\": false}",
+        "raw_data": "{}",
+        "region": "ap-southeast-2",
+        "scan_id": "scan-fixture-001",
+        "size_bytes": 1024,
+        "tags": {},
+        "versioning_status": "Enabled"
+      }
+    ],
+    "count": 1
+  },
+  "093:get_scan_summary": {
+    "error": "scan_id parameter required"
+  },
+  "094:get_security_assessment_data": {
+    "categories": {
+      "data_protection": [
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_ebs_volumes",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no EBS volumes in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable EBS encryption; migrate data to encrypted volumes",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_ebs_snapshots",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no EBS snapshots in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Copy snapshots with encryption enabled and remove the plaintext originals",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.unencrypted_rds_instances",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no RDS instances in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Restore to an encrypted instance from a snapshot; encryption cannot be enabled in place",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.s3_public_buckets",
+          "default_severity": "critical",
+          "findings": [],
+          "not_applicable_reason": "no S3 buckets in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Apply a Public Access Block and remove public bucket policies unless deliberately published",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.s3_buckets_without_pab",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": "no S3 buckets in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable all four Public Access Block settings on every bucket",
+          "status": "not_applicable"
+        },
+        {
+          "category": "data_protection",
+          "check_id": "data.kms_rotation_disabled",
+          "default_severity": "low",
+          "findings": [],
+          "not_applicable_reason": "no KMS keys in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Enable annual automatic rotation on customer-managed keys",
+          "status": "not_applicable"
+        }
+      ],
+      "identity_access": [
+        {
+          "category": "identity_access",
+          "check_id": "identity.admin_wildcard_policies",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no IAM policies in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Replace wildcard policies with least-privilege statements",
+          "status": "not_applicable"
+        },
+        {
+          "category": "identity_access",
+          "check_id": "identity.administrator_access_attached",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": "no IAM policies in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Limit AdministratorAccess to break-glass roles; use scoped policies day to day",
+          "status": "not_applicable"
+        }
+      ],
+      "logging_monitoring": [
+        {
+          "category": "logging_monitoring",
+          "check_id": "logging.config_recorder_missing",
+          "default_severity": "medium",
+          "findings": [
+            {
+              "evidence": {
+                "config_recorders": 0
+              },
+              "region": null,
+              "resource_id": "account",
+              "resource_type": "config"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Enable AWS Config recording for configuration history and drift detection",
+          "status": "findings"
+        }
+      ],
+      "network_exposure": [
+        {
+          "category": "network_exposure",
+          "check_id": "network.sg_world_open_sensitive_ports",
+          "default_severity": "critical",
+          "findings": [],
+          "not_applicable_reason": "no security groups in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Restrict sensitive ports to known CIDRs, a VPN or SSM Session Manager",
+          "status": "not_applicable"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.sg_world_open_all_traffic",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no security groups in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Replace all-traffic rules with specific protocol and port rules",
+          "status": "not_applicable"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.default_sg_with_rules",
+          "default_severity": "medium",
+          "findings": [],
+          "not_applicable_reason": "no security groups in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Remove all rules from default security groups; use purpose-built groups",
+          "status": "not_applicable"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.subnets_auto_assign_public_ip",
+          "default_severity": "low",
+          "findings": [],
+          "not_applicable_reason": "no subnets in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Disable automatic public IP assignment; assign public IPs deliberately",
+          "status": "not_applicable"
+        },
+        {
+          "category": "network_exposure",
+          "check_id": "network.vpcs_without_flow_logs",
+          "default_severity": "medium",
+          "findings": [
+            {
+              "evidence": {
+                "cidr_block": "10.2.0.0/16",
+                "flow_logs": false
+              },
+              "region": "ap-southeast-2",
+              "resource_id": "vpc-fix-3",
+              "resource_type": "vpc"
+            }
+          ],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Enable VPC Flow Logs for traffic visibility and incident response",
+          "status": "findings"
+        }
+      ],
+      "service_exposure": [
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.ec2_public_instances",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": null,
+          "not_evaluated_reason": null,
+          "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+          "status": "clean"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.lambda_public_functions",
+          "default_severity": "high",
+          "findings": [],
+          "not_applicable_reason": "no Lambda functions in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+          "status": "not_applicable"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.database_exposure",
+          "default_severity": "critical",
+          "findings": [],
+          "not_applicable_reason": "no RDS, OpenSearch or ElastiCache resources in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+          "status": "not_applicable"
+        },
+        {
+          "category": "service_exposure",
+          "check_id": "exposure.public_entry_points",
+          "default_severity": "informational",
+          "findings": [],
+          "not_applicable_reason": "no load balancers, API Gateway stages or CloudFront distributions in this account (scanned, none found)",
+          "not_evaluated_reason": null,
+          "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+          "status": "not_applicable"
+        }
+      ]
+    },
+    "not_evaluated": [
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_mfa_disabled",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Enable a hardware or virtual MFA device on the root user immediately",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_access_keys_present",
+        "default_severity": "critical",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report and account summary unavailable",
+        "recommendation": "Delete root access keys; use IAM roles or users for programmatic access",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.password_policy_missing_or_weak",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Configure an account password policy with minimum length 14, complexity and reuse prevention",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.console_users_without_mfa",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Enable MFA for every user with console access",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.stale_access_keys",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Rotate access keys at least every 90 days, or replace with short-lived credentials",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.inactive_users",
+        "default_severity": "low",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "credential report not collected",
+        "recommendation": "Disable or remove credentials for users no longer in active use",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.account_pab_missing",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "account security posture not collected",
+        "recommendation": "Enable the account-level Public Access Block in S3 settings",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.ebs_default_encryption_off",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region_security_services not collected",
+        "recommendation": "Enable EBS encryption by default in every active region",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.no_multi_region_cloudtrail",
+        "default_severity": "high",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "CloudTrail trails not collected",
+        "recommendation": "Create a multi-region trail with log file validation enabled",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.guardduty_not_enabled",
+        "default_severity": "medium",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region security services not collected",
+        "recommendation": "Enable GuardDuty in every active region, ideally via the organisation",
+        "status": "not_evaluated"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.security_hub_not_enabled",
+        "default_severity": "low",
+        "findings": [],
+        "not_applicable_reason": null,
+        "not_evaluated_reason": "region security services not collected",
+        "recommendation": "Enable Security Hub for consolidated findings and standards checks",
+        "status": "not_evaluated"
+      }
+    ],
+    "prowler": {
+      "available": false,
+      "detail_tool": "get_prowler_findings",
+      "failed_by_severity": {}
+    },
+    "scan_id": "scan-fixture-002",
+    "scoring_note": "Severities are advisory facts. Scoring, weighting and report structure are the responsibility of the MCP client."
+  },
+  "095:get_security_check_catalogue": {
+    "checks": [
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_mfa_disabled",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "critical",
+        "detects": "The account root user has no MFA device enabled",
+        "recommendation": "Enable a hardware or virtual MFA device on the root user immediately",
+        "title": "Root account MFA disabled"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.root_access_keys_present",
+        "data_dependencies": [
+          "iam_credential_report",
+          "account_security_posture"
+        ],
+        "default_severity": "critical",
+        "detects": "The root user has active long-lived access keys",
+        "recommendation": "Delete root access keys; use IAM roles or users for programmatic access",
+        "title": "Root account access keys present"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.password_policy_missing_or_weak",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "high",
+        "detects": "No IAM account password policy, or minimum length below 14",
+        "recommendation": "Configure an account password policy with minimum length 14, complexity and reuse prevention",
+        "title": "Password policy missing or weak"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.console_users_without_mfa",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "high",
+        "detects": "IAM users with console passwords but no active MFA device",
+        "recommendation": "Enable MFA for every user with console access",
+        "title": "Console users without MFA"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.stale_access_keys",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "medium",
+        "detects": "Active access keys not rotated in over 90 days",
+        "recommendation": "Rotate access keys at least every 90 days, or replace with short-lived credentials",
+        "title": "Access keys not rotated"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.inactive_users",
+        "data_dependencies": [
+          "iam_credential_report"
+        ],
+        "default_severity": "low",
+        "detects": "Users with no password or access key activity in over 90 days",
+        "recommendation": "Disable or remove credentials for users no longer in active use",
+        "title": "Inactive IAM users"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.admin_wildcard_policies",
+        "data_dependencies": [
+          "iam_policies"
+        ],
+        "default_severity": "high",
+        "detects": "Customer-managed policies with Effect Allow, Action * and Resource *",
+        "recommendation": "Replace wildcard policies with least-privilege statements",
+        "title": "Policies allowing all actions on all resources"
+      },
+      {
+        "category": "identity_access",
+        "check_id": "identity.administrator_access_attached",
+        "data_dependencies": [
+          "iam_policies"
+        ],
+        "default_severity": "medium",
+        "detects": "The AWS managed AdministratorAccess policy is attached to users, roles or groups",
+        "recommendation": "Limit AdministratorAccess to break-glass roles; use scoped policies day to day",
+        "title": "AdministratorAccess policy attached"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.sg_world_open_sensitive_ports",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "critical",
+        "detects": "Ingress rules from 0.0.0.0/0 or ::/0 reaching SSH, RDP, database or search ports",
+        "recommendation": "Restrict sensitive ports to known CIDRs, a VPN or SSM Session Manager",
+        "title": "Security groups open to the internet on sensitive ports"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.sg_world_open_all_traffic",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "high",
+        "detects": "Ingress rules allowing all protocols from 0.0.0.0/0 or ::/0",
+        "recommendation": "Replace all-traffic rules with specific protocol and port rules",
+        "title": "Security groups open to the internet for all traffic"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.default_sg_with_rules",
+        "data_dependencies": [
+          "security_groups"
+        ],
+        "default_severity": "medium",
+        "detects": "Default security groups with any ingress rules configured",
+        "recommendation": "Remove all rules from default security groups; use purpose-built groups",
+        "title": "Default security groups containing rules"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.subnets_auto_assign_public_ip",
+        "data_dependencies": [
+          "subnets"
+        ],
+        "default_severity": "low",
+        "detects": "Subnets with MapPublicIpOnLaunch enabled",
+        "recommendation": "Disable automatic public IP assignment; assign public IPs deliberately",
+        "title": "Subnets auto-assigning public IPs"
+      },
+      {
+        "category": "network_exposure",
+        "check_id": "network.vpcs_without_flow_logs",
+        "data_dependencies": [
+          "vpcs",
+          "vpc_flow_logs"
+        ],
+        "default_severity": "medium",
+        "detects": "VPCs with no VPC Flow Log attached",
+        "recommendation": "Enable VPC Flow Logs for traffic visibility and incident response",
+        "title": "VPCs without flow logs"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_ebs_volumes",
+        "data_dependencies": [
+          "ebs_volumes"
+        ],
+        "default_severity": "high",
+        "detects": "EBS volumes without encryption at rest",
+        "recommendation": "Enable EBS encryption; migrate data to encrypted volumes",
+        "title": "Unencrypted EBS volumes"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_ebs_snapshots",
+        "data_dependencies": [
+          "ebs_snapshots"
+        ],
+        "default_severity": "high",
+        "detects": "EBS snapshots without encryption at rest",
+        "recommendation": "Copy snapshots with encryption enabled and remove the plaintext originals",
+        "title": "Unencrypted EBS snapshots"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.unencrypted_rds_instances",
+        "data_dependencies": [
+          "rds_instances"
+        ],
+        "default_severity": "high",
+        "detects": "RDS instances without storage encryption",
+        "recommendation": "Restore to an encrypted instance from a snapshot; encryption cannot be enabled in place",
+        "title": "Unencrypted RDS instances"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.s3_public_buckets",
+        "data_dependencies": [
+          "s3_public_access"
+        ],
+        "default_severity": "critical",
+        "detects": "Buckets whose policy status reports IsPublic",
+        "recommendation": "Apply a Public Access Block and remove public bucket policies unless deliberately published",
+        "title": "Publicly accessible S3 buckets"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.s3_buckets_without_pab",
+        "data_dependencies": [
+          "s3_public_access"
+        ],
+        "default_severity": "medium",
+        "detects": "Buckets with no bucket-level Public Access Block configuration",
+        "recommendation": "Enable all four Public Access Block settings on every bucket",
+        "title": "S3 buckets without a Public Access Block"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.account_pab_missing",
+        "data_dependencies": [
+          "account_security_posture"
+        ],
+        "default_severity": "high",
+        "detects": "No account-wide S3 Public Access Block configuration",
+        "recommendation": "Enable the account-level Public Access Block in S3 settings",
+        "title": "Account-level S3 Public Access Block missing"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.kms_rotation_disabled",
+        "data_dependencies": [
+          "kms_keys"
+        ],
+        "default_severity": "low",
+        "detects": "Enabled customer-managed KMS keys with rotation disabled",
+        "recommendation": "Enable annual automatic rotation on customer-managed keys",
+        "title": "Customer KMS keys without rotation"
+      },
+      {
+        "category": "data_protection",
+        "check_id": "data.ebs_default_encryption_off",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "medium",
+        "detects": "Regions where new EBS volumes are not encrypted by default",
+        "recommendation": "Enable EBS encryption by default in every active region",
+        "title": "EBS encryption by default disabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.no_multi_region_cloudtrail",
+        "data_dependencies": [
+          "cloudtrail_trails"
+        ],
+        "default_severity": "high",
+        "detects": "No logging multi-region CloudTrail trail exists",
+        "recommendation": "Create a multi-region trail with log file validation enabled",
+        "title": "No multi-region CloudTrail"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.guardduty_not_enabled",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "medium",
+        "detects": "Regions where GuardDuty has no enabled detector",
+        "recommendation": "Enable GuardDuty in every active region, ideally via the organisation",
+        "title": "GuardDuty not enabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.security_hub_not_enabled",
+        "data_dependencies": [
+          "region_security_services"
+        ],
+        "default_severity": "low",
+        "detects": "Regions where Security Hub is not enabled",
+        "recommendation": "Enable Security Hub for consolidated findings and standards checks",
+        "title": "Security Hub not enabled"
+      },
+      {
+        "category": "logging_monitoring",
+        "check_id": "logging.config_recorder_missing",
+        "data_dependencies": [
+          "config_recorders"
+        ],
+        "default_severity": "medium",
+        "detects": "No recording AWS Config recorder in the account",
+        "recommendation": "Enable AWS Config recording for configuration history and drift detection",
+        "title": "AWS Config recorder missing or stopped"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.ec2_public_instances",
+        "data_dependencies": [
+          "ec2_instances",
+          "security_groups"
+        ],
+        "default_severity": "high",
+        "detects": "Running instances with public IPs whose attached security groups admit internet traffic",
+        "recommendation": "Remove public IPs where possible; restrict security group ingress to known sources",
+        "title": "EC2 instances reachable from the internet"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.lambda_public_functions",
+        "data_dependencies": [
+          "lambda_exposure"
+        ],
+        "default_severity": "high",
+        "detects": "Function URLs with auth type NONE, or resource policies granting a * principal without conditions",
+        "recommendation": "Require AWS_IAM auth on function URLs; scope resource policies to known principals or add source conditions",
+        "title": "Publicly invokable Lambda functions"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.database_exposure",
+        "data_dependencies": [
+          "rds_instances",
+          "opensearch_domains",
+          "elasticache_clusters",
+          "security_groups"
+        ],
+        "default_severity": "critical",
+        "detects": "Publicly accessible RDS instances (worse when their port is world-open), OpenSearch domains outside a VPC, and ElastiCache clusters behind world-open security groups",
+        "recommendation": "Disable public accessibility, move data stores into private subnets and restrict their security groups",
+        "title": "Databases and data stores exposed to the internet"
+      },
+      {
+        "category": "service_exposure",
+        "check_id": "exposure.public_entry_points",
+        "data_dependencies": [
+          "load_balancers",
+          "api_gateway_stages",
+          "cloudfront_distributions"
+        ],
+        "default_severity": "informational",
+        "detects": "The account's internet-facing surface: internet-facing load balancers, API Gateway stages and enabled CloudFront distributions",
+        "recommendation": "Review each entry point; confirm it is intended, authenticated and fronted by WAF where appropriate",
+        "title": "Public entry point inventory"
+      }
+    ],
+    "count": 29
+  },
+  "096:get_sso_permissions": {
+    "assignments": [],
+    "permission_sets": [],
+    "summary": {
+      "accounts_with_assignments": [],
+      "total_accounts_with_assignments": 0,
+      "total_assignments": 0,
+      "total_permission_sets": 0
+    }
+  },
+  "097:get_total_cost": {
+    "account_count": 1,
+    "accounts": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "currency": "USD",
+        "earliest_period": "2026-07-01T00:00:00+00:00",
+        "is_master_payer_account": true,
+        "latest_period": "2026-08-31T23:59:59+00:00",
+        "note": "Master payer account in AWS Organizations - costs shown here are direct costs for this account only. Member account costs are shown separately.",
+        "service_count": 2,
+        "total_cost": 195.35
+      }
+    ],
+    "aws_organizations_info": {
+      "has_organizations": true,
+      "master_payer_accounts": 1,
+      "note": "This AWS environment uses AWS Organizations with consolidated billing. The master payer account costs shown are direct costs only, not including member account costs which are listed separately.",
+      "total_member_account_costs": 0.0
+    },
+    "currency": "USD",
+    "total_cost_all_accounts": 195.35
+  },
+  "098:get_vpc_architecture": {
+    "error": "vpc_id parameter required"
+  },
+  "099:get_vpc_flow_log_coverage": {
+    "error": "scan_id parameter required"
+  },
+  "100:get_vpc_topology_detailed": {
+    "error": "vpc_id parameter required"
+  },
+  "101:get_workspaces_summary": {
+    "summary": {}
+  },
+  "102:list_scans": {
+    "count": 2,
+    "scans": [
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "prowler_level": "2",
+        "scan_duration_seconds": 95.0,
+        "scan_id": "scan-fixture-002",
+        "scan_status": "completed",
+        "scan_timestamp": "2026-08-02T00:00:00+00:00"
+      },
+      {
+        "account_name": "Fixture Account",
+        "account_number": "123456789012",
+        "prowler_level": "2",
+        "scan_duration_seconds": 120.5,
+        "scan_id": "scan-fixture-001",
+        "scan_status": "completed",
+        "scan_timestamp": "2026-08-01T00:00:00+00:00"
+      }
+    ]
+  },
+  "103:search_by_ip": {
+    "error": "Either ip_address or cidr_range parameter required"
+  }
+}

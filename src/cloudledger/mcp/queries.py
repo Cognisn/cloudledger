@@ -8,10 +8,61 @@ Uses Australian English in all documentation and comments.
 import json
 import logging
 from typing import Any, Dict
-import sqlite3
 import ipaddress
 
+import sqlalchemy as sa
+
 from ..database.operations import DatabaseOperations
+from ..database.tables import (
+    t_auto_scaling_groups,
+    t_bedrock_agents,
+    t_bedrock_guardrails,
+    t_bedrock_knowledge_bases,
+    t_cloudwatch_log_groups,
+    t_config_recorders,
+    t_config_rules,
+    t_cost_data,
+    t_direct_connect_connections,
+    t_directory_services,
+    t_ebs_snapshots,
+    t_ebs_volumes,
+    t_ec2_instances,
+    t_ecr_repositories,
+    t_ecs_clusters,
+    t_ecs_services,
+    t_eks_clusters,
+    t_elastic_ips,
+    t_elasticache_clusters,
+    t_iam_policies,
+    t_iam_roles,
+    t_iam_users,
+    t_internet_gateways,
+    t_lambda_functions,
+    t_load_balancers,
+    t_msk_clusters,
+    t_nat_gateways,
+    t_network_interfaces,
+    t_opensearch_domains,
+    t_organization_accounts,
+    t_organizational_units,
+    t_organizations,
+    t_prowler_findings,
+    t_rds_instances,
+    t_route53_hosted_zones,
+    t_route53_record_sets,
+    t_route_tables,
+    t_s3_buckets,
+    t_scan_metadata,
+    t_security_groups,
+    t_sso_assignments,
+    t_sso_permission_sets,
+    t_subnets,
+    t_transit_gateways,
+    t_vpc_flow_logs,
+    t_vpcs,
+    t_vpn_connections,
+    t_workspaces,
+)
 from ..assessment import get_catalogue, run_checks as run_assessment_checks
 from ..assessment.exposure import run_exposure
 
@@ -56,9 +107,11 @@ class QueryHandler:
 
         return limit, offset
 
-    def _build_limit_clause(self, limit: int, offset: int) -> str:
-        """Build SQL LIMIT/OFFSET clause."""
-        return f"LIMIT {limit} OFFSET {offset}"
+    def _build_limit_clause(
+        self, stmt: sa.Select, limit: int, offset: int
+    ) -> sa.Select:
+        """Apply LIMIT/OFFSET to a Core select statement."""
+        return stmt.limit(limit).offset(offset)
 
     def _add_pagination_info(
         self, results: Dict[str, Any], total_count: int, limit: int, offset: int
@@ -184,31 +237,19 @@ class QueryHandler:
         """List all scans or scans for a specific account."""
         account_number = params.get("account_number")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
+        stmt = sa.select(
+            t_scan_metadata.c.scan_id,
+            t_scan_metadata.c.account_name,
+            t_scan_metadata.c.account_number,
+            t_scan_metadata.c.scan_timestamp,
+            t_scan_metadata.c.prowler_level,
+            t_scan_metadata.c.scan_status,
+            t_scan_metadata.c.scan_duration_seconds,
+        ).order_by(t_scan_metadata.c.scan_timestamp.desc())
         if account_number:
-            cursor.execute(
-                """
-                SELECT scan_id, account_name, account_number, scan_timestamp,
-                       prowler_level, scan_status, scan_duration_seconds
-                FROM scan_metadata
-                WHERE account_number = ?
-                ORDER BY scan_timestamp DESC
-            """,
-                (account_number,),
-            )
-        else:
-            cursor.execute("""
-                SELECT scan_id, account_name, account_number, scan_timestamp,
-                       prowler_level, scan_status, scan_duration_seconds
-                FROM scan_metadata
-                ORDER BY scan_timestamp DESC
-            """)
-
-        scans = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-
+            stmt = stmt.where(t_scan_metadata.c.account_number == account_number)
+        with self.db_ops.engine.connect() as conn:
+            scans = [dict(row._mapping) for row in conn.execute(stmt)]
         return {"scans": scans, "count": len(scans)}
 
     def _get_scan_summary(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -218,85 +259,81 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        # Get scan metadata
-        cursor.execute("SELECT * FROM scan_metadata WHERE scan_id = ?", (scan_id,))
-        scan_info = cursor.fetchone()
-
-        if not scan_info:
-            conn.close()
-            return {"error": f"Scan not found: {scan_id}"}
-
         # Count resources by type
-        resource_counts = {}
-        tables = [
-            "ec2_instances",
-            "vpcs",
-            "subnets",
-            "security_groups",
-            "s3_buckets",
-            "iam_users",
-            "iam_roles",
-            "route53_hosted_zones",
-            "route53_record_sets",
-            "prowler_findings",
-        ]
+        resource_tables = {
+            "ec2_instances": t_ec2_instances,
+            "vpcs": t_vpcs,
+            "subnets": t_subnets,
+            "security_groups": t_security_groups,
+            "s3_buckets": t_s3_buckets,
+            "iam_users": t_iam_users,
+            "iam_roles": t_iam_roles,
+            "route53_hosted_zones": t_route53_hosted_zones,
+            "route53_record_sets": t_route53_record_sets,
+            "prowler_findings": t_prowler_findings,
+        }
 
-        for table in tables:
-            cursor.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE scan_id = ?", (scan_id,)
-            )
-            count = cursor.fetchone()[0]
-            resource_counts[table] = count
+        with self.db_ops.engine.connect() as conn:
+            # Get scan metadata
+            scan_info = conn.execute(
+                sa.select(t_scan_metadata).where(t_scan_metadata.c.scan_id == scan_id)
+            ).fetchone()
 
-        conn.close()
+            if not scan_info:
+                return {"error": f"Scan not found: {scan_id}"}
 
-        return {"scan_info": dict(scan_info), "resource_counts": resource_counts}
+            resource_counts = {}
+            for table_name, table in resource_tables.items():
+                count_stmt = (
+                    sa.select(sa.func.count())
+                    .select_from(table)
+                    .where(table.c.scan_id == scan_id)
+                )
+                resource_counts[table_name] = conn.execute(count_stmt).scalar()
+
+        return {
+            "scan_info": dict(scan_info._mapping),
+            "resource_counts": resource_counts,
+        }
 
     def _find_public_s3_buckets(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Find S3 buckets that may be publicly accessible."""
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = """
-            SELECT bucket_name, region, creation_date, public_access_block,
-                   scan_id, tags
-            FROM s3_buckets
-        """
+        stmt = sa.select(
+            t_s3_buckets.c.bucket_name,
+            t_s3_buckets.c.region,
+            t_s3_buckets.c.creation_date,
+            t_s3_buckets.c.public_access_block,
+            t_s3_buckets.c.scan_id,
+            t_s3_buckets.c.tags,
+        )
 
         if scan_id:
-            query += " WHERE scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            stmt = stmt.where(t_s3_buckets.c.scan_id == scan_id)
 
         buckets = []
-        for row in cursor.fetchall():
-            bucket = dict(row)
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                bucket = dict(row._mapping)
 
-            # Parse public_access_block
-            pab = json.loads(bucket.get("public_access_block") or "{}")
+                # Parse public_access_block
+                pab = json.loads(bucket.get("public_access_block") or "{}")
 
-            # Check if potentially public
-            is_potentially_public = not all(
-                [
-                    pab.get("BlockPublicAcls", False),
-                    pab.get("IgnorePublicAcls", False),
-                    pab.get("BlockPublicPolicy", False),
-                    pab.get("RestrictPublicBuckets", False),
-                ]
-            )
+                # Check if potentially public
+                is_potentially_public = not all(
+                    [
+                        pab.get("BlockPublicAcls", False),
+                        pab.get("IgnorePublicAcls", False),
+                        pab.get("BlockPublicPolicy", False),
+                        pab.get("RestrictPublicBuckets", False),
+                    ]
+                )
 
-            if is_potentially_public:
-                bucket["public_access_block"] = pab
-                bucket["tags"] = json.loads(bucket.get("tags") or "{}")
-                buckets.append(bucket)
-
-        conn.close()
+                if is_potentially_public:
+                    bucket["public_access_block"] = pab
+                    bucket["tags"] = json.loads(bucket.get("tags") or "{}")
+                    buckets.append(bucket)
 
         return {"buckets": buckets, "count": len(buckets)}
 
@@ -312,75 +349,75 @@ class QueryHandler:
         limit, offset = self._apply_pagination(params)
         summary_mode = self._is_summary_mode(params)
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         conditions = []
-        query_params = []
 
         # Add IP type filter
         if ip_type == "public":
-            conditions.append("public_ip IS NOT NULL")
+            conditions.append(t_ec2_instances.c.public_ip.isnot(None))
         elif ip_type == "private":
-            conditions.append("public_ip IS NULL AND private_ip IS NOT NULL")
+            conditions.append(
+                sa.and_(
+                    t_ec2_instances.c.public_ip.is_(None),
+                    t_ec2_instances.c.private_ip.isnot(None),
+                )
+            )
         # 'all' means no IP filter
 
         if scan_id:
-            conditions.append("scan_id = ?")
-            query_params.append(scan_id)
+            conditions.append(t_ec2_instances.c.scan_id == scan_id)
 
         if region:
-            conditions.append("region = ?")
-            query_params.append(region)
+            conditions.append(t_ec2_instances.c.region == region)
 
-        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+        with self.db_ops.engine.connect() as conn:
+            # Get total count first
+            count_stmt = sa.select(sa.func.count()).select_from(t_ec2_instances)
+            if conditions:
+                count_stmt = count_stmt.where(*conditions)
+            total_count = conn.execute(count_stmt).scalar()
 
-        # Get total count first
-        count_query = f"SELECT COUNT(*) FROM ec2_instances{where_clause}"
-        cursor.execute(count_query, tuple(query_params))
-        total_count = cursor.fetchone()[0]
+            # In summary mode, return only counts and aggregates
+            if summary_mode:
+                summary_stmt = (
+                    sa.select(t_ec2_instances.c.region, sa.func.count().label("count"))
+                    .select_from(t_ec2_instances)
+                    .group_by(t_ec2_instances.c.region)
+                )
+                if conditions:
+                    summary_stmt = summary_stmt.where(*conditions)
 
-        # In summary mode, return only counts and aggregates
-        if summary_mode:
-            cursor.execute(
-                f"""
-                SELECT region, COUNT(*) as count
-                FROM ec2_instances{where_clause}
-                GROUP BY region
-            """,
-                tuple(query_params),
-            )
+                summary = {
+                    "total_instances": total_count,
+                    "by_region": {row[0]: row[1] for row in conn.execute(summary_stmt)},
+                }
+                return {"summary": summary, "mode": "summary"}
 
-            summary = {
-                "total_instances": total_count,
-                "by_region": {row[0]: row[1] for row in cursor.fetchall()},
-            }
-            conn.close()
-            return {"summary": summary, "mode": "summary"}
+            # Full query with pagination
+            stmt = sa.select(
+                t_ec2_instances.c.instance_id,
+                t_ec2_instances.c.public_ip,
+                t_ec2_instances.c.private_ip,
+                t_ec2_instances.c.instance_type,
+                t_ec2_instances.c.state,
+                t_ec2_instances.c.region,
+                t_ec2_instances.c.vpc_id,
+                t_ec2_instances.c.subnet_id,
+                t_ec2_instances.c.security_groups,
+                t_ec2_instances.c.tags,
+                t_ec2_instances.c.scan_id,
+            ).order_by(t_ec2_instances.c.instance_id)
+            if conditions:
+                stmt = stmt.where(*conditions)
+            stmt = self._build_limit_clause(stmt, limit, offset)
 
-        # Full query with pagination
-        query = f"""
-            SELECT instance_id, public_ip, private_ip, instance_type,
-                   state, region, vpc_id, subnet_id, security_groups,
-                   tags, scan_id
-            FROM ec2_instances
-            {where_clause}
-            ORDER BY instance_id
-            {self._build_limit_clause(limit, offset)}
-        """
-
-        cursor.execute(query, tuple(query_params))
-
-        instances = []
-        for row in cursor.fetchall():
-            instance = dict(row)
-            instance["security_groups"] = json.loads(
-                instance.get("security_groups") or "[]"
-            )
-            instance["tags"] = json.loads(instance.get("tags") or "{}")
-            instances.append(instance)
-
-        conn.close()
+            instances = []
+            for row in conn.execute(stmt):
+                instance = dict(row._mapping)
+                instance["security_groups"] = json.loads(
+                    instance.get("security_groups") or "[]"
+                )
+                instance["tags"] = json.loads(instance.get("tags") or "{}")
+                instances.append(instance)
 
         results = {"instances": instances, "count": len(instances)}
 
@@ -394,39 +431,32 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         allow_all_ingress = params.get("allow_all_ingress", False)
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM security_groups"
+        stmt = sa.select(t_security_groups)
 
         if scan_id:
-            query += " WHERE scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            stmt = stmt.where(t_security_groups.c.scan_id == scan_id)
 
         security_groups = []
-        for row in cursor.fetchall():
-            sg = dict(row)
-            sg["ingress_rules"] = json.loads(sg.get("ingress_rules") or "[]")
-            sg["egress_rules"] = json.loads(sg.get("egress_rules") or "[]")
-            sg["tags"] = json.loads(sg.get("tags") or "{}")
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                sg = dict(row._mapping)
+                sg["ingress_rules"] = json.loads(sg.get("ingress_rules") or "[]")
+                sg["egress_rules"] = json.loads(sg.get("egress_rules") or "[]")
+                sg["tags"] = json.loads(sg.get("tags") or "{}")
 
-            # Check for overly permissive rules if requested
-            if allow_all_ingress:
-                has_open_rule = any(
-                    any(
-                        ip_range.get("CidrIp") == "0.0.0.0/0"
-                        for ip_range in rule.get("IpRanges", [])
+                # Check for overly permissive rules if requested
+                if allow_all_ingress:
+                    has_open_rule = any(
+                        any(
+                            ip_range.get("CidrIp") == "0.0.0.0/0"
+                            for ip_range in rule.get("IpRanges", [])
+                        )
+                        for rule in sg["ingress_rules"]
                     )
-                    for rule in sg["ingress_rules"]
-                )
-                if has_open_rule:
+                    if has_open_rule:
+                        security_groups.append(sg)
+                else:
                     security_groups.append(sg)
-            else:
-                security_groups.append(sg)
-
-        conn.close()
 
         return {"security_groups": security_groups, "count": len(security_groups)}
 
@@ -439,46 +469,33 @@ class QueryHandler:
             return {"error": "Either ip_address or cidr_range parameter required"}
 
         search_term = ip_address or cidr_range
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
+        like_term = f"%{search_term}%"
 
         results = {"ec2_instances": [], "vpcs": [], "subnets": []}
 
-        # Search EC2 instances
-        cursor.execute(
-            """
-            SELECT * FROM ec2_instances
-            WHERE public_ip LIKE ? OR private_ip LIKE ?
-        """,
-            (f"%{search_term}%", f"%{search_term}%"),
-        )
+        with self.db_ops.engine.connect() as conn:
+            # Search EC2 instances
+            ec2_stmt = sa.select(t_ec2_instances).where(
+                sa.or_(
+                    t_ec2_instances.c.public_ip.like(like_term),
+                    t_ec2_instances.c.private_ip.like(like_term),
+                )
+            )
+            results["ec2_instances"] = [
+                dict(row._mapping) for row in conn.execute(ec2_stmt)
+            ]
 
-        results["ec2_instances"] = [dict(row) for row in cursor.fetchall()]
+            # Search VPCs
+            vpc_stmt = sa.select(t_vpcs).where(t_vpcs.c.cidr_block.like(like_term))
+            results["vpcs"] = [dict(row._mapping) for row in conn.execute(vpc_stmt)]
 
-        # Search VPCs
-        cursor.execute(
-            """
-            SELECT * FROM vpcs
-            WHERE cidr_block LIKE ?
-        """,
-            (f"%{search_term}%",),
-        )
-
-        results["vpcs"] = [dict(row) for row in cursor.fetchall()]
-
-        # Search Subnets
-        cursor.execute(
-            """
-            SELECT * FROM subnets
-            WHERE cidr_block LIKE ?
-        """,
-            (f"%{search_term}%",),
-        )
-
-        results["subnets"] = [dict(row) for row in cursor.fetchall()]
-
-        conn.close()
+            # Search Subnets
+            subnet_stmt = sa.select(t_subnets).where(
+                t_subnets.c.cidr_block.like(like_term)
+            )
+            results["subnets"] = [
+                dict(row._mapping) for row in conn.execute(subnet_stmt)
+            ]
 
         return results
 
@@ -490,75 +507,51 @@ class QueryHandler:
         if not vpc_id:
             return {"error": "vpc_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
+        with self.db_ops.engine.connect() as conn:
+            # Get VPC details
+            vpc_stmt = sa.select(t_vpcs).where(t_vpcs.c.vpc_id == vpc_id)
+            if scan_id:
+                vpc_stmt = vpc_stmt.where(t_vpcs.c.scan_id == scan_id)
 
-        # Get VPC details
-        query = "SELECT * FROM vpcs WHERE vpc_id = ?"
-        params_list = [vpc_id]
+            vpc = conn.execute(vpc_stmt).fetchone()
 
-        if scan_id:
-            query += " AND scan_id = ?"
-            params_list.append(scan_id)
+            if not vpc:
+                return {"error": f"VPC not found: {vpc_id}"}
 
-        cursor.execute(query, tuple(params_list))
-        vpc = cursor.fetchone()
+            vpc_data = dict(vpc._mapping)
+            vpc_data["tags"] = json.loads(vpc_data.get("tags") or "{}")
 
-        if not vpc:
-            conn.close()
-            return {"error": f"VPC not found: {vpc_id}"}
+            # Get subnets
+            subnets = []
+            for row in conn.execute(
+                sa.select(t_subnets).where(t_subnets.c.vpc_id == vpc_id)
+            ):
+                subnet = dict(row._mapping)
+                subnet["tags"] = json.loads(subnet.get("tags") or "{}")
+                subnets.append(subnet)
 
-        vpc_data = dict(vpc)
-        vpc_data["tags"] = json.loads(vpc_data.get("tags") or "{}")
+            # Get security groups
+            security_groups = []
+            for row in conn.execute(
+                sa.select(t_security_groups).where(t_security_groups.c.vpc_id == vpc_id)
+            ):
+                sg = dict(row._mapping)
+                sg["ingress_rules"] = json.loads(sg.get("ingress_rules") or "[]")
+                sg["egress_rules"] = json.loads(sg.get("egress_rules") or "[]")
+                sg["tags"] = json.loads(sg.get("tags") or "{}")
+                security_groups.append(sg)
 
-        # Get subnets
-        cursor.execute(
-            """
-            SELECT * FROM subnets WHERE vpc_id = ?
-        """,
-            (vpc_id,),
-        )
-
-        subnets = []
-        for row in cursor.fetchall():
-            subnet = dict(row)
-            subnet["tags"] = json.loads(subnet.get("tags") or "{}")
-            subnets.append(subnet)
-
-        # Get security groups
-        cursor.execute(
-            """
-            SELECT * FROM security_groups WHERE vpc_id = ?
-        """,
-            (vpc_id,),
-        )
-
-        security_groups = []
-        for row in cursor.fetchall():
-            sg = dict(row)
-            sg["ingress_rules"] = json.loads(sg.get("ingress_rules") or "[]")
-            sg["egress_rules"] = json.loads(sg.get("egress_rules") or "[]")
-            sg["tags"] = json.loads(sg.get("tags") or "{}")
-            security_groups.append(sg)
-
-        # Get EC2 instances in VPC
-        cursor.execute(
-            """
-            SELECT * FROM ec2_instances WHERE vpc_id = ?
-        """,
-            (vpc_id,),
-        )
-
-        instances = []
-        for row in cursor.fetchall():
-            instance = dict(row)
-            instance["security_groups"] = json.loads(
-                instance.get("security_groups") or "[]"
-            )
-            instance["tags"] = json.loads(instance.get("tags") or "{}")
-            instances.append(instance)
-
-        conn.close()
+            # Get EC2 instances in VPC
+            instances = []
+            for row in conn.execute(
+                sa.select(t_ec2_instances).where(t_ec2_instances.c.vpc_id == vpc_id)
+            ):
+                instance = dict(row._mapping)
+                instance["security_groups"] = json.loads(
+                    instance.get("security_groups") or "[]"
+                )
+                instance["tags"] = json.loads(instance.get("tags") or "{}")
+                instances.append(instance)
 
         return {
             "vpc": vpc_data,
@@ -572,37 +565,29 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         no_mfa_only = params.get("no_mfa_only", False)
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM iam_users"
+        stmt = sa.select(t_iam_users)
         conditions = []
-        query_params = []
 
         if scan_id:
-            conditions.append("scan_id = ?")
-            query_params.append(scan_id)
+            conditions.append(t_iam_users.c.scan_id == scan_id)
 
         if no_mfa_only:
-            conditions.append("mfa_enabled = 0")
+            conditions.append(t_iam_users.c.mfa_enabled == 0)
 
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(*conditions)
 
         users = []
-        for row in cursor.fetchall():
-            user = dict(row)
-            user["access_keys"] = json.loads(user.get("access_keys") or "[]")
-            user["attached_policies"] = json.loads(
-                user.get("attached_policies") or "[]"
-            )
-            user["groups"] = json.loads(user.get("groups") or "[]")
-            user["tags"] = json.loads(user.get("tags") or "{}")
-            users.append(user)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                user = dict(row._mapping)
+                user["access_keys"] = json.loads(user.get("access_keys") or "[]")
+                user["attached_policies"] = json.loads(
+                    user.get("attached_policies") or "[]"
+                )
+                user["groups"] = json.loads(user.get("groups") or "[]")
+                user["tags"] = json.loads(user.get("tags") or "{}")
+                users.append(user)
 
         return {"users": users, "count": len(users)}
 
@@ -622,70 +607,57 @@ class QueryHandler:
         limit, offset = self._apply_pagination(params)
         summary_mode = self._is_summary_mode(params)
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         conditions = []
-        query_params = []
 
         if scan_id:
-            conditions.append("scan_id = ?")
-            query_params.append(scan_id)
+            conditions.append(t_prowler_findings.c.scan_id == scan_id)
 
         if severity:
-            conditions.append("severity = ?")
-            query_params.append(severity.lower())
+            conditions.append(t_prowler_findings.c.severity == severity.lower())
 
         if status:
-            conditions.append("status = ?")
-            query_params.append(status.upper())
+            conditions.append(t_prowler_findings.c.status == status.upper())
 
-        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+        with self.db_ops.engine.connect() as conn:
+            # Get total count
+            count_stmt = sa.select(sa.func.count()).select_from(t_prowler_findings)
+            if conditions:
+                count_stmt = count_stmt.where(*conditions)
+            total_count = conn.execute(count_stmt).scalar()
 
-        # Get total count
-        count_query = f"SELECT COUNT(*) FROM prowler_findings{where_clause}"
-        cursor.execute(count_query, tuple(query_params))
-        total_count = cursor.fetchone()[0]
+            # Build comprehensive summary
+            summary = self._build_prowler_summary(conn, conditions, total_count)
 
-        # Build comprehensive summary
-        summary = self._build_prowler_summary(
-            cursor, where_clause, query_params, total_count
-        )
+            # If summary mode only, return summary
+            if summary_mode:
+                return {"summary": summary, "mode": "summary"}
 
-        # If summary mode only, return summary
-        if summary_mode:
-            conn.close()
-            return {"summary": summary, "mode": "summary"}
-
-        # Full query with pagination
-        query = f"""
-            SELECT * FROM prowler_findings
-            {where_clause}
-            ORDER BY
-                CASE severity
-                    WHEN 'critical' THEN 1
-                    WHEN 'high' THEN 2
-                    WHEN 'medium' THEN 3
-                    WHEN 'low' THEN 4
-                    WHEN 'informational' THEN 5
-                    ELSE 6
-                END,
-                status
-            {self._build_limit_clause(limit, offset)}
-        """
-
-        cursor.execute(query, tuple(query_params))
-
-        findings = []
-        for row in cursor.fetchall():
-            finding = dict(row)
-            finding["resource_tags"] = json.loads(finding.get("resource_tags") or "{}")
-            finding["compliance_frameworks"] = json.loads(
-                finding.get("compliance_frameworks") or "[]"
+            # Full query with pagination
+            severity_order = sa.case(
+                (t_prowler_findings.c.severity == "critical", 1),
+                (t_prowler_findings.c.severity == "high", 2),
+                (t_prowler_findings.c.severity == "medium", 3),
+                (t_prowler_findings.c.severity == "low", 4),
+                (t_prowler_findings.c.severity == "informational", 5),
+                else_=6,
             )
-            findings.append(finding)
+            stmt = sa.select(t_prowler_findings).order_by(
+                severity_order, t_prowler_findings.c.status
+            )
+            if conditions:
+                stmt = stmt.where(*conditions)
+            stmt = self._build_limit_clause(stmt, limit, offset)
 
-        conn.close()
+            findings = []
+            for row in conn.execute(stmt):
+                finding = dict(row._mapping)
+                finding["resource_tags"] = json.loads(
+                    finding.get("resource_tags") or "{}"
+                )
+                finding["compliance_frameworks"] = json.loads(
+                    finding.get("compliance_frameworks") or "[]"
+                )
+                findings.append(finding)
 
         results = {
             "summary": summary,  # Always include summary
@@ -699,108 +671,98 @@ class QueryHandler:
         return results
 
     def _build_prowler_summary(
-        self, cursor, where_clause: str, query_params: tuple, total_count: int
+        self, conn: sa.Connection, conditions: list, total_count: int
     ) -> Dict[str, Any]:
         """
         Build comprehensive Prowler findings summary.
 
         Args:
-            cursor: Database cursor
-            where_clause: SQL WHERE clause
-            query_params: Query parameters
+            conn: Database connection
+            conditions: SQLAlchemy Core WHERE conditions
             total_count: Total findings count
 
         Returns:
             Dictionary with comprehensive summary including severity breakdown,
             top failing services, compliance coverage, and actionable insights
         """
-        # Severity breakdown
-        cursor.execute(
-            f"""
-            SELECT severity, COUNT(*) as count
-            FROM prowler_findings{where_clause}
-            GROUP BY severity
-            ORDER BY
-                CASE severity
-                    WHEN 'critical' THEN 1
-                    WHEN 'high' THEN 2
-                    WHEN 'medium' THEN 3
-                    WHEN 'low' THEN 4
-                    WHEN 'informational' THEN 5
-                    ELSE 6
-                END
-        """,
-            tuple(query_params),
+        severity_order = sa.case(
+            (t_prowler_findings.c.severity == "critical", 1),
+            (t_prowler_findings.c.severity == "high", 2),
+            (t_prowler_findings.c.severity == "medium", 3),
+            (t_prowler_findings.c.severity == "low", 4),
+            (t_prowler_findings.c.severity == "informational", 5),
+            else_=6,
         )
 
+        # Severity breakdown
+        severity_stmt = (
+            sa.select(t_prowler_findings.c.severity, sa.func.count().label("count"))
+            .group_by(t_prowler_findings.c.severity)
+            .order_by(severity_order)
+        )
+        if conditions:
+            severity_stmt = severity_stmt.where(*conditions)
+
         severity_counts = {}
-        for row in cursor.fetchall():
+        for row in conn.execute(severity_stmt):
             severity_counts[row[0]] = row[1]
 
         # Status breakdown
-        cursor.execute(
-            f"""
-            SELECT status, COUNT(*) as count
-            FROM prowler_findings{where_clause}
-            GROUP BY status
-            ORDER BY status
-        """,
-            tuple(query_params),
+        status_stmt = (
+            sa.select(t_prowler_findings.c.status, sa.func.count().label("count"))
+            .group_by(t_prowler_findings.c.status)
+            .order_by(t_prowler_findings.c.status)
         )
+        if conditions:
+            status_stmt = status_stmt.where(*conditions)
 
         status_counts = {}
-        for row in cursor.fetchall():
+        for row in conn.execute(status_stmt):
             status_counts[row[0]] = row[1]
 
         # Top failing services (top 10)
-        cursor.execute(
-            f"""
-            SELECT service_name, COUNT(*) as count
-            FROM prowler_findings
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} status = 'FAIL'
-            GROUP BY service_name
-            ORDER BY count DESC
-            LIMIT 10
-        """,
-            tuple(query_params),
+        fail_count_col = sa.func.count().label("count")
+        services_stmt = (
+            sa.select(t_prowler_findings.c.service_name, fail_count_col)
+            .where(t_prowler_findings.c.status == "FAIL")
+            .group_by(t_prowler_findings.c.service_name)
+            .order_by(fail_count_col.desc())
+            .limit(10)
         )
+        if conditions:
+            services_stmt = services_stmt.where(*conditions)
 
         top_failing_services = [
-            {"service": row[0], "fail_count": row[1]} for row in cursor.fetchall()
+            {"service": row[0], "fail_count": row[1]}
+            for row in conn.execute(services_stmt)
         ]
 
         # Top failing check types (top 10)
-        cursor.execute(
-            f"""
-            SELECT check_type, COUNT(*) as count
-            FROM prowler_findings
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} status = 'FAIL'
-            GROUP BY check_type
-            ORDER BY count DESC
-            LIMIT 10
-        """,
-            tuple(query_params),
+        check_type_count_col = sa.func.count().label("count")
+        check_types_stmt = (
+            sa.select(t_prowler_findings.c.check_type, check_type_count_col)
+            .where(t_prowler_findings.c.status == "FAIL")
+            .group_by(t_prowler_findings.c.check_type)
+            .order_by(check_type_count_col.desc())
+            .limit(10)
         )
+        if conditions:
+            check_types_stmt = check_types_stmt.where(*conditions)
 
         top_failing_check_types = [
-            {"check_type": row[0], "fail_count": row[1]} for row in cursor.fetchall()
+            {"check_type": row[0], "fail_count": row[1]}
+            for row in conn.execute(check_types_stmt)
         ]
 
         # Compliance framework coverage
-        cursor.execute(
-            f"""
-            SELECT compliance_frameworks
-            FROM prowler_findings{where_clause}
-        """,
-            tuple(query_params),
-        )
+        frameworks_stmt = sa.select(t_prowler_findings.c.compliance_frameworks)
+        if conditions:
+            frameworks_stmt = frameworks_stmt.where(*conditions)
 
         all_frameworks = set()
         framework_fail_counts = {}
 
-        for row in cursor.fetchall():
+        for row in conn.execute(frameworks_stmt):
             if row[0]:
                 frameworks = json.loads(row[0])
                 for framework in frameworks:
@@ -808,16 +770,14 @@ class QueryHandler:
 
         # Count failures per framework
         if all_frameworks:
-            cursor.execute(
-                f"""
-                SELECT compliance_frameworks, status
-                FROM prowler_findings
-                {where_clause}
-            """,
-                tuple(query_params),
+            fail_frameworks_stmt = sa.select(
+                t_prowler_findings.c.compliance_frameworks,
+                t_prowler_findings.c.status,
             )
+            if conditions:
+                fail_frameworks_stmt = fail_frameworks_stmt.where(*conditions)
 
-            for row in cursor.fetchall():
+            for row in conn.execute(fail_frameworks_stmt):
                 if row[0] and row[1] == "FAIL":
                     frameworks = json.loads(row[0])
                     for framework in frameworks:
@@ -891,45 +851,43 @@ class QueryHandler:
         if not scan_id_1 or not scan_id_2:
             return {"error": "Both scan_id_1 and scan_id_2 parameters required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        tables = [
-            "ec2_instances",
-            "vpcs",
-            "subnets",
-            "security_groups",
-            "load_balancers",
-            "nat_gateways",
-            "internet_gateways",
-            "route_tables",
-            "auto_scaling_groups",
-            "network_interfaces",
-            "s3_buckets",
-            "iam_users",
-            "iam_roles",
-        ]
+        tables = {
+            "ec2_instances": t_ec2_instances,
+            "vpcs": t_vpcs,
+            "subnets": t_subnets,
+            "security_groups": t_security_groups,
+            "load_balancers": t_load_balancers,
+            "nat_gateways": t_nat_gateways,
+            "internet_gateways": t_internet_gateways,
+            "route_tables": t_route_tables,
+            "auto_scaling_groups": t_auto_scaling_groups,
+            "network_interfaces": t_network_interfaces,
+            "s3_buckets": t_s3_buckets,
+            "iam_users": t_iam_users,
+            "iam_roles": t_iam_roles,
+        }
 
         comparison = {}
 
-        for table in tables:
-            cursor.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE scan_id = ?", (scan_id_1,)
-            )
-            count_1 = cursor.fetchone()[0]
+        with self.db_ops.engine.connect() as conn:
+            for table_name, table in tables.items():
+                count_1 = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(table)
+                    .where(table.c.scan_id == scan_id_1)
+                ).scalar()
 
-            cursor.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE scan_id = ?", (scan_id_2,)
-            )
-            count_2 = cursor.fetchone()[0]
+                count_2 = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(table)
+                    .where(table.c.scan_id == scan_id_2)
+                ).scalar()
 
-            comparison[table] = {
-                "scan_1_count": count_1,
-                "scan_2_count": count_2,
-                "difference": count_2 - count_1,
-            }
-
-        conn.close()
+                comparison[table_name] = {
+                    "scan_1_count": count_1,
+                    "scan_2_count": count_2,
+                    "difference": count_2 - count_1,
+                }
 
         return {
             "scan_id_1": scan_id_1,
@@ -948,40 +906,31 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM load_balancers WHERE scan_id = ?"
-        query_params = [scan_id]
+        stmt = sa.select(t_load_balancers).where(t_load_balancers.c.scan_id == scan_id)
 
         if vpc_id:
-            query += " AND vpc_id = ?"
-            query_params.append(vpc_id)
+            stmt = stmt.where(t_load_balancers.c.vpc_id == vpc_id)
 
         if lb_type:
-            query += " AND load_balancer_type = ?"
-            query_params.append(lb_type)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_load_balancers.c.load_balancer_type == lb_type)
 
         load_balancers = []
-        for row in cursor.fetchall():
-            lb = dict(row)
-            # Parse JSON fields
-            for field in [
-                "availability_zones",
-                "security_groups",
-                "subnets",
-                "listeners",
-                "target_groups",
-                "tags",
-                "raw_data",
-            ]:
-                if lb.get(field):
-                    lb[field] = json.loads(lb[field])
-            load_balancers.append(lb)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                lb = dict(row._mapping)
+                # Parse JSON fields
+                for field in [
+                    "availability_zones",
+                    "security_groups",
+                    "subnets",
+                    "listeners",
+                    "target_groups",
+                    "tags",
+                    "raw_data",
+                ]:
+                    if lb.get(field):
+                        lb[field] = json.loads(lb[field])
+                load_balancers.append(lb)
 
         return {"load_balancers": load_balancers, "count": len(load_balancers)}
 
@@ -993,28 +942,20 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM nat_gateways WHERE scan_id = ?"
-        query_params = [scan_id]
+        stmt = sa.select(t_nat_gateways).where(t_nat_gateways.c.scan_id == scan_id)
 
         if vpc_id:
-            query += " AND vpc_id = ?"
-            query_params.append(vpc_id)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_nat_gateways.c.vpc_id == vpc_id)
 
         nat_gateways = []
-        for row in cursor.fetchall():
-            nat = dict(row)
-            # Parse JSON fields
-            for field in ["nat_gateway_addresses", "tags", "raw_data"]:
-                if nat.get(field):
-                    nat[field] = json.loads(nat[field])
-            nat_gateways.append(nat)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                nat = dict(row._mapping)
+                # Parse JSON fields
+                for field in ["nat_gateway_addresses", "tags", "raw_data"]:
+                    if nat.get(field):
+                        nat[field] = json.loads(nat[field])
+                nat_gateways.append(nat)
 
         return {"nat_gateways": nat_gateways, "count": len(nat_gateways)}
 
@@ -1026,34 +967,26 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM route_tables WHERE scan_id = ?"
-        query_params = [scan_id]
+        stmt = sa.select(t_route_tables).where(t_route_tables.c.scan_id == scan_id)
 
         if vpc_id:
-            query += " AND vpc_id = ?"
-            query_params.append(vpc_id)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_route_tables.c.vpc_id == vpc_id)
 
         route_tables = []
-        for row in cursor.fetchall():
-            rt = dict(row)
-            # Parse JSON fields
-            for field in [
-                "routes",
-                "subnet_associations",
-                "gateway_associations",
-                "tags",
-                "raw_data",
-            ]:
-                if rt.get(field):
-                    rt[field] = json.loads(rt[field])
-            route_tables.append(rt)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                rt = dict(row._mapping)
+                # Parse JSON fields
+                for field in [
+                    "routes",
+                    "subnet_associations",
+                    "gateway_associations",
+                    "tags",
+                    "raw_data",
+                ]:
+                    if rt.get(field):
+                        rt[field] = json.loads(rt[field])
+                route_tables.append(rt)
 
         return {"route_tables": route_tables, "count": len(route_tables)}
 
@@ -1064,21 +997,19 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM internet_gateways WHERE scan_id = ?", (scan_id,))
+        stmt = sa.select(t_internet_gateways).where(
+            t_internet_gateways.c.scan_id == scan_id
+        )
 
         internet_gateways = []
-        for row in cursor.fetchall():
-            igw = dict(row)
-            # Parse JSON fields
-            for field in ["vpc_attachments", "tags", "raw_data"]:
-                if igw.get(field):
-                    igw[field] = json.loads(igw[field])
-            internet_gateways.append(igw)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                igw = dict(row._mapping)
+                # Parse JSON fields
+                for field in ["vpc_attachments", "tags", "raw_data"]:
+                    if igw.get(field):
+                        igw[field] = json.loads(igw[field])
+                internet_gateways.append(igw)
 
         return {"internet_gateways": internet_gateways, "count": len(internet_gateways)}
 
@@ -1090,36 +1021,30 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM auto_scaling_groups WHERE scan_id = ?"
-        query_params = [scan_id]
+        stmt = sa.select(t_auto_scaling_groups).where(
+            t_auto_scaling_groups.c.scan_id == scan_id
+        )
 
         if region:
-            query += " AND region = ?"
-            query_params.append(region)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_auto_scaling_groups.c.region == region)
 
         asgs = []
-        for row in cursor.fetchall():
-            asg = dict(row)
-            # Parse JSON fields
-            for field in [
-                "launch_template",
-                "availability_zones",
-                "load_balancer_names",
-                "target_group_arns",
-                "instances",
-                "tags",
-                "raw_data",
-            ]:
-                if asg.get(field):
-                    asg[field] = json.loads(asg[field])
-            asgs.append(asg)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                asg = dict(row._mapping)
+                # Parse JSON fields
+                for field in [
+                    "launch_template",
+                    "availability_zones",
+                    "load_balancer_names",
+                    "target_group_arns",
+                    "instances",
+                    "tags",
+                    "raw_data",
+                ]:
+                    if asg.get(field):
+                        asg[field] = json.loads(asg[field])
+                asgs.append(asg)
 
         return {"auto_scaling_groups": asgs, "count": len(asgs)}
 
@@ -1133,79 +1058,95 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM network_interfaces WHERE scan_id = ? AND public_ip IS NOT NULL"
-        query_params = [scan_id]
+        stmt = sa.select(t_network_interfaces).where(
+            sa.and_(
+                t_network_interfaces.c.scan_id == scan_id,
+                t_network_interfaces.c.public_ip.isnot(None),
+            )
+        )
 
         if vpc_id:
-            query += " AND vpc_id = ?"
-            query_params.append(vpc_id)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_network_interfaces.c.vpc_id == vpc_id)
 
         interfaces = []
-        for row in cursor.fetchall():
-            eni = dict(row)
-            # Parse JSON fields
-            for field in [
-                "private_ip_addresses",
-                "security_groups",
-                "attachment",
-                "tags",
-                "raw_data",
-            ]:
-                if eni.get(field):
-                    eni[field] = json.loads(eni[field])
-            interfaces.append(eni)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                eni = dict(row._mapping)
+                # Parse JSON fields
+                for field in [
+                    "private_ip_addresses",
+                    "security_groups",
+                    "attachment",
+                    "tags",
+                    "raw_data",
+                ]:
+                    if eni.get(field):
+                        eni[field] = json.loads(eni[field])
+                interfaces.append(eni)
 
         return {"network_interfaces": interfaces, "count": len(interfaces)}
 
     def _get_ec2_summary_by_account(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Get EC2 instance types breakdown by account for most recent scans."""
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
+        sm2 = t_scan_metadata.alias("sm2")
 
         # Get latest scan for each account
-        cursor.execute("""
-            SELECT sm.account_name, sm.account_number, sm.scan_id, sm.scan_timestamp,
-                   e.instance_type, e.state, COUNT(*) as count
-            FROM scan_metadata sm
-            INNER JOIN ec2_instances e ON sm.scan_id = e.scan_id
-            WHERE sm.scan_id IN (
-                SELECT scan_id FROM scan_metadata sm2
-                WHERE sm2.account_number = sm.account_number
-                ORDER BY sm2.scan_timestamp DESC
-                LIMIT 1
+        latest_scan_id = (
+            sa.select(sm2.c.scan_id)
+            .where(sm2.c.account_number == t_scan_metadata.c.account_number)
+            .order_by(sm2.c.scan_timestamp.desc())
+            .limit(1)
+            .correlate(t_scan_metadata)
+        )
+
+        stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_scan_metadata.c.scan_id,
+                t_scan_metadata.c.scan_timestamp,
+                t_ec2_instances.c.instance_type,
+                t_ec2_instances.c.state,
+                sa.func.count().label("count"),
             )
-            GROUP BY sm.account_name, sm.account_number, sm.scan_id, e.instance_type, e.state
-            ORDER BY sm.account_name, e.instance_type
-        """)
+            .select_from(
+                t_scan_metadata.join(
+                    t_ec2_instances,
+                    t_scan_metadata.c.scan_id == t_ec2_instances.c.scan_id,
+                )
+            )
+            .where(t_scan_metadata.c.scan_id.in_(latest_scan_id))
+            .group_by(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_scan_metadata.c.scan_id,
+                t_ec2_instances.c.instance_type,
+                t_ec2_instances.c.state,
+            )
+            .order_by(t_scan_metadata.c.account_name, t_ec2_instances.c.instance_type)
+        )
 
         accounts = {}
-        for row in cursor.fetchall():
-            account_name = row["account_name"]
-            if account_name not in accounts:
-                accounts[account_name] = {
-                    "account_number": row["account_number"],
-                    "scan_id": row["scan_id"],
-                    "scan_timestamp": row["scan_timestamp"],
-                    "instance_types": {},
-                }
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                account_name = mapping["account_name"]
+                if account_name not in accounts:
+                    accounts[account_name] = {
+                        "account_number": mapping["account_number"],
+                        "scan_id": mapping["scan_id"],
+                        "scan_timestamp": mapping["scan_timestamp"],
+                        "instance_types": {},
+                    }
 
-            instance_type = row["instance_type"]
-            state = row["state"]
-            count = row["count"]
+                instance_type = mapping["instance_type"]
+                state = mapping["state"]
+                count = mapping["count"]
 
-            if instance_type not in accounts[account_name]["instance_types"]:
-                accounts[account_name]["instance_types"][instance_type] = {}
+                if instance_type not in accounts[account_name]["instance_types"]:
+                    accounts[account_name]["instance_types"][instance_type] = {}
 
-            accounts[account_name]["instance_types"][instance_type][state] = count
-
-        conn.close()
+                accounts[account_name]["instance_types"][instance_type][state] = count
 
         return {"accounts": accounts}
 
@@ -1213,51 +1154,60 @@ class QueryHandler:
         """Get EC2 instance changes across all scans for all accounts."""
         account_number = params.get("account_number")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         # Build query to track instance changes
-        query = """
-            SELECT sm.account_name, sm.account_number, sm.scan_id, sm.scan_timestamp,
-                   e.instance_id, e.instance_type, e.state, e.region,
-                   e.public_ip, e.private_ip, e.vpc_id, e.subnet_id
-            FROM scan_metadata sm
-            INNER JOIN ec2_instances e ON sm.scan_id = e.scan_id
-        """
+        stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_scan_metadata.c.scan_id,
+                t_scan_metadata.c.scan_timestamp,
+                t_ec2_instances.c.instance_id,
+                t_ec2_instances.c.instance_type,
+                t_ec2_instances.c.state,
+                t_ec2_instances.c.region,
+                t_ec2_instances.c.public_ip,
+                t_ec2_instances.c.private_ip,
+                t_ec2_instances.c.vpc_id,
+                t_ec2_instances.c.subnet_id,
+            )
+            .select_from(
+                t_scan_metadata.join(
+                    t_ec2_instances,
+                    t_scan_metadata.c.scan_id == t_ec2_instances.c.scan_id,
+                )
+            )
+            .order_by(t_ec2_instances.c.instance_id, t_scan_metadata.c.scan_timestamp)
+        )
 
-        query_params = []
         if account_number:
-            query += " WHERE sm.account_number = ?"
-            query_params.append(account_number)
-
-        query += " ORDER BY e.instance_id, sm.scan_timestamp"
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(t_scan_metadata.c.account_number == account_number)
 
         # Track instance history
         instance_history = {}
-        for row in cursor.fetchall():
-            instance_id = row["instance_id"]
-            if instance_id not in instance_history:
-                instance_history[instance_id] = {
-                    "instance_id": instance_id,
-                    "instance_type": row["instance_type"],
-                    "region": row["region"],
-                    "scans": [],
-                }
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                instance_id = mapping["instance_id"]
+                if instance_id not in instance_history:
+                    instance_history[instance_id] = {
+                        "instance_id": instance_id,
+                        "instance_type": mapping["instance_type"],
+                        "region": mapping["region"],
+                        "scans": [],
+                    }
 
-            instance_history[instance_id]["scans"].append(
-                {
-                    "scan_id": row["scan_id"],
-                    "scan_timestamp": row["scan_timestamp"],
-                    "account_name": row["account_name"],
-                    "state": row["state"],
-                    "public_ip": row["public_ip"],
-                    "private_ip": row["private_ip"],
-                    "vpc_id": row["vpc_id"],
-                    "subnet_id": row["subnet_id"],
-                }
-            )
+                instance_history[instance_id]["scans"].append(
+                    {
+                        "scan_id": mapping["scan_id"],
+                        "scan_timestamp": mapping["scan_timestamp"],
+                        "account_name": mapping["account_name"],
+                        "state": mapping["state"],
+                        "public_ip": mapping["public_ip"],
+                        "private_ip": mapping["private_ip"],
+                        "vpc_id": mapping["vpc_id"],
+                        "subnet_id": mapping["subnet_id"],
+                    }
+                )
 
         # Identify changes
         changes = []
@@ -1294,8 +1244,6 @@ class QueryHandler:
                             }
                         )
 
-        conn.close()
-
         return {
             "instance_history": instance_history,
             "changes": changes,
@@ -1310,120 +1258,157 @@ class QueryHandler:
         if not vpc_id:
             return {"error": "vpc_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
+        with self.db_ops.engine.connect() as conn:
+            # Get VPC details
+            vpc_stmt = sa.select(t_vpcs).where(t_vpcs.c.vpc_id == vpc_id)
+            if scan_id:
+                vpc_stmt = vpc_stmt.where(t_vpcs.c.scan_id == scan_id)
 
-        # Get VPC details
-        query = "SELECT * FROM vpcs WHERE vpc_id = ?"
-        params_list = [vpc_id]
-        if scan_id:
-            query += " AND scan_id = ?"
-            params_list.append(scan_id)
+            vpc = conn.execute(vpc_stmt).fetchone()
 
-        cursor.execute(query, tuple(params_list))
-        vpc = cursor.fetchone()
+            if not vpc:
+                return {"error": f"VPC not found: {vpc_id}"}
 
-        if not vpc:
-            conn.close()
-            return {"error": f"VPC not found: {vpc_id}"}
+            vpc_data = dict(vpc._mapping)
+            vpc_data["tags"] = json.loads(vpc_data.get("tags") or "{}")
 
-        vpc_data = dict(vpc)
-        vpc_data["tags"] = json.loads(vpc_data.get("tags") or "{}")
+            # Get subnets
+            subnets = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_subnets).where(t_subnets.c.vpc_id == vpc_id)
+                )
+            ]
+            for subnet in subnets:
+                subnet["tags"] = json.loads(subnet.get("tags") or "{}")
 
-        # Get subnets
-        cursor.execute("SELECT * FROM subnets WHERE vpc_id = ?", (vpc_id,))
-        subnets = [dict(row) for row in cursor.fetchall()]
-        for subnet in subnets:
-            subnet["tags"] = json.loads(subnet.get("tags") or "{}")
+            # Get EC2 instances
+            instances = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_ec2_instances).where(t_ec2_instances.c.vpc_id == vpc_id)
+                )
+            ]
+            for instance in instances:
+                instance["security_groups"] = json.loads(
+                    instance.get("security_groups") or "[]"
+                )
+                instance["tags"] = json.loads(instance.get("tags") or "{}")
 
-        # Get EC2 instances
-        cursor.execute("SELECT * FROM ec2_instances WHERE vpc_id = ?", (vpc_id,))
-        instances = [dict(row) for row in cursor.fetchall()]
-        for instance in instances:
-            instance["security_groups"] = json.loads(
-                instance.get("security_groups") or "[]"
-            )
-            instance["tags"] = json.loads(instance.get("tags") or "{}")
+            # Get Load Balancers
+            load_balancers = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_load_balancers).where(
+                        t_load_balancers.c.vpc_id == vpc_id
+                    )
+                )
+            ]
+            for lb in load_balancers:
+                for field in [
+                    "availability_zones",
+                    "security_groups",
+                    "subnets",
+                    "listeners",
+                    "target_groups",
+                    "tags",
+                ]:
+                    if lb.get(field):
+                        lb[field] = json.loads(lb[field])
 
-        # Get Load Balancers
-        cursor.execute("SELECT * FROM load_balancers WHERE vpc_id = ?", (vpc_id,))
-        load_balancers = [dict(row) for row in cursor.fetchall()]
-        for lb in load_balancers:
-            for field in [
-                "availability_zones",
-                "security_groups",
-                "subnets",
-                "listeners",
-                "target_groups",
-                "tags",
-            ]:
-                if lb.get(field):
-                    lb[field] = json.loads(lb[field])
+            # Get NAT Gateways
+            nat_gateways = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_nat_gateways).where(t_nat_gateways.c.vpc_id == vpc_id)
+                )
+            ]
+            for nat in nat_gateways:
+                for field in ["nat_gateway_addresses", "tags"]:
+                    if nat.get(field):
+                        nat[field] = json.loads(nat[field])
 
-        # Get NAT Gateways
-        cursor.execute("SELECT * FROM nat_gateways WHERE vpc_id = ?", (vpc_id,))
-        nat_gateways = [dict(row) for row in cursor.fetchall()]
-        for nat in nat_gateways:
-            for field in ["nat_gateway_addresses", "tags"]:
-                if nat.get(field):
-                    nat[field] = json.loads(nat[field])
+            # Get Internet Gateways
+            # The legacy SQL matched on
+            # json_extract(igw.vpc_attachments, '$[0].VpcId') = ?, which cannot be
+            # bound portably through Core. Fetch all candidates and reproduce the
+            # same predicate (first attachment's VpcId) in Python instead.
+            igw_candidates = [
+                dict(row._mapping)
+                for row in conn.execute(sa.select(t_internet_gateways))
+            ]
+            internet_gateways = []
+            for igw in igw_candidates:
+                attachments = json.loads(igw.get("vpc_attachments") or "[]")
+                if attachments and attachments[0].get("VpcId") == vpc_id:
+                    internet_gateways.append(igw)
+            for igw in internet_gateways:
+                for field in ["vpc_attachments", "tags"]:
+                    if igw.get(field):
+                        igw[field] = json.loads(igw[field])
 
-        # Get Internet Gateways
-        cursor.execute(
-            """
-            SELECT igw.* FROM internet_gateways igw
-            WHERE json_extract(igw.vpc_attachments, '$[0].VpcId') = ?
-        """,
-            (vpc_id,),
-        )
-        internet_gateways = [dict(row) for row in cursor.fetchall()]
-        for igw in internet_gateways:
-            for field in ["vpc_attachments", "tags"]:
-                if igw.get(field):
-                    igw[field] = json.loads(igw[field])
+            # Get Route Tables
+            route_tables = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_route_tables).where(t_route_tables.c.vpc_id == vpc_id)
+                )
+            ]
+            for rt in route_tables:
+                for field in [
+                    "routes",
+                    "subnet_associations",
+                    "gateway_associations",
+                    "tags",
+                ]:
+                    if rt.get(field):
+                        rt[field] = json.loads(rt[field])
 
-        # Get Route Tables
-        cursor.execute("SELECT * FROM route_tables WHERE vpc_id = ?", (vpc_id,))
-        route_tables = [dict(row) for row in cursor.fetchall()]
-        for rt in route_tables:
-            for field in [
-                "routes",
-                "subnet_associations",
-                "gateway_associations",
-                "tags",
-            ]:
-                if rt.get(field):
-                    rt[field] = json.loads(rt[field])
+            # Get Security Groups
+            security_groups = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_security_groups).where(
+                        t_security_groups.c.vpc_id == vpc_id
+                    )
+                )
+            ]
+            for sg in security_groups:
+                for field in ["ingress_rules", "egress_rules", "tags"]:
+                    if sg.get(field):
+                        sg[field] = json.loads(sg[field])
 
-        # Get Security Groups
-        cursor.execute("SELECT * FROM security_groups WHERE vpc_id = ?", (vpc_id,))
-        security_groups = [dict(row) for row in cursor.fetchall()]
-        for sg in security_groups:
-            for field in ["ingress_rules", "egress_rules", "tags"]:
-                if sg.get(field):
-                    sg[field] = json.loads(sg[field])
+            # Get Network Interfaces
+            network_interfaces = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_network_interfaces).where(
+                        t_network_interfaces.c.vpc_id == vpc_id
+                    )
+                )
+            ]
+            for eni in network_interfaces:
+                for field in [
+                    "private_ip_addresses",
+                    "security_groups",
+                    "attachment",
+                    "tags",
+                ]:
+                    if eni.get(field):
+                        eni[field] = json.loads(eni[field])
 
-        # Get Network Interfaces
-        cursor.execute("SELECT * FROM network_interfaces WHERE vpc_id = ?", (vpc_id,))
-        network_interfaces = [dict(row) for row in cursor.fetchall()]
-        for eni in network_interfaces:
-            for field in [
-                "private_ip_addresses",
-                "security_groups",
-                "attachment",
-                "tags",
-            ]:
-                if eni.get(field):
-                    eni[field] = json.loads(eni[field])
-
-        # Get VPC Flow Logs
-        cursor.execute("SELECT * FROM vpc_flow_logs WHERE resource_id = ?", (vpc_id,))
-        flow_logs = [dict(row) for row in cursor.fetchall()]
-        for log in flow_logs:
-            if log.get("tags"):
-                log["tags"] = json.loads(log["tags"])
-
-        conn.close()
+            # Get VPC Flow Logs
+            flow_logs = [
+                dict(row._mapping)
+                for row in conn.execute(
+                    sa.select(t_vpc_flow_logs).where(
+                        t_vpc_flow_logs.c.resource_id == vpc_id
+                    )
+                )
+            ]
+            for log in flow_logs:
+                if log.get("tags"):
+                    log["tags"] = json.loads(log["tags"])
 
         return {
             "vpc": vpc_data,
@@ -1443,73 +1428,84 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         account_number = params.get("account_number")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = """
-            SELECT sm.account_name, sm.account_number, sm.scan_id,
-                   w.workspace_id, w.user_name, w.state, w.vpc_id,
-                   w.region, w.compute_type, w.running_mode,
-                   w.volume_encryption_enabled, w.tags
-            FROM workspaces w
-            INNER JOIN scan_metadata sm ON w.scan_id = sm.scan_id
-        """
+        stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_scan_metadata.c.scan_id,
+                t_workspaces.c.workspace_id,
+                t_workspaces.c.user_name,
+                t_workspaces.c.state,
+                t_workspaces.c.vpc_id,
+                t_workspaces.c.region,
+                t_workspaces.c.compute_type,
+                t_workspaces.c.running_mode,
+                t_workspaces.c.volume_encryption_enabled,
+                t_workspaces.c.tags,
+            )
+            .select_from(
+                t_workspaces.join(
+                    t_scan_metadata,
+                    t_workspaces.c.scan_id == t_scan_metadata.c.scan_id,
+                )
+            )
+            .order_by(
+                t_scan_metadata.c.account_name,
+                t_workspaces.c.vpc_id,
+                t_workspaces.c.workspace_id,
+            )
+        )
 
         conditions = []
-        query_params = []
-
         if scan_id:
-            conditions.append("w.scan_id = ?")
-            query_params.append(scan_id)
-
+            conditions.append(t_workspaces.c.scan_id == scan_id)
         if account_number:
-            conditions.append("sm.account_number = ?")
-            query_params.append(account_number)
-
+            conditions.append(t_scan_metadata.c.account_number == account_number)
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        query += " ORDER BY sm.account_name, w.vpc_id, w.workspace_id"
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(*conditions)
 
         # Group by account and VPC
         summary = {}
-        for row in cursor.fetchall():
-            account = row["account_name"]
-            vpc_id = row["vpc_id"] or "no-vpc"
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                account = mapping["account_name"]
+                vpc_id = mapping["vpc_id"] or "no-vpc"
 
-            if account not in summary:
-                summary[account] = {"account_number": row["account_number"], "vpcs": {}}
+                if account not in summary:
+                    summary[account] = {
+                        "account_number": mapping["account_number"],
+                        "vpcs": {},
+                    }
 
-            if vpc_id not in summary[account]["vpcs"]:
-                summary[account]["vpcs"][vpc_id] = {
-                    "workspaces": [],
-                    "count": 0,
-                    "states": {},
+                if vpc_id not in summary[account]["vpcs"]:
+                    summary[account]["vpcs"][vpc_id] = {
+                        "workspaces": [],
+                        "count": 0,
+                        "states": {},
+                    }
+
+                workspace = {
+                    "workspace_id": mapping["workspace_id"],
+                    "user_name": mapping["user_name"],
+                    "state": mapping["state"],
+                    "region": mapping["region"],
+                    "compute_type": mapping["compute_type"],
+                    "running_mode": mapping["running_mode"],
+                    "volume_encryption_enabled": bool(
+                        mapping["volume_encryption_enabled"]
+                    ),
+                    "tags": json.loads(mapping["tags"] or "{}"),
                 }
 
-            workspace = {
-                "workspace_id": row["workspace_id"],
-                "user_name": row["user_name"],
-                "state": row["state"],
-                "region": row["region"],
-                "compute_type": row["compute_type"],
-                "running_mode": row["running_mode"],
-                "volume_encryption_enabled": bool(row["volume_encryption_enabled"]),
-                "tags": json.loads(row["tags"] or "{}"),
-            }
+                summary[account]["vpcs"][vpc_id]["workspaces"].append(workspace)
+                summary[account]["vpcs"][vpc_id]["count"] += 1
 
-            summary[account]["vpcs"][vpc_id]["workspaces"].append(workspace)
-            summary[account]["vpcs"][vpc_id]["count"] += 1
-
-            # Count states
-            state = row["state"]
-            if state not in summary[account]["vpcs"][vpc_id]["states"]:
-                summary[account]["vpcs"][vpc_id]["states"][state] = 0
-            summary[account]["vpcs"][vpc_id]["states"][state] += 1
-
-        conn.close()
+                # Count states
+                state = mapping["state"]
+                if state not in summary[account]["vpcs"][vpc_id]["states"]:
+                    summary[account]["vpcs"][vpc_id]["states"][state] = 0
+                summary[account]["vpcs"][vpc_id]["states"][state] += 1
 
         return {"summary": summary}
 
@@ -1517,41 +1513,39 @@ class QueryHandler:
         """Get S3 buckets with lifecycle policy details."""
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM s3_buckets WHERE lifecycle_rules IS NOT NULL AND lifecycle_rules != '[]'"
+        stmt = sa.select(t_s3_buckets).where(
+            sa.and_(
+                t_s3_buckets.c.lifecycle_rules.isnot(None),
+                t_s3_buckets.c.lifecycle_rules != "[]",
+            )
+        )
 
         if scan_id:
-            query += " AND scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            stmt = stmt.where(t_s3_buckets.c.scan_id == scan_id)
 
         buckets = []
-        for row in cursor.fetchall():
-            bucket = dict(row)
-            bucket["lifecycle_rules"] = json.loads(
-                bucket.get("lifecycle_rules") or "[]"
-            )
-            bucket["tags"] = json.loads(bucket.get("tags") or "{}")
-
-            # Parse lifecycle rules for summary
-            rules_summary = []
-            for rule in bucket["lifecycle_rules"]:
-                rules_summary.append(
-                    {
-                        "id": rule.get("ID"),
-                        "status": rule.get("Status"),
-                        "transitions": rule.get("Transitions", []),
-                        "expiration": rule.get("Expiration", {}),
-                    }
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                bucket = dict(row._mapping)
+                bucket["lifecycle_rules"] = json.loads(
+                    bucket.get("lifecycle_rules") or "[]"
                 )
+                bucket["tags"] = json.loads(bucket.get("tags") or "{}")
 
-            bucket["lifecycle_summary"] = rules_summary
-            buckets.append(bucket)
+                # Parse lifecycle rules for summary
+                rules_summary = []
+                for rule in bucket["lifecycle_rules"]:
+                    rules_summary.append(
+                        {
+                            "id": rule.get("ID"),
+                            "status": rule.get("Status"),
+                            "transitions": rule.get("Transitions", []),
+                            "expiration": rule.get("Expiration", {}),
+                        }
+                    )
 
-        conn.close()
+                bucket["lifecycle_summary"] = rules_summary
+                buckets.append(bucket)
 
         return {"buckets": buckets, "count": len(buckets)}
 
@@ -1560,53 +1554,49 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         vpc_integrated_only = params.get("vpc_integrated_only", False)
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM lambda_functions"
+        stmt = sa.select(t_lambda_functions)
 
         conditions = []
-        query_params = []
-
         if scan_id:
-            conditions.append("scan_id = ?")
-            query_params.append(scan_id)
-
+            conditions.append(t_lambda_functions.c.scan_id == scan_id)
         if vpc_integrated_only:
-            conditions.append("vpc_config IS NOT NULL AND vpc_config != 'null'")
-
+            conditions.append(
+                sa.and_(
+                    t_lambda_functions.c.vpc_config.isnot(None),
+                    t_lambda_functions.c.vpc_config != "null",
+                )
+            )
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            stmt = stmt.where(*conditions)
 
-        query += " ORDER BY region, function_name"
-
-        cursor.execute(query, tuple(query_params))
+        stmt = stmt.order_by(
+            t_lambda_functions.c.region, t_lambda_functions.c.function_name
+        )
 
         functions = []
         vpc_count = 0
         non_vpc_count = 0
 
-        for row in cursor.fetchall():
-            func = dict(row)
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                func = dict(row._mapping)
 
-            # Parse JSON fields
-            func["vpc_config"] = json.loads(func.get("vpc_config") or "null")
-            func["environment_variables"] = json.loads(
-                func.get("environment_variables") or "{}"
-            )
-            func["layers"] = json.loads(func.get("layers") or "[]")
-            func["architectures"] = json.loads(func.get("architectures") or "[]")
-            func["triggers"] = json.loads(func.get("triggers") or "[]")
-            func["tags"] = json.loads(func.get("tags") or "{}")
+                # Parse JSON fields
+                func["vpc_config"] = json.loads(func.get("vpc_config") or "null")
+                func["environment_variables"] = json.loads(
+                    func.get("environment_variables") or "{}"
+                )
+                func["layers"] = json.loads(func.get("layers") or "[]")
+                func["architectures"] = json.loads(func.get("architectures") or "[]")
+                func["triggers"] = json.loads(func.get("triggers") or "[]")
+                func["tags"] = json.loads(func.get("tags") or "{}")
 
-            if func["vpc_config"]:
-                vpc_count += 1
-            else:
-                non_vpc_count += 1
+                if func["vpc_config"]:
+                    vpc_count += 1
+                else:
+                    non_vpc_count += 1
 
-            functions.append(func)
-
-        conn.close()
+                functions.append(func)
 
         return {
             "functions": functions,
@@ -1619,53 +1609,55 @@ class QueryHandler:
         """Get Route53 hosted zones by account."""
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = """
-            SELECT sm.account_name, sm.account_number, sm.scan_id,
-                   hz.hosted_zone_id, hz.name, hz.is_private,
-                   hz.resource_record_set_count, hz.tags
-            FROM route53_hosted_zones hz
-            INNER JOIN scan_metadata sm ON hz.scan_id = sm.scan_id
-        """
+        stmt = sa.select(
+            t_scan_metadata.c.account_name,
+            t_scan_metadata.c.account_number,
+            t_scan_metadata.c.scan_id,
+            t_route53_hosted_zones.c.hosted_zone_id,
+            t_route53_hosted_zones.c.name,
+            t_route53_hosted_zones.c.is_private,
+            t_route53_hosted_zones.c.resource_record_set_count,
+            t_route53_hosted_zones.c.tags,
+        ).select_from(
+            t_route53_hosted_zones.join(
+                t_scan_metadata,
+                t_route53_hosted_zones.c.scan_id == t_scan_metadata.c.scan_id,
+            )
+        )
 
         if scan_id:
-            query += " WHERE hz.scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            stmt = stmt.where(t_route53_hosted_zones.c.scan_id == scan_id)
 
         # Group by account
         accounts = {}
-        for row in cursor.fetchall():
-            account = row["account_name"]
-            if account not in accounts:
-                accounts[account] = {
-                    "account_number": row["account_number"],
-                    "hosted_zones": [],
-                    "zone_count": 0,
-                    "private_zones": 0,
-                    "public_zones": 0,
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                account = mapping["account_name"]
+                if account not in accounts:
+                    accounts[account] = {
+                        "account_number": mapping["account_number"],
+                        "hosted_zones": [],
+                        "zone_count": 0,
+                        "private_zones": 0,
+                        "public_zones": 0,
+                    }
+
+                zone = {
+                    "hosted_zone_id": mapping["hosted_zone_id"],
+                    "name": mapping["name"],
+                    "is_private": bool(mapping["is_private"]),
+                    "resource_record_set_count": mapping["resource_record_set_count"],
+                    "tags": json.loads(mapping["tags"] or "{}"),
                 }
 
-            zone = {
-                "hosted_zone_id": row["hosted_zone_id"],
-                "name": row["name"],
-                "is_private": bool(row["is_private"]),
-                "resource_record_set_count": row["resource_record_set_count"],
-                "tags": json.loads(row["tags"] or "{}"),
-            }
+                accounts[account]["hosted_zones"].append(zone)
+                accounts[account]["zone_count"] += 1
 
-            accounts[account]["hosted_zones"].append(zone)
-            accounts[account]["zone_count"] += 1
-
-            if zone["is_private"]:
-                accounts[account]["private_zones"] += 1
-            else:
-                accounts[account]["public_zones"] += 1
-
-        conn.close()
+                if zone["is_private"]:
+                    accounts[account]["private_zones"] += 1
+                else:
+                    accounts[account]["public_zones"] += 1
 
         return {"accounts": accounts}
 
@@ -1677,30 +1669,30 @@ class QueryHandler:
         if not hosted_zone_id:
             return {"error": "hosted_zone_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = "SELECT * FROM route53_record_sets WHERE hosted_zone_id = ?"
-        query_params = [hosted_zone_id]
+        stmt = sa.select(t_route53_record_sets).where(
+            t_route53_record_sets.c.hosted_zone_id == hosted_zone_id
+        )
 
         if record_type:
-            query += " AND record_type = ?"
-            query_params.append(record_type.upper())
+            stmt = stmt.where(
+                t_route53_record_sets.c.record_type == record_type.upper()
+            )
 
-        query += " ORDER BY record_type, name"
-
-        cursor.execute(query, tuple(query_params))
+        stmt = stmt.order_by(
+            t_route53_record_sets.c.record_type, t_route53_record_sets.c.name
+        )
 
         records = []
-        for row in cursor.fetchall():
-            record = dict(row)
-            record["resource_records"] = json.loads(
-                record.get("resource_records") or "[]"
-            )
-            record["alias_target"] = json.loads(record.get("alias_target") or "null")
-            records.append(record)
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                record = dict(row._mapping)
+                record["resource_records"] = json.loads(
+                    record.get("resource_records") or "[]"
+                )
+                record["alias_target"] = json.loads(
+                    record.get("alias_target") or "null"
+                )
+                records.append(record)
 
         return {
             "hosted_zone_id": hosted_zone_id,
@@ -1712,43 +1704,50 @@ class QueryHandler:
         """Get Route53 zone and DNS configuration changes across scans."""
         account_number = params.get("account_number")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         # Get zone changes
-        zone_query = """
-            SELECT sm.account_name, sm.account_number, sm.scan_id, sm.scan_timestamp,
-                   hz.hosted_zone_id, hz.name, hz.is_private, hz.resource_record_set_count
-            FROM route53_hosted_zones hz
-            INNER JOIN scan_metadata sm ON hz.scan_id = sm.scan_id
-        """
+        zone_stmt = sa.select(
+            t_scan_metadata.c.account_name,
+            t_scan_metadata.c.account_number,
+            t_scan_metadata.c.scan_id,
+            t_scan_metadata.c.scan_timestamp,
+            t_route53_hosted_zones.c.hosted_zone_id,
+            t_route53_hosted_zones.c.name,
+            t_route53_hosted_zones.c.is_private,
+            t_route53_hosted_zones.c.resource_record_set_count,
+        ).select_from(
+            t_route53_hosted_zones.join(
+                t_scan_metadata,
+                t_route53_hosted_zones.c.scan_id == t_scan_metadata.c.scan_id,
+            )
+        )
 
         if account_number:
-            zone_query += " WHERE sm.account_number = ?"
-            cursor.execute(zone_query, (account_number,))
-        else:
-            cursor.execute(zone_query)
+            zone_stmt = zone_stmt.where(
+                t_scan_metadata.c.account_number == account_number
+            )
 
         # Track zone history
         zone_history = {}
-        for row in cursor.fetchall():
-            zone_id = row["hosted_zone_id"]
-            if zone_id not in zone_history:
-                zone_history[zone_id] = {
-                    "hosted_zone_id": zone_id,
-                    "name": row["name"],
-                    "scans": [],
-                }
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(zone_stmt):
+                mapping = row._mapping
+                zone_id = mapping["hosted_zone_id"]
+                if zone_id not in zone_history:
+                    zone_history[zone_id] = {
+                        "hosted_zone_id": zone_id,
+                        "name": mapping["name"],
+                        "scans": [],
+                    }
 
-            zone_history[zone_id]["scans"].append(
-                {
-                    "scan_id": row["scan_id"],
-                    "scan_timestamp": row["scan_timestamp"],
-                    "account_name": row["account_name"],
-                    "is_private": bool(row["is_private"]),
-                    "record_count": row["resource_record_set_count"],
-                }
-            )
+                zone_history[zone_id]["scans"].append(
+                    {
+                        "scan_id": mapping["scan_id"],
+                        "scan_timestamp": mapping["scan_timestamp"],
+                        "account_name": mapping["account_name"],
+                        "is_private": bool(mapping["is_private"]),
+                        "record_count": mapping["resource_record_set_count"],
+                    }
+                )
 
         # Identify changes
         changes = []
@@ -1772,8 +1771,6 @@ class QueryHandler:
                             }
                         )
 
-        conn.close()
-
         return {
             "zone_history": zone_history,
             "changes": changes,
@@ -1787,54 +1784,57 @@ class QueryHandler:
         if not scan_id:
             return {"error": "scan_id parameter required"}
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        # Get all VPCs
-        cursor.execute(
-            "SELECT vpc_id, region, cidr_block, tags FROM vpcs WHERE scan_id = ?",
-            (scan_id,),
-        )
         vpcs = {}
-        for row in cursor.fetchall():
-            vpcs[row["vpc_id"]] = {
-                "vpc_id": row["vpc_id"],
-                "region": row["region"],
-                "cidr_block": row["cidr_block"],
-                "tags": json.loads(row["tags"] or "{}"),
-                "has_flow_logs": False,
-                "flow_logs": [],
-            }
+        with self.db_ops.engine.connect() as conn:
+            # Get all VPCs
+            vpc_stmt = sa.select(
+                t_vpcs.c.vpc_id,
+                t_vpcs.c.region,
+                t_vpcs.c.cidr_block,
+                t_vpcs.c.tags,
+            ).where(t_vpcs.c.scan_id == scan_id)
+            for row in conn.execute(vpc_stmt):
+                mapping = row._mapping
+                vpcs[mapping["vpc_id"]] = {
+                    "vpc_id": mapping["vpc_id"],
+                    "region": mapping["region"],
+                    "cidr_block": mapping["cidr_block"],
+                    "tags": json.loads(mapping["tags"] or "{}"),
+                    "has_flow_logs": False,
+                    "flow_logs": [],
+                }
 
-        # Get VPC flow logs
-        cursor.execute(
-            """
-            SELECT flow_log_id, resource_id, resource_type, traffic_type,
-                   log_destination_type, flow_log_status, region
-            FROM vpc_flow_logs
-            WHERE scan_id = ? AND resource_type = 'VPC'
-        """,
-            (scan_id,),
-        )
+            # Get VPC flow logs
+            flow_log_stmt = sa.select(
+                t_vpc_flow_logs.c.flow_log_id,
+                t_vpc_flow_logs.c.resource_id,
+                t_vpc_flow_logs.c.resource_type,
+                t_vpc_flow_logs.c.traffic_type,
+                t_vpc_flow_logs.c.log_destination_type,
+                t_vpc_flow_logs.c.flow_log_status,
+                t_vpc_flow_logs.c.region,
+            ).where(
+                t_vpc_flow_logs.c.scan_id == scan_id,
+                t_vpc_flow_logs.c.resource_type == "VPC",
+            )
 
-        for row in cursor.fetchall():
-            resource_id = row["resource_id"]
-            if resource_id in vpcs:
-                vpcs[resource_id]["has_flow_logs"] = True
-                vpcs[resource_id]["flow_logs"].append(
-                    {
-                        "flow_log_id": row["flow_log_id"],
-                        "traffic_type": row["traffic_type"],
-                        "log_destination_type": row["log_destination_type"],
-                        "status": row["flow_log_status"],
-                    }
-                )
+            for row in conn.execute(flow_log_stmt):
+                mapping = row._mapping
+                resource_id = mapping["resource_id"]
+                if resource_id in vpcs:
+                    vpcs[resource_id]["has_flow_logs"] = True
+                    vpcs[resource_id]["flow_logs"].append(
+                        {
+                            "flow_log_id": mapping["flow_log_id"],
+                            "traffic_type": mapping["traffic_type"],
+                            "log_destination_type": mapping["log_destination_type"],
+                            "status": mapping["flow_log_status"],
+                        }
+                    )
 
         # Categorise VPCs
         vpcs_with_logs = [vpc for vpc in vpcs.values() if vpc["has_flow_logs"]]
         vpcs_without_logs = [vpc for vpc in vpcs.values() if not vpc["has_flow_logs"]]
-
-        conn.close()
 
         return {
             "total_vpcs": len(vpcs),
@@ -1852,82 +1852,97 @@ class QueryHandler:
         account_number = params.get("account_number")
         months = params.get("months", 12)  # Default to 12 months
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        # First, identify master/payer accounts (those with AWS Organizations)
-        cursor.execute("""
-            SELECT DISTINCT sm.account_number, sm.account_name, org.master_account_id
-            FROM scan_metadata sm
-            LEFT JOIN organizations org ON sm.scan_id = org.scan_id
-            WHERE org.organization_id IS NOT NULL
-        """)
-
-        master_accounts = {}
-        for row in cursor.fetchall():
-            master_accounts[row[0]] = {"account_name": row[1], "is_payer": True}
-
-        # Build cost query
-        query = """
-            SELECT sm.account_name, sm.account_number,
-                   cd.currency,
-                   SUM(cd.amount) as total_cost,
-                   MIN(cd.time_period_start) as earliest_period,
-                   MAX(cd.time_period_end) as latest_period,
-                   COUNT(DISTINCT cd.service_name) as service_count
-            FROM cost_data cd
-            INNER JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
-        """
-
-        conditions = []
-        query_params = []
-
-        if account_number:
-            conditions.append("cd.account_number = ?")
-            query_params.append(account_number)
-
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        query += " GROUP BY sm.account_name, sm.account_number, cd.currency"
-        query += " ORDER BY total_cost DESC"
-
-        cursor.execute(query, tuple(query_params))
-
-        accounts = []
-        total_all_accounts = 0.0
-        total_excluding_payer = 0.0
-        currency = "USD"
-        payer_account_cost = 0.0
-
-        for row in cursor.fetchall():
-            acct_num = row["account_number"]
-            is_payer = acct_num in master_accounts
-
-            account_cost = {
-                "account_name": row["account_name"],
-                "account_number": row["account_number"],
-                "total_cost": round(row["total_cost"], 2),
-                "currency": row["currency"],
-                "earliest_period": row["earliest_period"],
-                "latest_period": row["latest_period"],
-                "service_count": row["service_count"],
-                "is_master_payer_account": is_payer,
-            }
-
-            if is_payer:
-                account_cost["note"] = (
-                    "Master payer account in AWS Organizations - costs shown here are direct costs for this account only. Member account costs are shown separately."
+        with self.db_ops.engine.connect() as conn:
+            # First, identify master/payer accounts (those with AWS Organizations)
+            master_accounts_stmt = (
+                sa.select(
+                    t_scan_metadata.c.account_number,
+                    t_scan_metadata.c.account_name,
+                    t_organizations.c.master_account_id,
                 )
-                payer_account_cost = row["total_cost"]
+                .select_from(
+                    t_scan_metadata.outerjoin(
+                        t_organizations,
+                        t_scan_metadata.c.scan_id == t_organizations.c.scan_id,
+                    )
+                )
+                .where(t_organizations.c.organization_id.isnot(None))
+                .distinct()
+            )
 
-            accounts.append(account_cost)
-            total_all_accounts += row["total_cost"]
-            if not is_payer:
-                total_excluding_payer += row["total_cost"]
-            currency = row["currency"]
+            master_accounts = {}
+            for row in conn.execute(master_accounts_stmt):
+                mapping = row._mapping
+                master_accounts[mapping["account_number"]] = {
+                    "account_name": mapping["account_name"],
+                    "is_payer": True,
+                }
 
-        conn.close()
+            # Build cost query
+            stmt = (
+                sa.select(
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                    t_cost_data.c.currency,
+                    sa.func.sum(t_cost_data.c.amount).label("total_cost"),
+                    sa.func.min(t_cost_data.c.time_period_start).label(
+                        "earliest_period"
+                    ),
+                    sa.func.max(t_cost_data.c.time_period_end).label("latest_period"),
+                    sa.func.count(sa.distinct(t_cost_data.c.service_name)).label(
+                        "service_count"
+                    ),
+                )
+                .select_from(
+                    t_cost_data.join(
+                        t_scan_metadata,
+                        t_cost_data.c.scan_id == t_scan_metadata.c.scan_id,
+                    )
+                )
+                .group_by(
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                    t_cost_data.c.currency,
+                )
+                .order_by(sa.desc("total_cost"))
+            )
+
+            if account_number:
+                stmt = stmt.where(t_cost_data.c.account_number == account_number)
+
+            accounts = []
+            total_all_accounts = 0.0
+            total_excluding_payer = 0.0
+            currency = "USD"
+            payer_account_cost = 0.0
+
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                acct_num = mapping["account_number"]
+                is_payer = acct_num in master_accounts
+
+                account_cost = {
+                    "account_name": mapping["account_name"],
+                    "account_number": mapping["account_number"],
+                    "total_cost": round(mapping["total_cost"], 2),
+                    "currency": mapping["currency"],
+                    "earliest_period": mapping["earliest_period"],
+                    "latest_period": mapping["latest_period"],
+                    "service_count": mapping["service_count"],
+                    "is_master_payer_account": is_payer,
+                }
+
+                if is_payer:
+                    account_cost["note"] = (
+                        "Master payer account in AWS Organizations - costs shown here are direct costs for this account only. Member account costs are shown separately."
+                    )
+                    payer_account_cost = mapping["total_cost"]
+
+                accounts.append(account_cost)
+                total_all_accounts += mapping["total_cost"]
+                if not is_payer:
+                    total_excluding_payer += mapping["total_cost"]
+                currency = mapping["currency"]
 
         result = {
             "accounts": accounts,
@@ -1952,56 +1967,46 @@ class QueryHandler:
         account_number = params.get("account_number")
         top_n = params.get("top_n", 20)  # Default to top 20 services
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         # Build query to get cost by service
-        query = """
-            SELECT cd.service_name,
-                   SUM(cd.amount) as total_cost,
-                   cd.currency,
-                   COUNT(DISTINCT cd.account_number) as account_count,
-                   MIN(cd.time_period_start) as earliest_period,
-                   MAX(cd.time_period_end) as latest_period
-            FROM cost_data cd
-        """
-
-        conditions = []
-        query_params = []
+        stmt = (
+            sa.select(
+                t_cost_data.c.service_name,
+                sa.func.sum(t_cost_data.c.amount).label("total_cost"),
+                t_cost_data.c.currency,
+                sa.func.count(sa.distinct(t_cost_data.c.account_number)).label(
+                    "account_count"
+                ),
+                sa.func.min(t_cost_data.c.time_period_start).label("earliest_period"),
+                sa.func.max(t_cost_data.c.time_period_end).label("latest_period"),
+            )
+            .group_by(t_cost_data.c.service_name, t_cost_data.c.currency)
+            .order_by(sa.desc("total_cost"))
+        )
 
         if account_number:
-            conditions.append("cd.account_number = ?")
-            query_params.append(account_number)
-
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        query += " GROUP BY cd.service_name, cd.currency"
-        query += " ORDER BY total_cost DESC"
+            stmt = stmt.where(t_cost_data.c.account_number == account_number)
 
         if top_n:
-            query += f" LIMIT {top_n}"
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.limit(top_n)
 
         services = []
         total_cost = 0.0
         currency = "USD"
 
-        for row in cursor.fetchall():
-            service = {
-                "service_name": row["service_name"],
-                "total_cost": round(row["total_cost"], 2),
-                "currency": row["currency"],
-                "account_count": row["account_count"],
-                "earliest_period": row["earliest_period"],
-                "latest_period": row["latest_period"],
-            }
-            services.append(service)
-            total_cost += row["total_cost"]
-            currency = row["currency"]
-
-        conn.close()
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                service = {
+                    "service_name": mapping["service_name"],
+                    "total_cost": round(mapping["total_cost"], 2),
+                    "currency": mapping["currency"],
+                    "account_count": mapping["account_count"],
+                    "earliest_period": mapping["earliest_period"],
+                    "latest_period": mapping["latest_period"],
+                }
+                services.append(service)
+                total_cost += mapping["total_cost"]
+                currency = mapping["currency"]
 
         return {
             "services": services,
@@ -2015,68 +2020,75 @@ class QueryHandler:
         account_number = params.get("account_number")
         service_name = params.get("service_name")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        # Build query to get monthly costs
-        query = """
-            SELECT
-                strftime('%Y-%m', cd.time_period_start) as month,
-                cd.account_number,
-                sm.account_name,
-                cd.service_name,
-                SUM(cd.amount) as monthly_cost,
-                cd.currency
-            FROM cost_data cd
-            INNER JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
-        """
+        # Build query to get monthly costs.
+        # The legacy SQL uses strftime('%Y-%m', cd.time_period_start); the
+        # column holds ISO date strings, so substr(col, 1, 7) is the binding
+        # equivalent for a 'YYYY-MM' prefix.
+        month_expr = sa.func.substr(t_cost_data.c.time_period_start, 1, 7).label(
+            "month"
+        )
+        monthly_cost_expr = sa.func.sum(t_cost_data.c.amount).label("monthly_cost")
+        stmt = (
+            sa.select(
+                month_expr,
+                t_cost_data.c.account_number,
+                t_scan_metadata.c.account_name,
+                t_cost_data.c.service_name,
+                monthly_cost_expr,
+                t_cost_data.c.currency,
+            )
+            .select_from(
+                t_cost_data.join(
+                    t_scan_metadata, t_cost_data.c.scan_id == t_scan_metadata.c.scan_id
+                )
+            )
+            .group_by(
+                month_expr,
+                t_cost_data.c.account_number,
+                t_scan_metadata.c.account_name,
+                t_cost_data.c.service_name,
+                t_cost_data.c.currency,
+            )
+            .order_by(month_expr.desc(), monthly_cost_expr.desc())
+        )
 
         conditions = []
-        query_params = []
-
         if account_number:
-            conditions.append("cd.account_number = ?")
-            query_params.append(account_number)
-
+            conditions.append(t_cost_data.c.account_number == account_number)
         if service_name:
-            conditions.append("cd.service_name = ?")
-            query_params.append(service_name)
-
+            conditions.append(t_cost_data.c.service_name == service_name)
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        query += " GROUP BY month, cd.account_number, sm.account_name, cd.service_name, cd.currency"
-        query += " ORDER BY month DESC, monthly_cost DESC"
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(*conditions)
 
         # Organize by month
         trends = {}
-        for row in cursor.fetchall():
-            month = row["month"]
-            if month not in trends:
-                trends[month] = {
-                    "month": month,
-                    "accounts": {},
-                    "total_monthly_cost": 0.0,
-                    "currency": row["currency"],
-                }
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                month = mapping["month"]
+                if month not in trends:
+                    trends[month] = {
+                        "month": month,
+                        "accounts": {},
+                        "total_monthly_cost": 0.0,
+                        "currency": mapping["currency"],
+                    }
 
-            account = row["account_number"]
-            if account not in trends[month]["accounts"]:
-                trends[month]["accounts"][account] = {
-                    "account_name": row["account_name"],
-                    "account_number": account,
-                    "services": {},
-                    "account_total": 0.0,
-                }
+                account = mapping["account_number"]
+                if account not in trends[month]["accounts"]:
+                    trends[month]["accounts"][account] = {
+                        "account_name": mapping["account_name"],
+                        "account_number": account,
+                        "services": {},
+                        "account_total": 0.0,
+                    }
 
-            service = row["service_name"]
-            cost = row["monthly_cost"]
+                service = mapping["service_name"]
+                cost = mapping["monthly_cost"]
 
-            trends[month]["accounts"][account]["services"][service] = round(cost, 2)
-            trends[month]["accounts"][account]["account_total"] += cost
-            trends[month]["total_monthly_cost"] += cost
+                trends[month]["accounts"][account]["services"][service] = round(cost, 2)
+                trends[month]["accounts"][account]["account_total"] += cost
+                trends[month]["total_monthly_cost"] += cost
 
         # Round totals
         for month_data in trends.values():
@@ -2086,8 +2098,6 @@ class QueryHandler:
             for account_data in month_data["accounts"].values():
                 account_data["account_total"] = round(account_data["account_total"], 2)
 
-        conn.close()
-
         # Convert to list sorted by month
         trends_list = sorted(trends.values(), key=lambda x: x["month"], reverse=True)
 
@@ -2095,48 +2105,54 @@ class QueryHandler:
 
     def _get_cost_comparison(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Compare costs between accounts with service breakdown."""
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        # Get total cost by account and service
-        cursor.execute("""
-            SELECT
-                sm.account_name,
-                sm.account_number,
-                cd.service_name,
-                SUM(cd.amount) as service_cost,
-                cd.currency
-            FROM cost_data cd
-            INNER JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
-            GROUP BY sm.account_name, sm.account_number, cd.service_name, cd.currency
-            ORDER BY sm.account_name, service_cost DESC
-        """)
+        service_cost_expr = sa.func.sum(t_cost_data.c.amount).label("service_cost")
+        stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_cost_data.c.service_name,
+                service_cost_expr,
+                t_cost_data.c.currency,
+            )
+            .select_from(
+                t_cost_data.join(
+                    t_scan_metadata, t_cost_data.c.scan_id == t_scan_metadata.c.scan_id
+                )
+            )
+            .group_by(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_cost_data.c.service_name,
+                t_cost_data.c.currency,
+            )
+            .order_by(t_scan_metadata.c.account_name, service_cost_expr.desc())
+        )
 
         # Organize by account
         accounts = {}
-        for row in cursor.fetchall():
-            account_num = row["account_number"]
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                mapping = row._mapping
+                account_num = mapping["account_number"]
 
-            if account_num not in accounts:
-                accounts[account_num] = {
-                    "account_name": row["account_name"],
-                    "account_number": account_num,
-                    "services": {},
-                    "total_cost": 0.0,
-                    "currency": row["currency"],
-                }
+                if account_num not in accounts:
+                    accounts[account_num] = {
+                        "account_name": mapping["account_name"],
+                        "account_number": account_num,
+                        "services": {},
+                        "total_cost": 0.0,
+                        "currency": mapping["currency"],
+                    }
 
-            service = row["service_name"]
-            cost = row["service_cost"]
+                service = mapping["service_name"]
+                cost = mapping["service_cost"]
 
-            accounts[account_num]["services"][service] = round(cost, 2)
-            accounts[account_num]["total_cost"] += cost
+                accounts[account_num]["services"][service] = round(cost, 2)
+                accounts[account_num]["total_cost"] += cost
 
         # Round account totals
         for account in accounts.values():
             account["total_cost"] = round(account["total_cost"], 2)
-
-        conn.close()
 
         # Convert to list sorted by total cost
         accounts_list = sorted(
@@ -2165,129 +2181,140 @@ class QueryHandler:
         vpc_id = params.get("vpc_id")
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         # Build VPC query
-        vpc_query = """
-            SELECT v.vpc_id, v.cidr_block, v.region, v.is_default,
-                   v.tags, v.scan_id,
-                   sm.account_name, sm.account_number
-            FROM vpcs v
-            INNER JOIN scan_metadata sm ON v.scan_id = sm.scan_id
-        """
+        vpc_stmt = sa.select(
+            t_vpcs.c.vpc_id,
+            t_vpcs.c.cidr_block,
+            t_vpcs.c.region,
+            t_vpcs.c.is_default,
+            t_vpcs.c.tags,
+            t_vpcs.c.scan_id,
+            t_scan_metadata.c.account_name,
+            t_scan_metadata.c.account_number,
+        ).select_from(
+            t_vpcs.join(t_scan_metadata, t_vpcs.c.scan_id == t_scan_metadata.c.scan_id)
+        )
 
         vpc_conditions = []
-        vpc_params = []
-
         if vpc_id:
-            vpc_conditions.append("v.vpc_id = ?")
-            vpc_params.append(vpc_id)
-
+            vpc_conditions.append(t_vpcs.c.vpc_id == vpc_id)
         if scan_id:
-            vpc_conditions.append("v.scan_id = ?")
-            vpc_params.append(scan_id)
-
+            vpc_conditions.append(t_vpcs.c.scan_id == scan_id)
         if vpc_conditions:
-            vpc_query += " WHERE " + " AND ".join(vpc_conditions)
+            vpc_stmt = vpc_stmt.where(*vpc_conditions)
 
-        vpc_query += " ORDER BY sm.account_name, v.region, v.vpc_id"
-
-        cursor.execute(vpc_query, tuple(vpc_params))
+        vpc_stmt = vpc_stmt.order_by(
+            t_scan_metadata.c.account_name, t_vpcs.c.region, t_vpcs.c.vpc_id
+        )
 
         # Collect VPC data
         vpcs = []
         vpc_networks = {}  # For overlap detection
 
-        for row in cursor.fetchall():
-            vpc_data = {
-                "vpc_id": row[0],
-                "cidr_block": row[1],
-                "region": row[2],
-                "is_default": bool(row[3]),
-                "tags": json.loads(row[4]) if row[4] else {},
-                "scan_id": row[5],
-                "account_name": row[6],
-                "account_number": row[7],
-                "subnets": [],
-            }
-
-            # Parse CIDR for overlap detection
-            try:
-                vpc_network = ipaddress.ip_network(vpc_data["cidr_block"], strict=False)
-                vpc_networks[row[0]] = {"network": vpc_network, "data": vpc_data}
-            except ValueError as e:
-                logger.warning(
-                    f"Invalid CIDR block {vpc_data['cidr_block']} for VPC {row[0]}: {e}"
-                )
-
-            vpcs.append(vpc_data)
-
-        # Get subnets for each VPC
-        if vpcs:
-            vpc_ids = [v["vpc_id"] for v in vpcs]
-            placeholders = ",".join("?" * len(vpc_ids))
-
-            subnet_query = f"""
-                SELECT vpc_id, subnet_id, cidr_block, availability_zone,
-                       is_public, tags
-                FROM subnets
-                WHERE vpc_id IN ({placeholders})
-                ORDER BY vpc_id, cidr_block
-            """
-
-            cursor.execute(subnet_query, tuple(vpc_ids))
-
-            # Group subnets by VPC
-            subnets_by_vpc = {}
-            for row in cursor.fetchall():
-                vpc_id_key = row[0]
-                subnet_data = {
-                    "subnet_id": row[1],
-                    "cidr_block": row[2],
-                    "availability_zone": row[3],
-                    "is_public": bool(row[4]),
-                    "tags": json.loads(row[5]) if row[5] else {},
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(vpc_stmt):
+                vpc_data = {
+                    "vpc_id": row[0],
+                    "cidr_block": row[1],
+                    "region": row[2],
+                    "is_default": bool(row[3]),
+                    "tags": json.loads(row[4]) if row[4] else {},
+                    "scan_id": row[5],
+                    "account_name": row[6],
+                    "account_number": row[7],
+                    "subnets": [],
                 }
 
-                if vpc_id_key not in subnets_by_vpc:
-                    subnets_by_vpc[vpc_id_key] = []
-                subnets_by_vpc[vpc_id_key].append(subnet_data)
+                # Parse CIDR for overlap detection
+                try:
+                    vpc_network = ipaddress.ip_network(
+                        vpc_data["cidr_block"], strict=False
+                    )
+                    vpc_networks[row[0]] = {"network": vpc_network, "data": vpc_data}
+                except ValueError as e:
+                    logger.warning(
+                        f"Invalid CIDR block {vpc_data['cidr_block']} for VPC {row[0]}: {e}"
+                    )
 
-            # Add subnets to VPCs
-            for vpc in vpcs:
-                vpc["subnets"] = subnets_by_vpc.get(vpc["vpc_id"], [])
+                vpcs.append(vpc_data)
 
-                # Calculate CIDR utilization
-                if vpc["subnets"]:
-                    try:
-                        vpc_network = ipaddress.ip_network(
-                            vpc["cidr_block"], strict=False
-                        )
-                        vpc_total_ips = vpc_network.num_addresses
+            # Get subnets for each VPC
+            if vpcs:
+                vpc_ids = [v["vpc_id"] for v in vpcs]
 
-                        subnet_ips = 0
-                        for subnet in vpc["subnets"]:
-                            try:
-                                subnet_network = ipaddress.ip_network(
-                                    subnet["cidr_block"], strict=False
-                                )
-                                subnet_ips += subnet_network.num_addresses
-                            except ValueError:
-                                pass
+                # The legacy SQL selects subnets.is_public, a column absent
+                # from the subnets DDL (only map_public_ip exists). Kept
+                # verbatim via sa.text() so the frozen "no such column:
+                # is_public" baseline error still fires; the raw sqlite3
+                # error is re-raised so handle_query's str(e) matches the
+                # frozen baseline exactly.
+                subnet_stmt = sa.text(
+                    """
+                    SELECT vpc_id, subnet_id, cidr_block, availability_zone,
+                           is_public, tags
+                    FROM subnets
+                    WHERE vpc_id IN :vpc_ids
+                    ORDER BY vpc_id, cidr_block
+                    """
+                ).bindparams(sa.bindparam("vpc_ids", expanding=True))
 
-                        vpc["cidr_utilization"] = {
-                            "total_ips": vpc_total_ips,
-                            "allocated_ips": subnet_ips,
-                            "available_ips": vpc_total_ips - subnet_ips,
-                            "utilization_percentage": round(
-                                (subnet_ips / vpc_total_ips) * 100, 2
+                try:
+                    subnet_rows = conn.execute(
+                        subnet_stmt, {"vpc_ids": vpc_ids}
+                    ).fetchall()
+                except sa.exc.DBAPIError as e:
+                    raise e.orig from None
+
+                # Group subnets by VPC
+                subnets_by_vpc = {}
+                for row in subnet_rows:
+                    vpc_id_key = row[0]
+                    subnet_data = {
+                        "subnet_id": row[1],
+                        "cidr_block": row[2],
+                        "availability_zone": row[3],
+                        "is_public": bool(row[4]),
+                        "tags": json.loads(row[5]) if row[5] else {},
+                    }
+
+                    if vpc_id_key not in subnets_by_vpc:
+                        subnets_by_vpc[vpc_id_key] = []
+                    subnets_by_vpc[vpc_id_key].append(subnet_data)
+
+                # Add subnets to VPCs
+                for vpc in vpcs:
+                    vpc["subnets"] = subnets_by_vpc.get(vpc["vpc_id"], [])
+
+                    # Calculate CIDR utilization
+                    if vpc["subnets"]:
+                        try:
+                            vpc_network = ipaddress.ip_network(
+                                vpc["cidr_block"], strict=False
                             )
-                            if vpc_total_ips > 0
-                            else 0,
-                        }
-                    except ValueError:
-                        vpc["cidr_utilization"] = None
+                            vpc_total_ips = vpc_network.num_addresses
+
+                            subnet_ips = 0
+                            for subnet in vpc["subnets"]:
+                                try:
+                                    subnet_network = ipaddress.ip_network(
+                                        subnet["cidr_block"], strict=False
+                                    )
+                                    subnet_ips += subnet_network.num_addresses
+                                except ValueError:
+                                    pass
+
+                            vpc["cidr_utilization"] = {
+                                "total_ips": vpc_total_ips,
+                                "allocated_ips": subnet_ips,
+                                "available_ips": vpc_total_ips - subnet_ips,
+                                "utilization_percentage": round(
+                                    (subnet_ips / vpc_total_ips) * 100, 2
+                                )
+                                if vpc_total_ips > 0
+                                else 0,
+                            }
+                        except ValueError:
+                            vpc["cidr_utilization"] = None
 
         # Detect overlaps between VPCs
         overlaps = []
@@ -2319,8 +2346,6 @@ class QueryHandler:
                         else "partial",
                     }
                     overlaps.append(overlap)
-
-        conn.close()
 
         # Calculate summary statistics
         total_vpcs = len(vpcs)
@@ -2368,9 +2393,6 @@ class QueryHandler:
         resource_type = params.get("resource_type")
         age_days = params.get("age_days", 90)  # Default: 90 days for old snapshots
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "summary": {
                 "total_unused": 0,
@@ -2380,180 +2402,224 @@ class QueryHandler:
             "unused_resources": {},
         }
 
-        # 1. Unattached EBS volumes
-        if not resource_type or resource_type == "ebs_volume":
-            query = """
-                SELECT ev.volume_id, ev.region, ev.size, ev.volume_type,
-                       ev.state, ev.create_time, ev.tags, ev.scan_id,
-                       sm.account_name, sm.account_number
-                FROM ebs_volumes ev
-                INNER JOIN scan_metadata sm ON ev.scan_id = sm.scan_id
-                WHERE ev.attached_instance_id IS NULL
-                AND ev.state = 'available'
-            """
-            if scan_id:
-                query += " AND ev.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
-
-            unattached_volumes = []
-            for row in cursor.fetchall():
-                tags = json.loads(row[6]) if row[6] else {}
-                unattached_volumes.append(
-                    {
-                        "volume_id": row[0],
-                        "region": row[1],
-                        "size_gb": row[2],
-                        "volume_type": row[3],
-                        "state": row[4],
-                        "create_time": row[5],
-                        "tags": tags,
-                        "account_name": row[8],
-                        "account_number": row[9],
-                        "estimated_monthly_cost": row[2]
-                        * 0.10,  # Rough estimate: $0.10/GB/month
-                    }
+        with self.db_ops.engine.connect() as conn:
+            # 1. Unattached EBS volumes
+            if not resource_type or resource_type == "ebs_volume":
+                stmt = (
+                    sa.select(
+                        t_ebs_volumes.c.volume_id,
+                        t_ebs_volumes.c.region,
+                        t_ebs_volumes.c.size,
+                        t_ebs_volumes.c.volume_type,
+                        t_ebs_volumes.c.state,
+                        t_ebs_volumes.c.create_time,
+                        t_ebs_volumes.c.tags,
+                        t_ebs_volumes.c.scan_id,
+                        t_scan_metadata.c.account_name,
+                        t_scan_metadata.c.account_number,
+                    )
+                    .select_from(
+                        t_ebs_volumes.join(
+                            t_scan_metadata,
+                            t_ebs_volumes.c.scan_id == t_scan_metadata.c.scan_id,
+                        )
+                    )
+                    .where(
+                        t_ebs_volumes.c.attached_instance_id.is_(None),
+                        t_ebs_volumes.c.state == "available",
+                    )
                 )
+                if scan_id:
+                    stmt = stmt.where(t_ebs_volumes.c.scan_id == scan_id)
 
-            if unattached_volumes:
-                results["unused_resources"]["unattached_ebs_volumes"] = (
-                    unattached_volumes
+                unattached_volumes = []
+                for row in conn.execute(stmt):
+                    tags = json.loads(row[6]) if row[6] else {}
+                    unattached_volumes.append(
+                        {
+                            "volume_id": row[0],
+                            "region": row[1],
+                            "size_gb": row[2],
+                            "volume_type": row[3],
+                            "state": row[4],
+                            "create_time": row[5],
+                            "tags": tags,
+                            "account_name": row[8],
+                            "account_number": row[9],
+                            "estimated_monthly_cost": row[2]
+                            * 0.10,  # Rough estimate: $0.10/GB/month
+                        }
+                    )
+
+                if unattached_volumes:
+                    results["unused_resources"]["unattached_ebs_volumes"] = (
+                        unattached_volumes
+                    )
+                    results["summary"]["categories"]["unattached_ebs_volumes"] = len(
+                        unattached_volumes
+                    )
+                    results["summary"]["potential_monthly_savings"] += sum(
+                        v["estimated_monthly_cost"] for v in unattached_volumes
+                    )
+
+            # 2. Unassociated Elastic IPs
+            if not resource_type or resource_type == "elastic_ip":
+                stmt = (
+                    sa.select(
+                        t_elastic_ips.c.public_ip,
+                        t_elastic_ips.c.allocation_id,
+                        t_elastic_ips.c.region,
+                        t_elastic_ips.c.tags,
+                        t_elastic_ips.c.scan_id,
+                        t_scan_metadata.c.account_name,
+                        t_scan_metadata.c.account_number,
+                    )
+                    .select_from(
+                        t_elastic_ips.join(
+                            t_scan_metadata,
+                            t_elastic_ips.c.scan_id == t_scan_metadata.c.scan_id,
+                        )
+                    )
+                    .where(t_elastic_ips.c.is_associated == 0)
                 )
-                results["summary"]["categories"]["unattached_ebs_volumes"] = len(
-                    unattached_volumes
+                if scan_id:
+                    stmt = stmt.where(t_elastic_ips.c.scan_id == scan_id)
+
+                unassociated_eips = []
+                for row in conn.execute(stmt):
+                    tags = json.loads(row[3]) if row[3] else {}
+                    unassociated_eips.append(
+                        {
+                            "public_ip": row[0],
+                            "allocation_id": row[1],
+                            "region": row[2],
+                            "tags": tags,
+                            "account_name": row[5],
+                            "account_number": row[6],
+                            "estimated_monthly_cost": 3.60,  # $0.005/hour = $3.60/month
+                        }
+                    )
+
+                if unassociated_eips:
+                    results["unused_resources"]["unassociated_elastic_ips"] = (
+                        unassociated_eips
+                    )
+                    results["summary"]["categories"]["unassociated_elastic_ips"] = len(
+                        unassociated_eips
+                    )
+                    results["summary"]["potential_monthly_savings"] += (
+                        len(unassociated_eips) * 3.60
+                    )
+
+            # 3. Old EBS snapshots
+            if not resource_type or resource_type == "ebs_snapshot":
+                age_days_expr = (
+                    sa.func.julianday("now")
+                    - sa.func.julianday(t_ebs_snapshots.c.start_time)
+                ).label("age_days")
+                stmt = (
+                    sa.select(
+                        t_ebs_snapshots.c.snapshot_id,
+                        t_ebs_snapshots.c.region,
+                        t_ebs_snapshots.c.volume_id,
+                        t_ebs_snapshots.c.volume_size,
+                        t_ebs_snapshots.c.start_time,
+                        t_ebs_snapshots.c.description,
+                        t_ebs_snapshots.c.tags,
+                        t_ebs_snapshots.c.scan_id,
+                        t_scan_metadata.c.account_name,
+                        t_scan_metadata.c.account_number,
+                        age_days_expr,
+                    )
+                    .select_from(
+                        t_ebs_snapshots.join(
+                            t_scan_metadata,
+                            t_ebs_snapshots.c.scan_id == t_scan_metadata.c.scan_id,
+                        )
+                    )
+                    .where(
+                        age_days_expr > age_days, t_ebs_snapshots.c.state == "completed"
+                    )
                 )
-                results["summary"]["potential_monthly_savings"] += sum(
-                    v["estimated_monthly_cost"] for v in unattached_volumes
+                if scan_id:
+                    stmt = stmt.where(t_ebs_snapshots.c.scan_id == scan_id)
+
+                old_snapshots = []
+                for row in conn.execute(stmt):
+                    tags = json.loads(row[6]) if row[6] else {}
+                    old_snapshots.append(
+                        {
+                            "snapshot_id": row[0],
+                            "region": row[1],
+                            "volume_id": row[2],
+                            "size_gb": row[3],
+                            "start_time": row[4],
+                            "description": row[5],
+                            "tags": tags,
+                            "account_name": row[8],
+                            "account_number": row[9],
+                            "age_days": int(row[10]),
+                            "estimated_monthly_cost": row[3]
+                            * 0.05,  # $0.05/GB/month for snapshots
+                        }
+                    )
+
+                if old_snapshots:
+                    results["unused_resources"]["old_snapshots"] = old_snapshots
+                    results["summary"]["categories"]["old_snapshots"] = len(
+                        old_snapshots
+                    )
+                    results["summary"]["potential_monthly_savings"] += sum(
+                        s["estimated_monthly_cost"] for s in old_snapshots
+                    )
+
+            # 4. Stopped EC2 instances (still paying for attached EBS)
+            if not resource_type or resource_type == "ec2_instance":
+                stmt = (
+                    sa.select(
+                        t_ec2_instances.c.instance_id,
+                        t_ec2_instances.c.instance_type,
+                        t_ec2_instances.c.state,
+                        t_ec2_instances.c.region,
+                        t_ec2_instances.c.tags,
+                        t_ec2_instances.c.scan_id,
+                        t_scan_metadata.c.account_name,
+                        t_scan_metadata.c.account_number,
+                    )
+                    .select_from(
+                        t_ec2_instances.join(
+                            t_scan_metadata,
+                            t_ec2_instances.c.scan_id == t_scan_metadata.c.scan_id,
+                        )
+                    )
+                    .where(t_ec2_instances.c.state == "stopped")
                 )
+                if scan_id:
+                    stmt = stmt.where(t_ec2_instances.c.scan_id == scan_id)
 
-        # 2. Unassociated Elastic IPs
-        if not resource_type or resource_type == "elastic_ip":
-            query = """
-                SELECT eip.public_ip, eip.allocation_id, eip.region,
-                       eip.tags, eip.scan_id,
-                       sm.account_name, sm.account_number
-                FROM elastic_ips eip
-                INNER JOIN scan_metadata sm ON eip.scan_id = sm.scan_id
-                WHERE eip.is_associated = 0
-            """
-            if scan_id:
-                query += " AND eip.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
+                stopped_instances = []
+                for row in conn.execute(stmt):
+                    tags = json.loads(row[4]) if row[4] else {}
+                    stopped_instances.append(
+                        {
+                            "instance_id": row[0],
+                            "instance_type": row[1],
+                            "state": row[2],
+                            "region": row[3],
+                            "tags": tags,
+                            "account_name": row[6],
+                            "account_number": row[7],
+                            "note": "Still paying for attached EBS volumes",
+                        }
+                    )
 
-            unassociated_eips = []
-            for row in cursor.fetchall():
-                tags = json.loads(row[3]) if row[3] else {}
-                unassociated_eips.append(
-                    {
-                        "public_ip": row[0],
-                        "allocation_id": row[1],
-                        "region": row[2],
-                        "tags": tags,
-                        "account_name": row[5],
-                        "account_number": row[6],
-                        "estimated_monthly_cost": 3.60,  # $0.005/hour = $3.60/month
-                    }
-                )
-
-            if unassociated_eips:
-                results["unused_resources"]["unassociated_elastic_ips"] = (
-                    unassociated_eips
-                )
-                results["summary"]["categories"]["unassociated_elastic_ips"] = len(
-                    unassociated_eips
-                )
-                results["summary"]["potential_monthly_savings"] += (
-                    len(unassociated_eips) * 3.60
-                )
-
-        # 3. Old EBS snapshots
-        if not resource_type or resource_type == "ebs_snapshot":
-            query = """
-                SELECT es.snapshot_id, es.region, es.volume_id, es.volume_size,
-                       es.start_time, es.description, es.tags, es.scan_id,
-                       sm.account_name, sm.account_number,
-                       julianday('now') - julianday(es.start_time) as age_days
-                FROM ebs_snapshots es
-                INNER JOIN scan_metadata sm ON es.scan_id = sm.scan_id
-                WHERE julianday('now') - julianday(es.start_time) > ?
-                AND es.state = 'completed'
-            """
-            query_params = [age_days]
-            if scan_id:
-                query += " AND es.scan_id = ?"
-                query_params.append(scan_id)
-
-            cursor.execute(query, tuple(query_params))
-
-            old_snapshots = []
-            for row in cursor.fetchall():
-                tags = json.loads(row[6]) if row[6] else {}
-                old_snapshots.append(
-                    {
-                        "snapshot_id": row[0],
-                        "region": row[1],
-                        "volume_id": row[2],
-                        "size_gb": row[3],
-                        "start_time": row[4],
-                        "description": row[5],
-                        "tags": tags,
-                        "account_name": row[8],
-                        "account_number": row[9],
-                        "age_days": int(row[10]),
-                        "estimated_monthly_cost": row[3]
-                        * 0.05,  # $0.05/GB/month for snapshots
-                    }
-                )
-
-            if old_snapshots:
-                results["unused_resources"]["old_snapshots"] = old_snapshots
-                results["summary"]["categories"]["old_snapshots"] = len(old_snapshots)
-                results["summary"]["potential_monthly_savings"] += sum(
-                    s["estimated_monthly_cost"] for s in old_snapshots
-                )
-
-        # 4. Stopped EC2 instances (still paying for attached EBS)
-        if not resource_type or resource_type == "ec2_instance":
-            query = """
-                SELECT ec2.instance_id, ec2.instance_type, ec2.state,
-                       ec2.region, ec2.tags, ec2.scan_id,
-                       sm.account_name, sm.account_number
-                FROM ec2_instances ec2
-                INNER JOIN scan_metadata sm ON ec2.scan_id = sm.scan_id
-                WHERE ec2.state = 'stopped'
-            """
-            if scan_id:
-                query += " AND ec2.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
-
-            stopped_instances = []
-            for row in cursor.fetchall():
-                tags = json.loads(row[4]) if row[4] else {}
-                stopped_instances.append(
-                    {
-                        "instance_id": row[0],
-                        "instance_type": row[1],
-                        "state": row[2],
-                        "region": row[3],
-                        "tags": tags,
-                        "account_name": row[6],
-                        "account_number": row[7],
-                        "note": "Still paying for attached EBS volumes",
-                    }
-                )
-
-            if stopped_instances:
-                results["unused_resources"]["stopped_ec2_instances"] = stopped_instances
-                results["summary"]["categories"]["stopped_ec2_instances"] = len(
-                    stopped_instances
-                )
-
-        conn.close()
+                if stopped_instances:
+                    results["unused_resources"]["stopped_ec2_instances"] = (
+                        stopped_instances
+                    )
+                    results["summary"]["categories"]["stopped_ec2_instances"] = len(
+                        stopped_instances
+                    )
 
         # Calculate totals
         results["summary"]["total_unused"] = sum(
@@ -2578,9 +2644,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         account_number = params.get("account_number")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "summary": {
                 "total_resources": 0,
@@ -2592,217 +2655,233 @@ class QueryHandler:
             "unencrypted_resources": {},
         }
 
-        # 1. EBS Volumes
-        query = """
-            SELECT ev.volume_id, ev.region, ev.size, ev.volume_type,
-                   ev.encrypted, ev.tags, sm.account_name, sm.account_number
-            FROM ebs_volumes ev
-            INNER JOIN scan_metadata sm ON ev.scan_id = sm.scan_id
-        """
-        conditions = []
-        query_params = []
-        if scan_id:
-            conditions.append("ev.scan_id = ?")
-            query_params.append(scan_id)
-        if account_number:
-            conditions.append("sm.account_number = ?")
-            query_params.append(account_number)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        cursor.execute(query, tuple(query_params))
-
-        ebs_volumes = []
-        ebs_encrypted = 0
-        ebs_total = 0
-        for row in cursor.fetchall():
-            ebs_total += 1
-            encrypted = bool(row[4])
-            if encrypted:
-                ebs_encrypted += 1
-            else:
-                tags = json.loads(row[5]) if row[5] else {}
-                ebs_volumes.append(
-                    {
-                        "volume_id": row[0],
-                        "region": row[1],
-                        "size_gb": row[2],
-                        "volume_type": row[3],
-                        "tags": tags,
-                        "account_name": row[6],
-                        "account_number": row[7],
-                    }
+        with self.db_ops.engine.connect() as conn:
+            # 1. EBS Volumes
+            stmt = sa.select(
+                t_ebs_volumes.c.volume_id,
+                t_ebs_volumes.c.region,
+                t_ebs_volumes.c.size,
+                t_ebs_volumes.c.volume_type,
+                t_ebs_volumes.c.encrypted,
+                t_ebs_volumes.c.tags,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+            ).select_from(
+                t_ebs_volumes.join(
+                    t_scan_metadata,
+                    t_ebs_volumes.c.scan_id == t_scan_metadata.c.scan_id,
                 )
+            )
+            conditions = []
+            if scan_id:
+                conditions.append(t_ebs_volumes.c.scan_id == scan_id)
+            if account_number:
+                conditions.append(t_scan_metadata.c.account_number == account_number)
+            if conditions:
+                stmt = stmt.where(*conditions)
 
-        if ebs_total > 0:
-            results["by_resource_type"]["ebs_volumes"] = {
-                "total": ebs_total,
-                "encrypted": ebs_encrypted,
-                "unencrypted": ebs_total - ebs_encrypted,
-                "encryption_percentage": round((ebs_encrypted / ebs_total) * 100, 2),
-            }
-            if ebs_volumes:
-                results["unencrypted_resources"]["ebs_volumes"] = ebs_volumes
+            ebs_volumes = []
+            ebs_encrypted = 0
+            ebs_total = 0
+            for row in conn.execute(stmt):
+                ebs_total += 1
+                encrypted = bool(row[4])
+                if encrypted:
+                    ebs_encrypted += 1
+                else:
+                    tags = json.loads(row[5]) if row[5] else {}
+                    ebs_volumes.append(
+                        {
+                            "volume_id": row[0],
+                            "region": row[1],
+                            "size_gb": row[2],
+                            "volume_type": row[3],
+                            "tags": tags,
+                            "account_name": row[6],
+                            "account_number": row[7],
+                        }
+                    )
 
-        # 2. EBS Snapshots
-        query = """
-            SELECT es.snapshot_id, es.region, es.volume_size,
-                   es.encrypted, es.tags, sm.account_name, sm.account_number
-            FROM ebs_snapshots es
-            INNER JOIN scan_metadata sm ON es.scan_id = sm.scan_id
-        """
-        conditions = []
-        query_params = []
-        if scan_id:
-            conditions.append("es.scan_id = ?")
-            query_params.append(scan_id)
-        if account_number:
-            conditions.append("sm.account_number = ?")
-            query_params.append(account_number)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            if ebs_total > 0:
+                results["by_resource_type"]["ebs_volumes"] = {
+                    "total": ebs_total,
+                    "encrypted": ebs_encrypted,
+                    "unencrypted": ebs_total - ebs_encrypted,
+                    "encryption_percentage": round(
+                        (ebs_encrypted / ebs_total) * 100, 2
+                    ),
+                }
+                if ebs_volumes:
+                    results["unencrypted_resources"]["ebs_volumes"] = ebs_volumes
 
-        cursor.execute(query, tuple(query_params))
-
-        ebs_snapshots = []
-        snap_encrypted = 0
-        snap_total = 0
-        for row in cursor.fetchall():
-            snap_total += 1
-            encrypted = bool(row[3])
-            if encrypted:
-                snap_encrypted += 1
-            else:
-                tags = json.loads(row[4]) if row[4] else {}
-                ebs_snapshots.append(
-                    {
-                        "snapshot_id": row[0],
-                        "region": row[1],
-                        "size_gb": row[2],
-                        "tags": tags,
-                        "account_name": row[5],
-                        "account_number": row[6],
-                    }
+            # 2. EBS Snapshots
+            stmt = sa.select(
+                t_ebs_snapshots.c.snapshot_id,
+                t_ebs_snapshots.c.region,
+                t_ebs_snapshots.c.volume_size,
+                t_ebs_snapshots.c.encrypted,
+                t_ebs_snapshots.c.tags,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+            ).select_from(
+                t_ebs_snapshots.join(
+                    t_scan_metadata,
+                    t_ebs_snapshots.c.scan_id == t_scan_metadata.c.scan_id,
                 )
+            )
+            conditions = []
+            if scan_id:
+                conditions.append(t_ebs_snapshots.c.scan_id == scan_id)
+            if account_number:
+                conditions.append(t_scan_metadata.c.account_number == account_number)
+            if conditions:
+                stmt = stmt.where(*conditions)
 
-        if snap_total > 0:
-            results["by_resource_type"]["ebs_snapshots"] = {
-                "total": snap_total,
-                "encrypted": snap_encrypted,
-                "unencrypted": snap_total - snap_encrypted,
-                "encryption_percentage": round((snap_encrypted / snap_total) * 100, 2),
-            }
-            if ebs_snapshots:
-                results["unencrypted_resources"]["ebs_snapshots"] = ebs_snapshots
+            ebs_snapshots = []
+            snap_encrypted = 0
+            snap_total = 0
+            for row in conn.execute(stmt):
+                snap_total += 1
+                encrypted = bool(row[3])
+                if encrypted:
+                    snap_encrypted += 1
+                else:
+                    tags = json.loads(row[4]) if row[4] else {}
+                    ebs_snapshots.append(
+                        {
+                            "snapshot_id": row[0],
+                            "region": row[1],
+                            "size_gb": row[2],
+                            "tags": tags,
+                            "account_name": row[5],
+                            "account_number": row[6],
+                        }
+                    )
 
-        # 3. RDS Instances
-        query = """
-            SELECT rds.db_instance_identifier, rds.region, rds.engine,
-                   rds.db_instance_class, rds.encrypted, rds.tags,
-                   sm.account_name, sm.account_number
-            FROM rds_instances rds
-            INNER JOIN scan_metadata sm ON rds.scan_id = sm.scan_id
-        """
-        conditions = []
-        query_params = []
-        if scan_id:
-            conditions.append("rds.scan_id = ?")
-            query_params.append(scan_id)
-        if account_number:
-            conditions.append("sm.account_number = ?")
-            query_params.append(account_number)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            if snap_total > 0:
+                results["by_resource_type"]["ebs_snapshots"] = {
+                    "total": snap_total,
+                    "encrypted": snap_encrypted,
+                    "unencrypted": snap_total - snap_encrypted,
+                    "encryption_percentage": round(
+                        (snap_encrypted / snap_total) * 100, 2
+                    ),
+                }
+                if ebs_snapshots:
+                    results["unencrypted_resources"]["ebs_snapshots"] = ebs_snapshots
 
-        cursor.execute(query, tuple(query_params))
-
-        rds_instances = []
-        rds_encrypted = 0
-        rds_total = 0
-        for row in cursor.fetchall():
-            rds_total += 1
-            encrypted = bool(row[4])
-            if encrypted:
-                rds_encrypted += 1
-            else:
-                tags = json.loads(row[5]) if row[5] else {}
-                rds_instances.append(
-                    {
-                        "db_instance_identifier": row[0],
-                        "region": row[1],
-                        "engine": row[2],
-                        "instance_class": row[3],
-                        "tags": tags,
-                        "account_name": row[6],
-                        "account_number": row[7],
-                        "severity": "CRITICAL",
-                    }
+            # 3. RDS Instances
+            stmt = sa.select(
+                t_rds_instances.c.db_instance_identifier,
+                t_rds_instances.c.region,
+                t_rds_instances.c.engine,
+                t_rds_instances.c.db_instance_class,
+                t_rds_instances.c.encrypted,
+                t_rds_instances.c.tags,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+            ).select_from(
+                t_rds_instances.join(
+                    t_scan_metadata,
+                    t_rds_instances.c.scan_id == t_scan_metadata.c.scan_id,
                 )
+            )
+            conditions = []
+            if scan_id:
+                conditions.append(t_rds_instances.c.scan_id == scan_id)
+            if account_number:
+                conditions.append(t_scan_metadata.c.account_number == account_number)
+            if conditions:
+                stmt = stmt.where(*conditions)
 
-        if rds_total > 0:
-            results["by_resource_type"]["rds_instances"] = {
-                "total": rds_total,
-                "encrypted": rds_encrypted,
-                "unencrypted": rds_total - rds_encrypted,
-                "encryption_percentage": round((rds_encrypted / rds_total) * 100, 2),
-            }
-            if rds_instances:
-                results["unencrypted_resources"]["rds_instances"] = rds_instances
+            rds_instances = []
+            rds_encrypted = 0
+            rds_total = 0
+            for row in conn.execute(stmt):
+                rds_total += 1
+                encrypted = bool(row[4])
+                if encrypted:
+                    rds_encrypted += 1
+                else:
+                    tags = json.loads(row[5]) if row[5] else {}
+                    rds_instances.append(
+                        {
+                            "db_instance_identifier": row[0],
+                            "region": row[1],
+                            "engine": row[2],
+                            "instance_class": row[3],
+                            "tags": tags,
+                            "account_name": row[6],
+                            "account_number": row[7],
+                            "severity": "CRITICAL",
+                        }
+                    )
 
-        # 4. S3 Buckets (check for default encryption)
-        query = """
-            SELECT s3.bucket_name, s3.region, s3.encryption_config,
-                   s3.tags, sm.account_name, sm.account_number
-            FROM s3_buckets s3
-            INNER JOIN scan_metadata sm ON s3.scan_id = sm.scan_id
-        """
-        conditions = []
-        query_params = []
-        if scan_id:
-            conditions.append("s3.scan_id = ?")
-            query_params.append(scan_id)
-        if account_number:
-            conditions.append("sm.account_number = ?")
-            query_params.append(account_number)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            if rds_total > 0:
+                results["by_resource_type"]["rds_instances"] = {
+                    "total": rds_total,
+                    "encrypted": rds_encrypted,
+                    "unencrypted": rds_total - rds_encrypted,
+                    "encryption_percentage": round(
+                        (rds_encrypted / rds_total) * 100, 2
+                    ),
+                }
+                if rds_instances:
+                    results["unencrypted_resources"]["rds_instances"] = rds_instances
 
-        cursor.execute(query, tuple(query_params))
-
-        s3_buckets = []
-        s3_encrypted = 0
-        s3_total = 0
-        for row in cursor.fetchall():
-            s3_total += 1
-            encryption_config = json.loads(row[2]) if row[2] else {}
-            has_encryption = bool(encryption_config)
-
-            if has_encryption:
-                s3_encrypted += 1
-            else:
-                tags = json.loads(row[3]) if row[3] else {}
-                s3_buckets.append(
-                    {
-                        "bucket_name": row[0],
-                        "region": row[1],
-                        "tags": tags,
-                        "account_name": row[4],
-                        "account_number": row[5],
-                        "severity": "HIGH",
-                    }
+            # 4. S3 Buckets (check for default encryption)
+            stmt = sa.select(
+                t_s3_buckets.c.bucket_name,
+                t_s3_buckets.c.region,
+                t_s3_buckets.c.encryption_config,
+                t_s3_buckets.c.tags,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+            ).select_from(
+                t_s3_buckets.join(
+                    t_scan_metadata, t_s3_buckets.c.scan_id == t_scan_metadata.c.scan_id
                 )
+            )
+            conditions = []
+            if scan_id:
+                conditions.append(t_s3_buckets.c.scan_id == scan_id)
+            if account_number:
+                conditions.append(t_scan_metadata.c.account_number == account_number)
+            if conditions:
+                stmt = stmt.where(*conditions)
 
-        if s3_total > 0:
-            results["by_resource_type"]["s3_buckets"] = {
-                "total": s3_total,
-                "encrypted": s3_encrypted,
-                "unencrypted": s3_total - s3_encrypted,
-                "encryption_percentage": round((s3_encrypted / s3_total) * 100, 2),
-            }
-            if s3_buckets:
-                results["unencrypted_resources"]["s3_buckets"] = s3_buckets
+            s3_buckets = []
+            s3_encrypted = 0
+            s3_total = 0
+            for row in conn.execute(stmt):
+                s3_total += 1
+                encryption_config = json.loads(row[2]) if row[2] else {}
+                has_encryption = bool(encryption_config)
 
-        conn.close()
+                if has_encryption:
+                    s3_encrypted += 1
+                else:
+                    tags = json.loads(row[3]) if row[3] else {}
+                    s3_buckets.append(
+                        {
+                            "bucket_name": row[0],
+                            "region": row[1],
+                            "tags": tags,
+                            "account_name": row[4],
+                            "account_number": row[5],
+                            "severity": "HIGH",
+                        }
+                    )
+
+            if s3_total > 0:
+                results["by_resource_type"]["s3_buckets"] = {
+                    "total": s3_total,
+                    "encrypted": s3_encrypted,
+                    "unencrypted": s3_total - s3_encrypted,
+                    "encryption_percentage": round((s3_encrypted / s3_total) * 100, 2),
+                }
+                if s3_buckets:
+                    results["unencrypted_resources"]["s3_buckets"] = s3_buckets
 
         # Calculate overall summary
         results["summary"]["total_resources"] = sum(
@@ -2842,73 +2921,79 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         region = params.get("region")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
-        query = """
-            SELECT rds.db_instance_identifier, rds.region, rds.engine,
-                   rds.engine_version, rds.db_instance_class,
-                   rds.publicly_accessible, rds.vpc_id, rds.subnet_group,
-                   rds.vpc_security_groups, rds.endpoint_address,
-                   rds.endpoint_port, rds.encrypted, rds.multi_az,
-                   rds.tags, rds.scan_id,
-                   sm.account_name, sm.account_number
-            FROM rds_instances rds
-            INNER JOIN scan_metadata sm ON rds.scan_id = sm.scan_id
-            WHERE rds.publicly_accessible = 1
-        """
+        stmt = (
+            sa.select(
+                t_rds_instances.c.db_instance_identifier,
+                t_rds_instances.c.region,
+                t_rds_instances.c.engine,
+                t_rds_instances.c.engine_version,
+                t_rds_instances.c.db_instance_class,
+                t_rds_instances.c.publicly_accessible,
+                t_rds_instances.c.vpc_id,
+                t_rds_instances.c.subnet_group,
+                t_rds_instances.c.vpc_security_groups,
+                t_rds_instances.c.endpoint_address,
+                t_rds_instances.c.endpoint_port,
+                t_rds_instances.c.encrypted,
+                t_rds_instances.c.multi_az,
+                t_rds_instances.c.tags,
+                t_rds_instances.c.scan_id,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+            )
+            .select_from(
+                t_rds_instances.join(
+                    t_scan_metadata,
+                    t_rds_instances.c.scan_id == t_scan_metadata.c.scan_id,
+                )
+            )
+            .where(t_rds_instances.c.publicly_accessible == 1)
+        )
 
         conditions = []
-        query_params = []
         if scan_id:
-            conditions.append("rds.scan_id = ?")
-            query_params.append(scan_id)
+            conditions.append(t_rds_instances.c.scan_id == scan_id)
         if region:
-            conditions.append("rds.region = ?")
-            query_params.append(region)
-
+            conditions.append(t_rds_instances.c.region == region)
         if conditions:
-            query += " AND " + " AND ".join(conditions)
-
-        cursor.execute(query, tuple(query_params))
+            stmt = stmt.where(*conditions)
 
         public_databases = []
-        for row in cursor.fetchall():
-            tags = json.loads(row[13]) if row[13] else {}
-            vpc_security_groups = json.loads(row[8]) if row[8] else []
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
+                tags = json.loads(row[13]) if row[13] else {}
+                vpc_security_groups = json.loads(row[8]) if row[8] else []
 
-            public_databases.append(
-                {
-                    "db_instance_identifier": row[0],
-                    "region": row[1],
-                    "engine": row[2],
-                    "engine_version": row[3],
-                    "instance_class": row[4],
-                    "publicly_accessible": bool(row[5]),
-                    "vpc_id": row[6],
-                    "subnet_group": row[7],
-                    "security_groups": vpc_security_groups,
-                    "endpoint_address": row[9],
-                    "endpoint_port": row[10],
-                    "encrypted": bool(row[11]),
-                    "multi_az": bool(row[12]),
-                    "tags": tags,
-                    "account_name": row[15],
-                    "account_number": row[16],
-                    "severity": "CRITICAL",
-                    "risk_assessment": {
-                        "publicly_accessible": "CRITICAL - Database is accessible from the internet",
-                        "encryption_status": "OK - Encrypted"
-                        if row[11]
-                        else "CRITICAL - Not encrypted",
-                        "multi_az": "OK - Multi-AZ enabled"
-                        if row[12]
-                        else "WARNING - Single AZ",
-                    },
-                }
-            )
-
-        conn.close()
+                public_databases.append(
+                    {
+                        "db_instance_identifier": row[0],
+                        "region": row[1],
+                        "engine": row[2],
+                        "engine_version": row[3],
+                        "instance_class": row[4],
+                        "publicly_accessible": bool(row[5]),
+                        "vpc_id": row[6],
+                        "subnet_group": row[7],
+                        "security_groups": vpc_security_groups,
+                        "endpoint_address": row[9],
+                        "endpoint_port": row[10],
+                        "encrypted": bool(row[11]),
+                        "multi_az": bool(row[12]),
+                        "tags": tags,
+                        "account_name": row[15],
+                        "account_number": row[16],
+                        "severity": "CRITICAL",
+                        "risk_assessment": {
+                            "publicly_accessible": "CRITICAL - Database is accessible from the internet",
+                            "encryption_status": "OK - Encrypted"
+                            if row[11]
+                            else "CRITICAL - Not encrypted",
+                            "multi_az": "OK - Multi-AZ enabled"
+                            if row[12]
+                            else "WARNING - Single AZ",
+                        },
+                    }
+                )
 
         return {
             "summary": {
@@ -2934,9 +3019,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         check_type = params.get("check_type")  # admin, wildcards, unused, keys, mfa
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "summary": {
                 "total_issues": 0,
@@ -2947,121 +3029,135 @@ class QueryHandler:
             "findings": {},
         }
 
-        # 1. Find policies with AdministratorAccess or overly permissive wildcards
-        if not check_type or check_type in ["admin", "wildcards"]:
-            query = """
-                SELECT pol.policy_name, pol.policy_arn, pol.policy_document,
-                       pol.attached_users, pol.attached_roles, pol.attached_groups,
-                       pol.attachment_count, pol.scan_id,
-                       sm.account_name, sm.account_number
-                FROM iam_policies pol
-                INNER JOIN scan_metadata sm ON pol.scan_id = sm.scan_id
-            """
-            if scan_id:
-                query += " WHERE pol.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
-
-            admin_policies = []
-            wildcard_policies = []
-
-            for row in cursor.fetchall():
-                policy_doc = json.loads(row[2]) if row[2] else {}
-                attached_users = json.loads(row[3]) if row[3] else []
-                attached_roles = json.loads(row[4]) if row[4] else []
-                attached_groups = json.loads(row[5]) if row[5] else []
-
-                # Check for overly permissive policies
-                is_admin = False
-                has_wildcards = False
-
-                for statement in policy_doc.get("Statement", []):
-                    if statement.get("Effect") == "Allow":
-                        actions = statement.get("Action", [])
-                        resources = statement.get("Resource", [])
-
-                        # Convert to list if string
-                        if isinstance(actions, str):
-                            actions = [actions]
-                        if isinstance(resources, str):
-                            resources = [resources]
-
-                        # Check for full admin access
-                        if "*" in actions and "*" in resources:
-                            is_admin = True
-
-                        # Check for dangerous wildcards
-                        for action in actions:
-                            if action in ["s3:*", "ec2:*", "iam:*", "rds:*"]:
-                                has_wildcards = True
-
-                policy_info = {
-                    "policy_name": row[0],
-                    "policy_arn": row[1],
-                    "attached_users": attached_users,
-                    "attached_roles": attached_roles,
-                    "attached_groups": attached_groups,
-                    "attachment_count": row[6],
-                    "account_name": row[8],
-                    "account_number": row[9],
-                }
-
-                if is_admin:
-                    policy_info["severity"] = "CRITICAL"
-                    policy_info["issue"] = (
-                        "Full administrator access (Action: *, Resource: *)"
+        with self.db_ops.engine.connect() as conn:
+            # 1. Find policies with AdministratorAccess or overly permissive wildcards
+            if not check_type or check_type in ["admin", "wildcards"]:
+                stmt = sa.select(
+                    t_iam_policies.c.policy_name,
+                    t_iam_policies.c.policy_arn,
+                    t_iam_policies.c.policy_document,
+                    t_iam_policies.c.attached_users,
+                    t_iam_policies.c.attached_roles,
+                    t_iam_policies.c.attached_groups,
+                    t_iam_policies.c.attachment_count,
+                    t_iam_policies.c.scan_id,
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                ).select_from(
+                    t_iam_policies.join(
+                        t_scan_metadata,
+                        t_iam_policies.c.scan_id == t_scan_metadata.c.scan_id,
                     )
-                    admin_policies.append(policy_info)
-                    results["summary"]["critical_issues"] += 1
-
-                elif has_wildcards:
-                    policy_info["severity"] = "HIGH"
-                    policy_info["issue"] = (
-                        "Overly permissive wildcards (e.g., s3:*, ec2:*, iam:*)"
-                    )
-                    wildcard_policies.append(policy_info)
-                    results["summary"]["high_issues"] += 1
-
-            if admin_policies:
-                results["findings"]["administrator_access_policies"] = admin_policies
-            if wildcard_policies:
-                results["findings"]["wildcard_policies"] = wildcard_policies
-
-        # 2. Find users without MFA
-        if not check_type or check_type == "mfa":
-            query = """
-                SELECT usr.user_name, usr.mfa_enabled, usr.tags, usr.scan_id,
-                       sm.account_name, sm.account_number
-                FROM iam_users usr
-                INNER JOIN scan_metadata sm ON usr.scan_id = sm.scan_id
-                WHERE usr.mfa_enabled = 0
-            """
-            if scan_id:
-                query += " AND usr.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
-
-            users_without_mfa = []
-            for row in cursor.fetchall():
-                tags = json.loads(row[2]) if row[2] else {}
-                users_without_mfa.append(
-                    {
-                        "user_name": row[0],
-                        "tags": tags,
-                        "account_name": row[4],
-                        "account_number": row[5],
-                        "severity": "HIGH",
-                        "issue": "MFA not enabled",
-                    }
                 )
+                if scan_id:
+                    stmt = stmt.where(t_iam_policies.c.scan_id == scan_id)
 
-            if users_without_mfa:
-                results["findings"]["users_without_mfa"] = users_without_mfa
-                results["summary"]["high_issues"] += len(users_without_mfa)
+                admin_policies = []
+                wildcard_policies = []
 
-        conn.close()
+                for row in conn.execute(stmt):
+                    policy_doc = json.loads(row[2]) if row[2] else {}
+                    attached_users = json.loads(row[3]) if row[3] else []
+                    attached_roles = json.loads(row[4]) if row[4] else []
+                    attached_groups = json.loads(row[5]) if row[5] else []
+
+                    # Check for overly permissive policies
+                    is_admin = False
+                    has_wildcards = False
+
+                    for statement in policy_doc.get("Statement", []):
+                        if statement.get("Effect") == "Allow":
+                            actions = statement.get("Action", [])
+                            resources = statement.get("Resource", [])
+
+                            # Convert to list if string
+                            if isinstance(actions, str):
+                                actions = [actions]
+                            if isinstance(resources, str):
+                                resources = [resources]
+
+                            # Check for full admin access
+                            if "*" in actions and "*" in resources:
+                                is_admin = True
+
+                            # Check for dangerous wildcards
+                            for action in actions:
+                                if action in ["s3:*", "ec2:*", "iam:*", "rds:*"]:
+                                    has_wildcards = True
+
+                    policy_info = {
+                        "policy_name": row[0],
+                        "policy_arn": row[1],
+                        "attached_users": attached_users,
+                        "attached_roles": attached_roles,
+                        "attached_groups": attached_groups,
+                        "attachment_count": row[6],
+                        "account_name": row[8],
+                        "account_number": row[9],
+                    }
+
+                    if is_admin:
+                        policy_info["severity"] = "CRITICAL"
+                        policy_info["issue"] = (
+                            "Full administrator access (Action: *, Resource: *)"
+                        )
+                        admin_policies.append(policy_info)
+                        results["summary"]["critical_issues"] += 1
+
+                    elif has_wildcards:
+                        policy_info["severity"] = "HIGH"
+                        policy_info["issue"] = (
+                            "Overly permissive wildcards (e.g., s3:*, ec2:*, iam:*)"
+                        )
+                        wildcard_policies.append(policy_info)
+                        results["summary"]["high_issues"] += 1
+
+                if admin_policies:
+                    results["findings"]["administrator_access_policies"] = (
+                        admin_policies
+                    )
+                if wildcard_policies:
+                    results["findings"]["wildcard_policies"] = wildcard_policies
+
+            # 2. Find users without MFA
+            if not check_type or check_type == "mfa":
+                stmt = (
+                    sa.select(
+                        t_iam_users.c.user_name,
+                        t_iam_users.c.mfa_enabled,
+                        t_iam_users.c.tags,
+                        t_iam_users.c.scan_id,
+                        t_scan_metadata.c.account_name,
+                        t_scan_metadata.c.account_number,
+                    )
+                    .select_from(
+                        t_iam_users.join(
+                            t_scan_metadata,
+                            t_iam_users.c.scan_id == t_scan_metadata.c.scan_id,
+                        )
+                    )
+                    .where(t_iam_users.c.mfa_enabled == 0)
+                )
+                if scan_id:
+                    stmt = stmt.where(t_iam_users.c.scan_id == scan_id)
+
+                users_without_mfa = []
+                for row in conn.execute(stmt):
+                    tags = json.loads(row[2]) if row[2] else {}
+                    users_without_mfa.append(
+                        {
+                            "user_name": row[0],
+                            "tags": tags,
+                            "account_name": row[4],
+                            "account_number": row[5],
+                            "severity": "HIGH",
+                            "issue": "MFA not enabled",
+                        }
+                    )
+
+                if users_without_mfa:
+                    results["findings"]["users_without_mfa"] = users_without_mfa
+                    results["summary"]["high_issues"] += len(users_without_mfa)
 
         results["summary"]["total_issues"] = (
             results["summary"]["critical_issues"]
@@ -3097,62 +3193,71 @@ class QueryHandler:
             "unprotected_resources": [],
         }
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        cursor = conn.cursor()
-
-        # Check RDS instances without automated backups
-        query = """
-            SELECT rds.db_instance_identifier, rds.region, rds.engine,
-                   rds.db_instance_class, rds.multi_az, rds.encrypted,
-                   rds.backup_retention_period, rds.tags, rds.scan_id,
-                   sm.account_name, sm.account_number
-            FROM rds_instances rds
-            INNER JOIN scan_metadata sm ON rds.scan_id = sm.scan_id
-            WHERE rds.backup_retention_period = 0
-        """
-        if scan_id:
-            query += " AND rds.scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
-
-        for row in cursor.fetchall():
-            tags = json.loads(row[7]) if row[7] else {}
-            results["unprotected_resources"].append(
-                {
-                    "resource_type": "RDS Instance",
-                    "identifier": row[0],
-                    "region": row[1],
-                    "engine": row[2],
-                    "instance_class": row[3],
-                    "multi_az": bool(row[4]),
-                    "encrypted": bool(row[5]),
-                    "backup_retention_period": row[6],
-                    "tags": tags,
-                    "account_name": row[9],
-                    "account_number": row[10],
-                    "severity": "CRITICAL",
-                    "issue": "No automated backups configured",
-                }
+        with self.db_ops.engine.connect() as conn:
+            # Check RDS instances without automated backups
+            stmt = (
+                sa.select(
+                    t_rds_instances.c.db_instance_identifier,
+                    t_rds_instances.c.region,
+                    t_rds_instances.c.engine,
+                    t_rds_instances.c.db_instance_class,
+                    t_rds_instances.c.multi_az,
+                    t_rds_instances.c.encrypted,
+                    t_rds_instances.c.backup_retention_period,
+                    t_rds_instances.c.tags,
+                    t_rds_instances.c.scan_id,
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                )
+                .select_from(
+                    t_rds_instances.join(
+                        t_scan_metadata,
+                        t_rds_instances.c.scan_id == t_scan_metadata.c.scan_id,
+                    )
+                )
+                .where(t_rds_instances.c.backup_retention_period == 0)
             )
-            results["summary"]["critical_issues"] += 1
+            if scan_id:
+                stmt = stmt.where(t_rds_instances.c.scan_id == scan_id)
 
-        results["summary"]["rds_without_backups"] = len(
-            results["unprotected_resources"]
-        )
+            for row in conn.execute(stmt):
+                tags = json.loads(row[7]) if row[7] else {}
+                results["unprotected_resources"].append(
+                    {
+                        "resource_type": "RDS Instance",
+                        "identifier": row[0],
+                        "region": row[1],
+                        "engine": row[2],
+                        "instance_class": row[3],
+                        "multi_az": bool(row[4]),
+                        "encrypted": bool(row[5]),
+                        "backup_retention_period": row[6],
+                        "tags": tags,
+                        "account_name": row[9],
+                        "account_number": row[10],
+                        "severity": "CRITICAL",
+                        "issue": "No automated backups configured",
+                    }
+                )
+                results["summary"]["critical_issues"] += 1
 
-        # Get total RDS instance count
-        count_query = """
-            SELECT COUNT(*) FROM rds_instances rds
-            INNER JOIN scan_metadata sm ON rds.scan_id = sm.scan_id
-        """
-        if scan_id:
-            count_query += " WHERE rds.scan_id = ?"
-            cursor.execute(count_query, (scan_id,))
-        else:
-            cursor.execute(count_query)
+            results["summary"]["rds_without_backups"] = len(
+                results["unprotected_resources"]
+            )
 
-        results["summary"]["total_rds_instances"] = cursor.fetchone()[0]
+            # Get total RDS instance count
+            count_stmt = sa.select(sa.func.count()).select_from(
+                t_rds_instances.join(
+                    t_scan_metadata,
+                    t_rds_instances.c.scan_id == t_scan_metadata.c.scan_id,
+                )
+            )
+            if scan_id:
+                count_stmt = count_stmt.where(t_rds_instances.c.scan_id == scan_id)
+
+            results["summary"]["total_rds_instances"] = conn.execute(
+                count_stmt
+            ).scalar()
 
         # Calculate protection percentage
         if results["summary"]["total_rds_instances"] > 0:
@@ -3163,8 +3268,6 @@ class QueryHandler:
             results["summary"]["protection_percentage"] = (
                 protected / results["summary"]["total_rds_instances"] * 100
             )
-
-        conn.close()
 
         results["recommendations"] = [
             "Enable automated backups for all production RDS instances",
@@ -3220,23 +3323,28 @@ class QueryHandler:
             "security_groups_with_violations": [],
         }
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        cursor = conn.cursor()
-
         # Query all security groups
-        query = """
-            SELECT sg.group_id, sg.group_name, sg.vpc_id, sg.region,
-                   sg.ingress_rules, sm.account_name, sm.account_number
-            FROM security_groups sg
-            INNER JOIN scan_metadata sm ON sg.scan_id = sm.scan_id
-        """
+        stmt = sa.select(
+            t_security_groups.c.group_id,
+            t_security_groups.c.group_name,
+            t_security_groups.c.vpc_id,
+            t_security_groups.c.region,
+            t_security_groups.c.ingress_rules,
+            t_scan_metadata.c.account_name,
+            t_scan_metadata.c.account_number,
+        ).select_from(
+            t_security_groups.join(
+                t_scan_metadata,
+                t_security_groups.c.scan_id == t_scan_metadata.c.scan_id,
+            )
+        )
         if scan_id:
-            query += " WHERE sg.scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            stmt = stmt.where(t_security_groups.c.scan_id == scan_id)
 
-        for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            rows = conn.execute(stmt).fetchall()
+
+        for row in rows:
             group_id = row[0]
             group_name = row[1]
             vpc_id = row[2]
@@ -3311,8 +3419,6 @@ class QueryHandler:
                 )
                 results["summary"]["security_groups_affected"].add(group_id)
 
-        conn.close()
-
         # Convert set to count
         results["summary"]["security_groups_affected"] = len(
             results["summary"]["security_groups_affected"]
@@ -3368,82 +3474,88 @@ class QueryHandler:
             "non_compliant_resources": [],
         }
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        cursor = conn.cursor()
-
-        # Define resource types and their table/column structure
+        # Define resource types and their table/column structure. Table
+        # objects replace the legacy f-string table-name interpolation;
+        # table.c[colname] replaces the legacy column-name interpolation.
         resource_types = [
-            ("EC2 Instance", "ec2_instances", "instance_id", "region", "tags"),
+            ("EC2 Instance", t_ec2_instances, "instance_id", "region", "tags"),
             (
                 "RDS Instance",
-                "rds_instances",
+                t_rds_instances,
                 "db_instance_identifier",
                 "region",
                 "tags",
             ),
-            ("EBS Volume", "ebs_volumes", "volume_id", "availability_zone", "tags"),
-            ("S3 Bucket", "s3_buckets", "bucket_name", "region", "tags"),
-            ("ECS Cluster", "ecs_clusters", "cluster_name", "region", "tags"),
-            ("EKS Cluster", "eks_clusters", "cluster_name", "region", "tags"),
-            ("ECR Repository", "ecr_repositories", "repository_name", "region", "tags"),
+            ("EBS Volume", t_ebs_volumes, "volume_id", "availability_zone", "tags"),
+            ("S3 Bucket", t_s3_buckets, "bucket_name", "region", "tags"),
+            ("ECS Cluster", t_ecs_clusters, "cluster_name", "region", "tags"),
+            ("EKS Cluster", t_eks_clusters, "cluster_name", "region", "tags"),
+            (
+                "ECR Repository",
+                t_ecr_repositories,
+                "repository_name",
+                "region",
+                "tags",
+            ),
             (
                 "Load Balancer",
-                "load_balancers",
+                t_load_balancers,
                 "load_balancer_name",
                 "availability_zones",
                 "tags",
             ),
         ]
 
-        for resource_type, table, id_col, location_col, tags_col in resource_types:
-            query = f"""
-                SELECT r.{id_col}, r.{location_col}, r.{tags_col},
-                       sm.account_name, sm.account_number
-                FROM {table} r
-                INNER JOIN scan_metadata sm ON r.scan_id = sm.scan_id
-            """
-            if scan_id:
-                query += " WHERE r.scan_id = ?"
-                cursor.execute(query, (scan_id,))
-            else:
-                cursor.execute(query)
-
-            for row in cursor.fetchall():
-                identifier = row[0]
-                location = row[1]
-                tags = json.loads(row[2]) if row[2] else {}
-                account_name = row[3]
-                account_number = row[4]
-
-                results["summary"]["total_resources"] += 1
-
-                # Check for missing required tags
-                missing_tags = [tag for tag in required_tags if tag not in tags]
-
-                if missing_tags:
-                    results["summary"]["non_compliant_resources"] += 1
-
-                    # Track by resource type
-                    if resource_type not in results["non_compliant_by_type"]:
-                        results["non_compliant_by_type"][resource_type] = 0
-                    results["non_compliant_by_type"][resource_type] += 1
-
-                    results["non_compliant_resources"].append(
-                        {
-                            "resource_type": resource_type,
-                            "identifier": identifier,
-                            "location": location,
-                            "missing_tags": missing_tags,
-                            "existing_tags": list(tags.keys()),
-                            "account_name": account_name,
-                            "account_number": account_number,
-                            "severity": "MEDIUM",
-                        }
+        with self.db_ops.engine.connect() as conn:
+            for resource_type, table, id_col, location_col, tags_col in resource_types:
+                stmt = sa.select(
+                    table.c[id_col],
+                    table.c[location_col],
+                    table.c[tags_col],
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                ).select_from(
+                    table.join(
+                        t_scan_metadata, table.c.scan_id == t_scan_metadata.c.scan_id
                     )
-                else:
-                    results["summary"]["compliant_resources"] += 1
+                )
+                if scan_id:
+                    stmt = stmt.where(table.c.scan_id == scan_id)
 
-        conn.close()
+                for row in conn.execute(stmt):
+                    identifier = row[0]
+                    location = row[1]
+                    tags = json.loads(row[2]) if row[2] else {}
+                    account_name = row[3]
+                    account_number = row[4]
+
+                    results["summary"]["total_resources"] += 1
+
+                    # Check for missing required tags
+                    missing_tags = [tag for tag in required_tags if tag not in tags]
+
+                    if missing_tags:
+                        results["summary"]["non_compliant_resources"] += 1
+
+                        # Track by resource type
+                        if resource_type not in results["non_compliant_by_type"]:
+                            results["non_compliant_by_type"][resource_type] = 0
+                        results["non_compliant_by_type"][resource_type] += 1
+
+                        results["non_compliant_resources"].append(
+                            {
+                                "resource_type": resource_type,
+                                "identifier": identifier,
+                                "location": location,
+                                "missing_tags": missing_tags,
+                                "existing_tags": list(tags.keys()),
+                                "account_name": account_name,
+                                "account_number": account_number,
+                                "severity": "MEDIUM",
+                            }
+                        )
+                    else:
+                        results["summary"]["compliant_resources"] += 1
 
         # Calculate compliance percentage
         if results["summary"]["total_resources"] > 0:
@@ -3511,10 +3623,11 @@ class QueryHandler:
             "vulnerable_images": [],
         }
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        cursor = conn.cursor()
-
-        # Query ECR images with scan findings
+        # The legacy SQL selects img.image_tag, a column absent from the
+        # ecr_images DDL (only image_tags exists). Kept verbatim via
+        # sa.text() so the frozen "no such column: img.image_tag" baseline
+        # error still fires; the raw sqlite3 error is re-raised so
+        # handle_query's str(e) matches the frozen baseline exactly.
         query = """
             SELECT img.repository_name, img.image_tag, img.image_digest,
                    img.image_scan_status, img.image_scan_findings_summary,
@@ -3523,13 +3636,18 @@ class QueryHandler:
             INNER JOIN scan_metadata sm ON img.scan_id = sm.scan_id
             WHERE img.image_scan_status = 'COMPLETE'
         """
+        query_params: Dict[str, Any] = {}
         if scan_id:
-            query += " AND img.scan_id = ?"
-            cursor.execute(query, (scan_id,))
-        else:
-            cursor.execute(query)
+            query += " AND img.scan_id = :scan_id"
+            query_params["scan_id"] = scan_id
 
-        for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            try:
+                rows = conn.execute(sa.text(query), query_params).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
+
+        for row in rows:
             repository_name = row[0]
             image_tag = row[1]
             image_digest = row[2]
@@ -3613,8 +3731,6 @@ class QueryHandler:
                     }
                 )
 
-        conn.close()
-
         results["recommendations"] = [
             "Scan all container images before deployment",
             "Implement automated remediation for CRITICAL and HIGH vulnerabilities",
@@ -3656,130 +3772,131 @@ class QueryHandler:
             "endpoint_opportunities": [],
         }
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        cursor = conn.cursor()
-
-        # Get all VPCs
-        vpc_query = """
-            SELECT vpc.vpc_id, vpc.region, sm.account_name, sm.account_number, vpc.scan_id
-            FROM vpcs vpc
-            INNER JOIN scan_metadata sm ON vpc.scan_id = sm.scan_id
-        """
-        if scan_id:
-            vpc_query += " WHERE vpc.scan_id = ?"
-            cursor.execute(vpc_query, (scan_id,))
-        else:
-            cursor.execute(vpc_query)
-
-        vpcs = cursor.fetchall()
-        results["summary"]["total_vpcs"] = len(vpcs)
-
-        for vpc_row in vpcs:
-            vpc_id = vpc_row[0]
-            region = vpc_row[1]
-            account_name = vpc_row[2]
-            account_number = vpc_row[3]
-            vpc_scan_id = vpc_row[4]
-
-            opportunities = {"s3": False, "ecr": False, "ecs": False}
-
-            # Check for S3 buckets in same account
-            cursor.execute(
-                """
-                SELECT COUNT(*) FROM s3_buckets
-                WHERE scan_id = ?
-            """,
-                (vpc_scan_id,),
-            )
-            s3_count = cursor.fetchone()[0]
-            if s3_count > 0:
-                opportunities["s3"] = True
-
-            # Check for ECS services in this VPC
-            cursor.execute(
-                """
-                SELECT COUNT(*) FROM ecs_services svc
-                INNER JOIN ecs_clusters cls ON svc.cluster_arn = cls.cluster_arn
-                WHERE svc.scan_id = ? AND cls.region = ?
-            """,
-                (vpc_scan_id, region),
-            )
-            ecs_count = cursor.fetchone()[0]
-            if ecs_count > 0:
-                opportunities["ecs"] = True
-                opportunities["ecr"] = True  # ECS typically uses ECR
-
-            # Check for EKS clusters in this region
-            cursor.execute(
-                """
-                SELECT COUNT(*) FROM eks_clusters
-                WHERE scan_id = ? AND region = ?
-            """,
-                (vpc_scan_id, region),
-            )
-            eks_count = cursor.fetchone()[0]
-            if eks_count > 0:
-                opportunities["ecr"] = True
-
-            # Check for EC2 instances in this VPC
-            cursor.execute(
-                """
-                SELECT COUNT(*) FROM ec2_instances
-                WHERE scan_id = ? AND vpc_id = ?
-            """,
-                (vpc_scan_id, vpc_id),
-            )
-            ec2_count = cursor.fetchone()[0]
-
-            # Calculate potential savings
-            has_opportunities = any(opportunities.values())
-
-            if has_opportunities:
-                results["summary"]["vpcs_with_opportunities"] += 1
-
-                estimated_savings = 0.0
-                recommendations = []
-
-                if opportunities["s3"]:
-                    recommendations.append(
-                        "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
-                    )
-                    # Estimate $0.09/GB savings on data transfer (conservative estimate of 100GB/month)
-                    estimated_savings += 9.0
-
-                if opportunities["ecr"]:
-                    recommendations.append(
-                        "ECR Interface Endpoint ($7.20/month - reduces data transfer costs)"
-                    )
-                    # $0.01/hour = $7.20/month, savings from data transfer can offset this
-                    estimated_savings += 5.0  # Conservative net savings
-
-                if opportunities["ecs"]:
-                    recommendations.append(
-                        "ECS Interface Endpoints ($7.20/month each for ecs, ecs-telemetry, ecs-agent)"
-                    )
-                    # Multiple endpoints needed but significant data transfer savings
-                    estimated_savings += 10.0
-
-                results["endpoint_opportunities"].append(
-                    {
-                        "vpc_id": vpc_id,
-                        "region": region,
-                        "account_name": account_name,
-                        "account_number": account_number,
-                        "opportunities": opportunities,
-                        "ec2_instances": ec2_count,
-                        "ecs_services": ecs_count,
-                        "eks_clusters": eks_count,
-                        "s3_buckets": s3_count,
-                        "estimated_monthly_savings": round(estimated_savings, 2),
-                        "recommendations": recommendations,
-                    }
+        with self.db_ops.engine.connect() as conn:
+            # Get all VPCs
+            vpc_stmt = sa.select(
+                t_vpcs.c.vpc_id,
+                t_vpcs.c.region,
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_vpcs.c.scan_id,
+            ).select_from(
+                t_vpcs.join(
+                    t_scan_metadata, t_vpcs.c.scan_id == t_scan_metadata.c.scan_id
                 )
+            )
+            if scan_id:
+                vpc_stmt = vpc_stmt.where(t_vpcs.c.scan_id == scan_id)
 
-                results["summary"]["potential_monthly_savings"] += estimated_savings
+            vpcs = conn.execute(vpc_stmt).fetchall()
+            results["summary"]["total_vpcs"] = len(vpcs)
 
-        conn.close()
+            for vpc_row in vpcs:
+                vpc_id = vpc_row[0]
+                region = vpc_row[1]
+                account_name = vpc_row[2]
+                account_number = vpc_row[3]
+                vpc_scan_id = vpc_row[4]
+
+                opportunities = {"s3": False, "ecr": False, "ecs": False}
+
+                # Check for S3 buckets in same account
+                s3_count = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(t_s3_buckets)
+                    .where(t_s3_buckets.c.scan_id == vpc_scan_id)
+                ).scalar()
+                if s3_count > 0:
+                    opportunities["s3"] = True
+
+                # Check for ECS services in this VPC
+                ecs_count = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(
+                        t_ecs_services.join(
+                            t_ecs_clusters,
+                            t_ecs_services.c.cluster_arn
+                            == t_ecs_clusters.c.cluster_arn,
+                        )
+                    )
+                    .where(
+                        t_ecs_services.c.scan_id == vpc_scan_id,
+                        t_ecs_clusters.c.region == region,
+                    )
+                ).scalar()
+                if ecs_count > 0:
+                    opportunities["ecs"] = True
+                    opportunities["ecr"] = True  # ECS typically uses ECR
+
+                # Check for EKS clusters in this region
+                eks_count = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(t_eks_clusters)
+                    .where(
+                        t_eks_clusters.c.scan_id == vpc_scan_id,
+                        t_eks_clusters.c.region == region,
+                    )
+                ).scalar()
+                if eks_count > 0:
+                    opportunities["ecr"] = True
+
+                # Check for EC2 instances in this VPC
+                ec2_count = conn.execute(
+                    sa.select(sa.func.count())
+                    .select_from(t_ec2_instances)
+                    .where(
+                        t_ec2_instances.c.scan_id == vpc_scan_id,
+                        t_ec2_instances.c.vpc_id == vpc_id,
+                    )
+                ).scalar()
+
+                # Calculate potential savings
+                has_opportunities = any(opportunities.values())
+
+                if has_opportunities:
+                    results["summary"]["vpcs_with_opportunities"] += 1
+
+                    estimated_savings = 0.0
+                    recommendations = []
+
+                    if opportunities["s3"]:
+                        recommendations.append(
+                            "S3 Gateway Endpoint (Free - eliminates data transfer costs)"
+                        )
+                        # Estimate $0.09/GB savings on data transfer (conservative estimate of 100GB/month)
+                        estimated_savings += 9.0
+
+                    if opportunities["ecr"]:
+                        recommendations.append(
+                            "ECR Interface Endpoint ($7.20/month - reduces data transfer costs)"
+                        )
+                        # $0.01/hour = $7.20/month, savings from data transfer can offset this
+                        estimated_savings += 5.0  # Conservative net savings
+
+                    if opportunities["ecs"]:
+                        recommendations.append(
+                            "ECS Interface Endpoints ($7.20/month each for ecs, ecs-telemetry, ecs-agent)"
+                        )
+                        # Multiple endpoints needed but significant data transfer savings
+                        estimated_savings += 10.0
+
+                    results["endpoint_opportunities"].append(
+                        {
+                            "vpc_id": vpc_id,
+                            "region": region,
+                            "account_name": account_name,
+                            "account_number": account_number,
+                            "opportunities": opportunities,
+                            "ec2_instances": ec2_count,
+                            "ecs_services": ecs_count,
+                            "eks_clusters": eks_count,
+                            "s3_buckets": s3_count,
+                            "estimated_monthly_savings": round(estimated_savings, 2),
+                            "recommendations": recommendations,
+                        }
+                    )
+
+                    results["summary"]["potential_monthly_savings"] += estimated_savings
 
         results["summary"]["potential_monthly_savings"] = round(
             results["summary"]["potential_monthly_savings"], 2
@@ -3810,9 +3927,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "organizations": [],
             "organizational_units": [],
@@ -3820,24 +3934,23 @@ class QueryHandler:
             "summary": {"total_accounts": 0, "total_ous": 0, "feature_set": None},
         }
 
-        try:
-            # Build query conditions
-            org_condition = (
-                f"WHERE scan_id = '{scan_id}'"
-                if scan_id
-                else "ORDER BY created_at DESC LIMIT 1"
-            )
+        # Get organization details
+        org_stmt = sa.select(
+            t_organizations.c.organization_id,
+            t_organizations.c.organization_arn,
+            t_organizations.c.master_account_id,
+            t_organizations.c.master_account_email,
+            t_organizations.c.feature_set,
+            t_organizations.c.available_policy_types,
+            t_organizations.c.scan_id,
+        )
+        if scan_id:
+            org_stmt = org_stmt.where(t_organizations.c.scan_id == scan_id)
+        else:
+            org_stmt = org_stmt.order_by(t_organizations.c.created_at.desc()).limit(1)
 
-            # Get organization details
-            cursor.execute(f"""
-                SELECT organization_id, organization_arn, master_account_id,
-                       master_account_email, feature_set, available_policy_types,
-                       scan_id
-                FROM organizations
-                {org_condition}
-            """)
-
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(org_stmt):
                 org_data = {
                     "organization_id": row[0],
                     "organization_arn": row[1],
@@ -3853,17 +3966,18 @@ class QueryHandler:
                 org_scan_id = row[6]
 
                 # Get organizational units for this organization
-                cursor.execute(
-                    """
-                    SELECT ou_id, ou_arn, ou_name, parent_id
-                    FROM organizational_units
-                    WHERE scan_id = ?
-                    ORDER BY ou_name
-                """,
-                    (org_scan_id,),
+                ou_stmt = (
+                    sa.select(
+                        t_organizational_units.c.ou_id,
+                        t_organizational_units.c.ou_arn,
+                        t_organizational_units.c.ou_name,
+                        t_organizational_units.c.parent_id,
+                    )
+                    .where(t_organizational_units.c.scan_id == org_scan_id)
+                    .order_by(t_organizational_units.c.ou_name)
                 )
 
-                for ou_row in cursor.fetchall():
+                for ou_row in conn.execute(ou_stmt):
                     results["organizational_units"].append(
                         {
                             "ou_id": ou_row[0],
@@ -3874,18 +3988,21 @@ class QueryHandler:
                     )
 
                 # Get accounts for this organization
-                cursor.execute(
-                    """
-                    SELECT account_id, account_arn, email, account_name,
-                           status, joined_method, joined_timestamp
-                    FROM organization_accounts
-                    WHERE scan_id = ?
-                    ORDER BY account_name
-                """,
-                    (org_scan_id,),
+                accounts_stmt = (
+                    sa.select(
+                        t_organization_accounts.c.account_id,
+                        t_organization_accounts.c.account_arn,
+                        t_organization_accounts.c.email,
+                        t_organization_accounts.c.account_name,
+                        t_organization_accounts.c.status,
+                        t_organization_accounts.c.joined_method,
+                        t_organization_accounts.c.joined_timestamp,
+                    )
+                    .where(t_organization_accounts.c.scan_id == org_scan_id)
+                    .order_by(t_organization_accounts.c.account_name)
                 )
 
-                for acct_row in cursor.fetchall():
+                for acct_row in conn.execute(accounts_stmt):
                     results["accounts"].append(
                         {
                             "account_id": acct_row[0],
@@ -3898,11 +4015,8 @@ class QueryHandler:
                         }
                     )
 
-            results["summary"]["total_accounts"] = len(results["accounts"])
-            results["summary"]["total_ous"] = len(results["organizational_units"])
-
-        finally:
-            conn.close()
+        results["summary"]["total_accounts"] = len(results["accounts"])
+        results["summary"]["total_ous"] = len(results["organizational_units"])
 
         return results
 
@@ -3919,9 +4033,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         account_id = params.get("account_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "permission_sets": [],
             "assignments": [],
@@ -3932,20 +4043,39 @@ class QueryHandler:
             },
         }
 
-        try:
-            # Build query condition
-            ps_condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        # Get permission sets
+        ps_stmt = sa.select(
+            t_sso_permission_sets.c.permission_set_arn,
+            t_sso_permission_sets.c.permission_set_name,
+            t_sso_permission_sets.c.description,
+            t_sso_permission_sets.c.instance_arn,
+            t_sso_permission_sets.c.session_duration,
+            t_sso_permission_sets.c.relay_state,
+            t_sso_permission_sets.c.managed_policies,
+            t_sso_permission_sets.c.inline_policy,
+            t_sso_permission_sets.c.scan_id,
+        )
+        if scan_id:
+            ps_stmt = ps_stmt.where(t_sso_permission_sets.c.scan_id == scan_id)
 
-            # Get permission sets
-            cursor.execute(f"""
-                SELECT permission_set_arn, permission_set_name, description,
-                       instance_arn, session_duration, relay_state,
-                       managed_policies, inline_policy, scan_id
-                FROM sso_permission_sets
-                {ps_condition}
-            """)
+        # Get assignments
+        assignment_stmt = sa.select(
+            t_sso_assignments.c.instance_arn,
+            t_sso_assignments.c.permission_set_arn,
+            t_sso_assignments.c.target_id,
+            t_sso_assignments.c.principal_type,
+            t_sso_assignments.c.principal_id,
+        )
+        assignment_conditions = []
+        if scan_id:
+            assignment_conditions.append(t_sso_assignments.c.scan_id == scan_id)
+        if account_id:
+            assignment_conditions.append(t_sso_assignments.c.target_id == account_id)
+        if assignment_conditions:
+            assignment_stmt = assignment_stmt.where(*assignment_conditions)
 
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(ps_stmt):
                 ps_data = {
                     "permission_set_arn": row[0],
                     "permission_set_name": row[1],
@@ -3959,28 +4089,7 @@ class QueryHandler:
                 }
                 results["permission_sets"].append(ps_data)
 
-            # Build assignment query condition
-            assignment_conditions = []
-            if scan_id:
-                assignment_conditions.append(f"scan_id = '{scan_id}'")
-            if account_id:
-                assignment_conditions.append(f"target_id = '{account_id}'")
-
-            assignment_condition = (
-                f"WHERE {' AND '.join(assignment_conditions)}"
-                if assignment_conditions
-                else ""
-            )
-
-            # Get assignments
-            cursor.execute(f"""
-                SELECT instance_arn, permission_set_arn, target_id,
-                       principal_type, principal_id
-                FROM sso_assignments
-                {assignment_condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(assignment_stmt):
                 results["assignments"].append(
                     {
                         "instance_arn": row[0],
@@ -3992,19 +4101,14 @@ class QueryHandler:
                 )
                 results["summary"]["accounts_with_assignments"].add(row[2])
 
-            results["summary"]["total_permission_sets"] = len(
-                results["permission_sets"]
-            )
-            results["summary"]["total_assignments"] = len(results["assignments"])
-            results["summary"]["total_accounts_with_assignments"] = len(
-                results["summary"]["accounts_with_assignments"]
-            )
-            results["summary"]["accounts_with_assignments"] = list(
-                results["summary"]["accounts_with_assignments"]
-            )
-
-        finally:
-            conn.close()
+        results["summary"]["total_permission_sets"] = len(results["permission_sets"])
+        results["summary"]["total_assignments"] = len(results["assignments"])
+        results["summary"]["total_accounts_with_assignments"] = len(
+            results["summary"]["accounts_with_assignments"]
+        )
+        results["summary"]["accounts_with_assignments"] = list(
+            results["summary"]["accounts_with_assignments"]
+        )
 
         return results
 
@@ -4019,9 +4123,6 @@ class QueryHandler:
             CloudTrail coverage analysis
         """
         scan_id = params.get("scan_id")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "trails": [],
@@ -4038,19 +4139,31 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        # The legacy SQL selects cloudtrail_trails.log_file_validation_enabled, a
+        # column absent from the DDL (src/cloudledger/database/tables.py has no
+        # such column on t_cloudtrail_trails). Kept verbatim via sa.text() so the
+        # frozen "no such column: log_file_validation_enabled" baseline error
+        # still fires; the raw sqlite3 error is re-raised so handle_query's
+        # str(e) matches the frozen baseline exactly.
+        condition = "WHERE scan_id = :scan_id" if scan_id else ""
+        stmt = sa.text(f"""
+            SELECT trail_arn, trail_name, region, s3_bucket_name,
+                   is_multi_region_trail, is_organization_trail, is_logging,
+                   log_file_validation_enabled, kms_key_id,
+                   cloud_watch_logs_log_group_arn, home_region
+            FROM cloudtrail_trails
+            {condition}
+        """)
 
-            cursor.execute(f"""
-                SELECT trail_arn, trail_name, region, s3_bucket_name,
-                       is_multi_region_trail, is_organization_trail, is_logging,
-                       log_file_validation_enabled, kms_key_id,
-                       cloud_watch_logs_log_group_arn, home_region
-                FROM cloudtrail_trails
-                {condition}
-            """)
+        with self.db_ops.engine.connect() as conn:
+            try:
+                rows = conn.execute(
+                    stmt, {"scan_id": scan_id} if scan_id else {}
+                ).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in rows:
                 trail_data = {
                     "trail_arn": row[0],
                     "trail_name": row[1],
@@ -4115,9 +4228,6 @@ class QueryHandler:
                 results["summary"]["compliance_issues"]
             )
 
-        finally:
-            conn.close()
-
         return results
 
     def _analyze_logging_coverage(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -4131,9 +4241,6 @@ class QueryHandler:
             Logging and Config coverage analysis
         """
         scan_id = params.get("scan_id")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "cloudwatch_log_groups": [],
@@ -4152,18 +4259,38 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        log_groups_stmt = sa.select(
+            t_cloudwatch_log_groups.c.log_group_name,
+            t_cloudwatch_log_groups.c.region,
+            t_cloudwatch_log_groups.c.retention_in_days,
+            t_cloudwatch_log_groups.c.stored_bytes,
+            t_cloudwatch_log_groups.c.kms_key_id,
+        )
+        recorders_stmt = sa.select(
+            t_config_recorders.c.recorder_name,
+            t_config_recorders.c.region,
+            t_config_recorders.c.role_arn,
+            t_config_recorders.c.is_recording,
+            t_config_recorders.c.last_status,
+        )
+        rules_stmt = sa.select(
+            t_config_rules.c.rule_name,
+            t_config_rules.c.region,
+            t_config_rules.c.config_rule_state,
+            t_config_rules.c.compliance_type,
+        )
+        if scan_id:
+            log_groups_stmt = log_groups_stmt.where(
+                t_cloudwatch_log_groups.c.scan_id == scan_id
+            )
+            recorders_stmt = recorders_stmt.where(
+                t_config_recorders.c.scan_id == scan_id
+            )
+            rules_stmt = rules_stmt.where(t_config_rules.c.scan_id == scan_id)
 
+        with self.db_ops.engine.connect() as conn:
             # Analyze CloudWatch Log Groups
-            cursor.execute(f"""
-                SELECT log_group_name, region, retention_in_days,
-                       stored_bytes, kms_key_id
-                FROM cloudwatch_log_groups
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(log_groups_stmt):
                 log_group_data = {
                     "log_group_name": row[0],
                     "region": row[1],
@@ -4183,13 +4310,7 @@ class QueryHandler:
                     results["summary"]["log_groups_with_kms"] += 1
 
             # Analyze Config Recorders
-            cursor.execute(f"""
-                SELECT recorder_name, region, role_arn, is_recording, last_status
-                FROM config_recorders
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(recorders_stmt):
                 results["config_recorders"].append(
                     {
                         "recorder_name": row[0],
@@ -4205,13 +4326,7 @@ class QueryHandler:
                     results["summary"]["config_recorders_recording"] += 1
 
             # Analyze Config Rules
-            cursor.execute(f"""
-                SELECT rule_name, region, config_rule_state, compliance_type
-                FROM config_rules
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(rules_stmt):
                 results["config_rules"].append(
                     {
                         "rule_name": row[0],
@@ -4227,13 +4342,10 @@ class QueryHandler:
                 elif row[3] == "NON_COMPLIANT":
                     results["summary"]["non_compliant_rules"] += 1
 
-            # Convert stored bytes to GB for readability
-            results["summary"]["total_stored_gb"] = round(
-                results["summary"]["total_stored_bytes"] / (1024**3), 2
-            )
-
-        finally:
-            conn.close()
+        # Convert stored bytes to GB for readability
+        results["summary"]["total_stored_gb"] = round(
+            results["summary"]["total_stored_bytes"] / (1024**3), 2
+        )
 
         return results
 
@@ -4250,9 +4362,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         region = params.get("region")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "models": [],
             "guardrails": [],
@@ -4268,24 +4377,78 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        # The legacy SQL selects bedrock_models.model_lifecycle_status, a column
+        # absent from the DDL (t_bedrock_models has no such column). Kept
+        # verbatim via sa.text() so the frozen "no such column:
+        # model_lifecycle_status" baseline error still fires; the raw sqlite3
+        # error is re-raised so handle_query's str(e) matches the frozen
+        # baseline exactly. As in the legacy code, this query runs first, so
+        # the guardrails/knowledge-bases/agents sections below never execute
+        # while the DDL mismatch stands.
+        conditions_sql = []
+        text_params = {}
+        if scan_id:
+            conditions_sql.append("scan_id = :scan_id")
+            text_params["scan_id"] = scan_id
+        if region:
+            conditions_sql.append("region = :region")
+            text_params["region"] = region
+        condition = f"WHERE {' AND '.join(conditions_sql)}" if conditions_sql else ""
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        models_stmt = sa.text(f"""
+            SELECT model_id, model_name, region, provider_name,
+                   input_modalities, output_modalities, model_lifecycle_status
+            FROM bedrock_models
+            {condition}
+        """)
 
+        guardrails_stmt = sa.select(
+            t_bedrock_guardrails.c.guardrail_id,
+            t_bedrock_guardrails.c.guardrail_name,
+            t_bedrock_guardrails.c.region,
+            t_bedrock_guardrails.c.description,
+            t_bedrock_guardrails.c.status,
+        )
+        knowledge_bases_stmt = sa.select(
+            t_bedrock_knowledge_bases.c.knowledge_base_id,
+            t_bedrock_knowledge_bases.c.knowledge_base_name,
+            t_bedrock_knowledge_bases.c.region,
+            t_bedrock_knowledge_bases.c.description,
+            t_bedrock_knowledge_bases.c.status,
+        )
+        agents_stmt = sa.select(
+            t_bedrock_agents.c.agent_id,
+            t_bedrock_agents.c.agent_name,
+            t_bedrock_agents.c.region,
+            t_bedrock_agents.c.description,
+            t_bedrock_agents.c.agent_status,
+            t_bedrock_agents.c.foundation_model,
+        )
+        if scan_id:
+            guardrails_stmt = guardrails_stmt.where(
+                t_bedrock_guardrails.c.scan_id == scan_id
+            )
+            knowledge_bases_stmt = knowledge_bases_stmt.where(
+                t_bedrock_knowledge_bases.c.scan_id == scan_id
+            )
+            agents_stmt = agents_stmt.where(t_bedrock_agents.c.scan_id == scan_id)
+        if region:
+            guardrails_stmt = guardrails_stmt.where(
+                t_bedrock_guardrails.c.region == region
+            )
+            knowledge_bases_stmt = knowledge_bases_stmt.where(
+                t_bedrock_knowledge_bases.c.region == region
+            )
+            agents_stmt = agents_stmt.where(t_bedrock_agents.c.region == region)
+
+        with self.db_ops.engine.connect() as conn:
             # Get Bedrock Models
-            cursor.execute(f"""
-                SELECT model_id, model_name, region, provider_name,
-                       input_modalities, output_modalities, model_lifecycle_status
-                FROM bedrock_models
-                {condition}
-            """)
+            try:
+                model_rows = conn.execute(models_stmt, text_params).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in model_rows:
                 model_data = {
                     "model_id": row[0],
                     "model_name": row[1],
@@ -4305,13 +4468,7 @@ class QueryHandler:
                 results["summary"]["regions"].add(row[2])
 
             # Get Bedrock Guardrails
-            cursor.execute(f"""
-                SELECT guardrail_id, guardrail_name, region, description, status
-                FROM bedrock_guardrails
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(guardrails_stmt):
                 results["guardrails"].append(
                     {
                         "guardrail_id": row[0],
@@ -4324,13 +4481,7 @@ class QueryHandler:
                 results["summary"]["total_guardrails"] += 1
 
             # Get Bedrock Knowledge Bases
-            cursor.execute(f"""
-                SELECT knowledge_base_id, knowledge_base_name, region, description, status
-                FROM bedrock_knowledge_bases
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(knowledge_bases_stmt):
                 results["knowledge_bases"].append(
                     {
                         "knowledge_base_id": row[0],
@@ -4343,13 +4494,7 @@ class QueryHandler:
                 results["summary"]["total_knowledge_bases"] += 1
 
             # Get Bedrock Agents
-            cursor.execute(f"""
-                SELECT agent_id, agent_name, region, description, agent_status, foundation_model
-                FROM bedrock_agents
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(agents_stmt):
                 results["agents"].append(
                     {
                         "agent_id": row[0],
@@ -4362,10 +4507,7 @@ class QueryHandler:
                 )
                 results["summary"]["total_agents"] += 1
 
-            results["summary"]["regions"] = list(results["summary"]["regions"])
-
-        finally:
-            conn.close()
+        results["summary"]["regions"] = list(results["summary"]["regions"])
 
         return results
 
@@ -4381,9 +4523,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "transit_gateways": [],
             "vpn_connections": [],
@@ -4398,17 +4537,41 @@ class QueryHandler:
             },
         }
 
-        try:
-            condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
+        transit_gateways_stmt = sa.select(
+            t_transit_gateways.c.transit_gateway_id,
+            t_transit_gateways.c.region,
+            t_transit_gateways.c.state,
+            t_transit_gateways.c.owner_id,
+            t_transit_gateways.c.description,
+        )
+        vpn_stmt = sa.select(
+            t_vpn_connections.c.vpn_connection_id,
+            t_vpn_connections.c.region,
+            t_vpn_connections.c.state,
+            t_vpn_connections.c.vpn_gateway_id,
+            t_vpn_connections.c.transit_gateway_id,
+            t_vpn_connections.c.customer_gateway_id,
+            t_vpn_connections.c.vpn_connection_type,
+        )
+        dx_stmt = sa.select(
+            t_direct_connect_connections.c.connection_id,
+            t_direct_connect_connections.c.connection_name,
+            t_direct_connect_connections.c.region,
+            t_direct_connect_connections.c.connection_state,
+            t_direct_connect_connections.c.location,
+            t_direct_connect_connections.c.bandwidth,
+            t_direct_connect_connections.c.provider_name,
+        )
+        if scan_id:
+            transit_gateways_stmt = transit_gateways_stmt.where(
+                t_transit_gateways.c.scan_id == scan_id
+            )
+            vpn_stmt = vpn_stmt.where(t_vpn_connections.c.scan_id == scan_id)
+            dx_stmt = dx_stmt.where(t_direct_connect_connections.c.scan_id == scan_id)
 
+        with self.db_ops.engine.connect() as conn:
             # Get Transit Gateways
-            cursor.execute(f"""
-                SELECT transit_gateway_id, region, state, owner_id, description
-                FROM transit_gateways
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(transit_gateways_stmt):
                 results["transit_gateways"].append(
                     {
                         "transit_gateway_id": row[0],
@@ -4421,14 +4584,7 @@ class QueryHandler:
                 results["summary"]["total_transit_gateways"] += 1
 
             # Get VPN Connections
-            cursor.execute(f"""
-                SELECT vpn_connection_id, region, state, vpn_gateway_id,
-                       transit_gateway_id, customer_gateway_id, vpn_connection_type
-                FROM vpn_connections
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(vpn_stmt):
                 vpn_data = {
                     "vpn_connection_id": row[0],
                     "region": row[1],
@@ -4445,14 +4601,7 @@ class QueryHandler:
                     results["summary"]["active_vpn_connections"] += 1
 
             # Get Direct Connect Connections
-            cursor.execute(f"""
-                SELECT connection_id, connection_name, region, connection_state,
-                       location, bandwidth, provider_name
-                FROM direct_connect_connections
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(dx_stmt):
                 dx_data = {
                     "connection_id": row[0],
                     "connection_name": row[1],
@@ -4468,16 +4617,13 @@ class QueryHandler:
                 if row[3] == "available":
                     results["summary"]["active_direct_connect_connections"] += 1
 
-            # Determine connectivity types in use
-            if results["summary"]["total_transit_gateways"] > 0:
-                results["summary"]["connectivity_types"].append("Transit Gateway")
-            if results["summary"]["total_vpn_connections"] > 0:
-                results["summary"]["connectivity_types"].append("VPN")
-            if results["summary"]["total_direct_connect_connections"] > 0:
-                results["summary"]["connectivity_types"].append("Direct Connect")
-
-        finally:
-            conn.close()
+        # Determine connectivity types in use
+        if results["summary"]["total_transit_gateways"] > 0:
+            results["summary"]["connectivity_types"].append("Transit Gateway")
+        if results["summary"]["total_vpn_connections"] > 0:
+            results["summary"]["connectivity_types"].append("VPN")
+        if results["summary"]["total_direct_connect_connections"] > 0:
+            results["summary"]["connectivity_types"].append("Direct Connect")
 
         return results
 
@@ -4494,9 +4640,6 @@ class QueryHandler:
         scan_id = params.get("scan_id")
         region = params.get("region")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "directories": [],
             "summary": {
@@ -4508,23 +4651,27 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        stmt = sa.select(
+            t_directory_services.c.directory_id,
+            t_directory_services.c.directory_name,
+            t_directory_services.c.region,
+            t_directory_services.c.directory_type,
+            t_directory_services.c.size,
+            t_directory_services.c.edition,
+            t_directory_services.c.access_url,
+            t_directory_services.c.stage,
+            t_directory_services.c.sso_enabled,
+        )
+        conditions = []
+        if scan_id:
+            conditions.append(t_directory_services.c.scan_id == scan_id)
+        if region:
+            conditions.append(t_directory_services.c.region == region)
+        if conditions:
+            stmt = stmt.where(*conditions)
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-
-            cursor.execute(f"""
-                SELECT directory_id, directory_name, region, directory_type,
-                       size, edition, access_url, stage, sso_enabled
-                FROM directory_services
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+        with self.db_ops.engine.connect() as conn:
+            for row in conn.execute(stmt):
                 dir_data = {
                     "directory_id": row[0],
                     "directory_name": row[1],
@@ -4555,10 +4702,7 @@ class QueryHandler:
 
                 results["summary"]["regions"].add(row[2])
 
-            results["summary"]["regions"] = list(results["summary"]["regions"])
-
-        finally:
-            conn.close()
+        results["summary"]["regions"] = list(results["summary"]["regions"])
 
         return results
 
@@ -4574,9 +4718,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
         region = params.get("region")
-
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
 
         results = {
             "elasticache_clusters": [],
@@ -4598,25 +4739,79 @@ class QueryHandler:
             },
         }
 
-        try:
-            conditions = []
-            if scan_id:
-                conditions.append(f"scan_id = '{scan_id}'")
-            if region:
-                conditions.append(f"region = '{region}'")
+        elasticache_stmt = sa.select(
+            t_elasticache_clusters.c.cache_cluster_id,
+            t_elasticache_clusters.c.region,
+            t_elasticache_clusters.c.cache_cluster_status,
+            t_elasticache_clusters.c.engine,
+            t_elasticache_clusters.c.engine_version,
+            t_elasticache_clusters.c.cache_node_type,
+            t_elasticache_clusters.c.num_cache_nodes,
+            t_elasticache_clusters.c.transit_encryption_enabled,
+            t_elasticache_clusters.c.at_rest_encryption_enabled,
+        )
+        opensearch_stmt = sa.select(
+            t_opensearch_domains.c.domain_name,
+            t_opensearch_domains.c.region,
+            t_opensearch_domains.c.engine_version,
+            t_opensearch_domains.c.endpoint,
+            t_opensearch_domains.c.created,
+            t_opensearch_domains.c.deleted,
+            t_opensearch_domains.c.processing,
+        )
+        msk_stmt = sa.select(
+            t_msk_clusters.c.cluster_name,
+            t_msk_clusters.c.region,
+            t_msk_clusters.c.cluster_type,
+            t_msk_clusters.c.state,
+            t_msk_clusters.c.current_version,
+            t_msk_clusters.c.number_of_broker_nodes,
+        )
+        if scan_id:
+            elasticache_stmt = elasticache_stmt.where(
+                t_elasticache_clusters.c.scan_id == scan_id
+            )
+            opensearch_stmt = opensearch_stmt.where(
+                t_opensearch_domains.c.scan_id == scan_id
+            )
+            msk_stmt = msk_stmt.where(t_msk_clusters.c.scan_id == scan_id)
+        if region:
+            elasticache_stmt = elasticache_stmt.where(
+                t_elasticache_clusters.c.region == region
+            )
+            opensearch_stmt = opensearch_stmt.where(
+                t_opensearch_domains.c.region == region
+            )
+            msk_stmt = msk_stmt.where(t_msk_clusters.c.region == region)
 
-            condition = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        # The legacy SQL selects dynamodb_tables.billing_mode, a column absent
+        # from the DDL (t_dynamodb_tables has billing_mode_summary, not
+        # billing_mode). Kept verbatim via sa.text() so the frozen "no such
+        # column: billing_mode" baseline error still fires; the raw sqlite3
+        # error is re-raised so handle_query's str(e) matches the frozen
+        # baseline exactly. As in the legacy code, this query runs last, so
+        # its failure discards the elasticache/opensearch/msk results already
+        # gathered above (the exception propagates past this method entirely).
+        conditions_sql = []
+        text_params = {}
+        if scan_id:
+            conditions_sql.append("scan_id = :scan_id")
+            text_params["scan_id"] = scan_id
+        if region:
+            conditions_sql.append("region = :region")
+            text_params["region"] = region
+        condition = f"WHERE {' AND '.join(conditions_sql)}" if conditions_sql else ""
 
+        dynamodb_stmt = sa.text(f"""
+            SELECT table_name, region, table_status, billing_mode,
+                   table_size_bytes, item_count, deletion_protection_enabled
+            FROM dynamodb_tables
+            {condition}
+        """)
+
+        with self.db_ops.engine.connect() as conn:
             # Get ElastiCache Clusters
-            cursor.execute(f"""
-                SELECT cache_cluster_id, region, cache_cluster_status, engine,
-                       engine_version, cache_node_type, num_cache_nodes,
-                       transit_encryption_enabled, at_rest_encryption_enabled
-                FROM elasticache_clusters
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(elasticache_stmt):
                 cluster_data = {
                     "cache_cluster_id": row[0],
                     "region": row[1],
@@ -4642,14 +4837,7 @@ class QueryHandler:
                     ] += 1
 
             # Get OpenSearch Domains
-            cursor.execute(f"""
-                SELECT domain_name, region, engine_version, endpoint,
-                       created, deleted, processing
-                FROM opensearch_domains
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(opensearch_stmt):
                 results["opensearch_domains"].append(
                     {
                         "domain_name": row[0],
@@ -4664,14 +4852,7 @@ class QueryHandler:
                 results["summary"]["total_opensearch_domains"] += 1
 
             # Get MSK Clusters
-            cursor.execute(f"""
-                SELECT cluster_name, region, cluster_type, state,
-                       current_version, number_of_broker_nodes
-                FROM msk_clusters
-                {condition}
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(msk_stmt):
                 results["msk_clusters"].append(
                     {
                         "cluster_name": row[0],
@@ -4685,14 +4866,12 @@ class QueryHandler:
                 results["summary"]["total_msk_clusters"] += 1
 
             # Get DynamoDB Tables
-            cursor.execute(f"""
-                SELECT table_name, region, table_status, billing_mode,
-                       table_size_bytes, item_count, deletion_protection_enabled
-                FROM dynamodb_tables
-                {condition}
-            """)
+            try:
+                dynamodb_rows = conn.execute(dynamodb_stmt, text_params).fetchall()
+            except sa.exc.DBAPIError as e:
+                raise e.orig from None
 
-            for row in cursor.fetchall():
+            for row in dynamodb_rows:
                 table_data = {
                     "table_name": row[0],
                     "region": row[1],
@@ -4711,9 +4890,6 @@ class QueryHandler:
                     + 1
                 )
 
-        finally:
-            conn.close()
-
         return results
 
     def _get_organizations_cost_breakdown(
@@ -4727,9 +4903,6 @@ class QueryHandler:
         """
         scan_id = params.get("scan_id")
 
-        conn = self.db_ops._get_connection()
-        cursor = conn.cursor()
-
         results = {
             "organization_info": {},
             "master_account_costs": {},
@@ -4742,19 +4915,59 @@ class QueryHandler:
             },
         }
 
-        try:
-            # Get organization information
-            org_condition = f"WHERE scan_id = '{scan_id}'" if scan_id else ""
-            cursor.execute(f"""
-                SELECT organization_id, organization_arn, master_account_id, 
-                       master_account_email, feature_set
-                FROM organizations
-                {org_condition}
-                ORDER BY created_at DESC
-                LIMIT 1
-            """)
+        org_stmt = (
+            sa.select(
+                t_organizations.c.organization_id,
+                t_organizations.c.organization_arn,
+                t_organizations.c.master_account_id,
+                t_organizations.c.master_account_email,
+                t_organizations.c.feature_set,
+            )
+            .order_by(t_organizations.c.created_at.desc())
+            .limit(1)
+        )
 
-            org_row = cursor.fetchone()
+        accounts_stmt = sa.select(
+            t_organization_accounts.c.account_id,
+            t_organization_accounts.c.account_name,
+            t_organization_accounts.c.email,
+            t_organization_accounts.c.status,
+        )
+
+        total_cost_expr = sa.func.sum(t_cost_data.c.amount).label("total_cost")
+        service_count_expr = sa.func.count(
+            sa.distinct(t_cost_data.c.service_name)
+        ).label("service_count")
+        cost_stmt = (
+            sa.select(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                total_cost_expr,
+                t_cost_data.c.currency,
+                service_count_expr,
+            )
+            .select_from(
+                t_cost_data.join(
+                    t_scan_metadata, t_cost_data.c.scan_id == t_scan_metadata.c.scan_id
+                )
+            )
+            .group_by(
+                t_scan_metadata.c.account_name,
+                t_scan_metadata.c.account_number,
+                t_cost_data.c.currency,
+            )
+            .order_by(total_cost_expr.desc())
+        )
+        if scan_id:
+            org_stmt = org_stmt.where(t_organizations.c.scan_id == scan_id)
+            accounts_stmt = accounts_stmt.where(
+                t_organization_accounts.c.scan_id == scan_id
+            )
+            cost_stmt = cost_stmt.where(t_cost_data.c.scan_id == scan_id)
+
+        with self.db_ops.engine.connect() as conn:
+            # Get organization information
+            org_row = conn.execute(org_stmt).fetchone()
             if not org_row:
                 return {
                     "error": "No AWS Organizations data found. This query is for Organizations environments only.",
@@ -4771,14 +4984,8 @@ class QueryHandler:
             master_account_id = org_row[2]
 
             # Get all organization member accounts
-            cursor.execute(f"""
-                SELECT account_id, account_name, email, status
-                FROM organization_accounts
-                {org_condition}
-            """)
-
             member_account_ids = {}
-            for row in cursor.fetchall():
+            for row in conn.execute(accounts_stmt):
                 member_account_ids[row[0]] = {
                     "account_name": row[1],
                     "email": row[2],
@@ -4786,20 +4993,7 @@ class QueryHandler:
                 }
 
             # Get costs for all accounts
-            cost_condition = f"cd.scan_id = '{scan_id}'" if scan_id else "1=1"
-            cursor.execute(f"""
-                SELECT sm.account_name, sm.account_number,
-                       SUM(cd.amount) as total_cost,
-                       cd.currency,
-                       COUNT(DISTINCT cd.service_name) as service_count
-                FROM cost_data cd
-                INNER JOIN scan_metadata sm ON cd.scan_id = sm.scan_id
-                WHERE {cost_condition}
-                GROUP BY sm.account_name, sm.account_number, cd.currency
-                ORDER BY total_cost DESC
-            """)
-
-            for row in cursor.fetchall():
+            for row in conn.execute(cost_stmt):
                 account_number = row[1]
                 account_name = row[0]
                 total_cost = round(row[2], 2)
@@ -4839,35 +5033,30 @@ class QueryHandler:
                 results["cost_summary"]["total_all_accounts"] += total_cost
                 results["cost_summary"]["currency"] = currency
 
-            # Round summary values
-            results["cost_summary"]["total_all_accounts"] = round(
-                results["cost_summary"]["total_all_accounts"], 2
-            )
-            results["cost_summary"]["total_member_accounts"] = round(
-                results["cost_summary"]["total_member_accounts"], 2
-            )
+        # Round summary values
+        results["cost_summary"]["total_all_accounts"] = round(
+            results["cost_summary"]["total_all_accounts"], 2
+        )
+        results["cost_summary"]["total_member_accounts"] = round(
+            results["cost_summary"]["total_member_accounts"], 2
+        )
 
-            # Add helpful context
-            results["interpretation"] = {
-                "note": (
-                    "In AWS Organizations with consolidated billing:\n"
-                    "- The master account pays for all member account usage\n"
-                    "- Cost data shown here reflects actual usage per account\n"
-                    "- Master account costs are its DIRECT costs only\n"
-                    "- Member account costs are their individual usage\n"
-                    '- When asking "which account costs most?", exclude the master account '
-                    "or look at member_accounts list to see actual usage by account"
-                ),
-                "highest_cost_member_account": results["member_accounts"][0][
-                    "account_name"
-                ]
-                if results["member_accounts"]
-                else "N/A",
-                "member_account_count": len(results["member_accounts"]),
-            }
-
-        finally:
-            conn.close()
+        # Add helpful context
+        results["interpretation"] = {
+            "note": (
+                "In AWS Organizations with consolidated billing:\n"
+                "- The master account pays for all member account usage\n"
+                "- Cost data shown here reflects actual usage per account\n"
+                "- Master account costs are its DIRECT costs only\n"
+                "- Member account costs are their individual usage\n"
+                '- When asking "which account costs most?", exclude the master account '
+                "or look at member_accounts list to see actual usage by account"
+            ),
+            "highest_cost_member_account": results["member_accounts"][0]["account_name"]
+            if results["member_accounts"]
+            else "N/A",
+            "member_account_count": len(results["member_accounts"]),
+        }
 
         return results
 
@@ -4882,18 +5071,16 @@ class QueryHandler:
         except ValueError as e:
             return {"error": str(e)}
 
-        conn = sqlite3.connect(str(self.db_ops.db_path))
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT severity, COUNT(*) FROM prowler_findings"
-                " WHERE scan_id = ? AND UPPER(status) = 'FAIL'"
-                " GROUP BY severity",
-                (result["scan_id"],),
+        failed_stmt = (
+            sa.select(t_prowler_findings.c.severity, sa.func.count())
+            .where(
+                t_prowler_findings.c.scan_id == result["scan_id"],
+                sa.func.upper(t_prowler_findings.c.status) == "FAIL",
             )
-            failed = {row[0]: row[1] for row in cursor.fetchall()}
-        finally:
-            conn.close()
+            .group_by(t_prowler_findings.c.severity)
+        )
+        with self.db_ops.engine.connect() as conn:
+            failed = {row[0]: row[1] for row in conn.execute(failed_stmt)}
 
         result["prowler"] = {
             "available": bool(failed),
