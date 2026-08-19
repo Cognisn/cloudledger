@@ -176,6 +176,16 @@ class DatabaseOperations:
             "scan_status": metadata.scan_status,
             "error_message": metadata.error_message,
             "scan_duration_seconds": metadata.scan_duration_seconds,
+            "org_member": (
+                None if metadata.org_member is None else (1 if metadata.org_member else 0)
+            ),
+            "is_management_account": (
+                None
+                if metadata.is_management_account is None
+                else (1 if metadata.is_management_account else 0)
+            ),
+            "management_account_id": metadata.management_account_id,
+            "management_account_name": metadata.management_account_name,
         }
         with self._engine.begin() as conn:
             conn.execute(t_scan_metadata.insert(), row)

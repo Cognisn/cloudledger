@@ -1497,7 +1497,24 @@ t_scan_metadata = sa.Table(
     sa.Column("scan_status", sa.Text, nullable=False),
     sa.Column("error_message", sa.Text),
     sa.Column("scan_duration_seconds", sa.REAL),
+    sa.Column("org_member", sa.Integer),
+    sa.Column("is_management_account", sa.Integer),
+    sa.Column("management_account_id", sa.Text),
+    sa.Column("management_account_name", sa.Text),
     _timestamp_column(),
+)
+
+t_scan_tags = sa.Table(
+    "scan_tags",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, nullable=True),
+    sa.Column(
+        "scan_id", KeyText, sa.ForeignKey("scan_metadata.scan_id"), nullable=False
+    ),
+    sa.Column("tag", KeyText, nullable=False),
+    _timestamp_column(),
+    sa.UniqueConstraint("scan_id", "tag", name="uq_scan_tags_scan_tag"),
+    sqlite_autoincrement=True,
 )
 
 t_schema_version = sa.Table(
@@ -1999,6 +2016,9 @@ sa.Index("idx_s3pab_bucket", t_s3_public_access.c.bucket_name)
 
 sa.Index("idx_scan_account", t_scan_metadata.c.account_number)
 sa.Index("idx_scan_timestamp", t_scan_metadata.c.scan_timestamp)
+
+sa.Index("idx_scan_tags_scan_id", t_scan_tags.c.scan_id)
+sa.Index("idx_scan_tags_tag", t_scan_tags.c.tag)
 
 sa.Index("idx_sg_scan", t_security_groups.c.scan_id)
 sa.Index("idx_sg_id", t_security_groups.c.group_id)

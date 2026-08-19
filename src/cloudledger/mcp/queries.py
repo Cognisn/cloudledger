@@ -275,9 +275,22 @@ class QueryHandler:
         }
 
         with self.db_ops.engine.connect() as conn:
-            # Get scan metadata
+            # Get scan metadata. Selected explicitly (rather than
+            # `sa.select(t_scan_metadata)`) so that adding nullable columns
+            # to the table does not change this tool's output shape.
             scan_info = conn.execute(
-                sa.select(t_scan_metadata).where(t_scan_metadata.c.scan_id == scan_id)
+                sa.select(
+                    t_scan_metadata.c.scan_id,
+                    t_scan_metadata.c.account_name,
+                    t_scan_metadata.c.account_number,
+                    t_scan_metadata.c.scan_timestamp,
+                    t_scan_metadata.c.prowler_level,
+                    t_scan_metadata.c.regions_scanned,
+                    t_scan_metadata.c.scan_status,
+                    t_scan_metadata.c.error_message,
+                    t_scan_metadata.c.scan_duration_seconds,
+                    t_scan_metadata.c.created_at,
+                ).where(t_scan_metadata.c.scan_id == scan_id)
             ).fetchone()
 
             if not scan_info:
