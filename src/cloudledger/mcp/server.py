@@ -23,7 +23,12 @@ except ImportError:
     MCP_AVAILABLE = False
     logging.warning("MCP SDK not available. Please install: pip install mcp")
 
-from ..config.context import create_app_context, mask_target, resolve_database_target
+from ..config.context import (
+    app_version,
+    create_app_context,
+    mask_target,
+    resolve_database_target,
+)
 from ..database.operations import DatabaseOperations
 from .queries import QueryHandler
 from .tools import get_tools
@@ -31,8 +36,9 @@ from .tools import get_tools
 logger = logging.getLogger(__name__)
 
 
-# Global server instance
-app = Server("cloudledger")
+# Global server instance. The version is CloudLedger's own, so the MCP
+# initialise handshake does not fall back to the mcp library's version.
+app = Server("cloudledger", version=app_version())
 
 # Global database operations and query handler (will be set in main)
 db_ops: DatabaseOperations = None
@@ -131,7 +137,7 @@ async def main(database_path: Optional[str] = None) -> None:
             raise
 
 
-def run() -> None:
+def run(argv: Optional[list[str]] = None) -> None:
     """
     Synchronous console entry point for the MCP server.
 
@@ -142,7 +148,16 @@ def run() -> None:
     """
     import sys
 
-    database_path = sys.argv[1] if len(sys.argv) > 1 else None
+    args = sys.argv[1:] if argv is None else argv
+    if "-h" in args or "--help" in args:
+        print(
+            "Usage: cloudledger-mcp [database_path]\n\n"
+            "CloudLedger MCP stdio server: serves scan data to MCP clients.\n"
+            "database_path is optional; without it the configured or "
+            "platform-default database location is used."
+        )
+        raise SystemExit(0)
+    database_path = args[0] if args else None
     asyncio.run(main(database_path))
 
 
