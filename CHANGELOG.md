@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.1.0a3] - 2026-08-20
+
 ### Fixed
 - The MCP initialise handshake now reports CloudLedger's own version in `serverInfo.version` instead of the mcp library's.
 - `cloudledger-mcp -h`/`--help` prints usage and exits cleanly instead of treating the flag as a database path and crashing.
